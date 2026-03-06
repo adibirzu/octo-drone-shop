@@ -1,4 +1,4 @@
--- MuShop Cloud Native Portal - Database Initialization
+-- OCTO Drone Shop - Database Initialization
 -- Compatible with both PostgreSQL and Oracle (using standard SQL)
 
 CREATE TABLE IF NOT EXISTS users (

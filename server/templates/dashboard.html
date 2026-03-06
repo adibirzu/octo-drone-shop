@@ -1,83 +1,256 @@
 {% extends "base.html" %}
+{% block head %}
+<style>
+    .dashboard-grid {
+        display: grid;
+        gap: 18px;
+    }
+    .dashboard-hero {
+        padding: 28px;
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+    }
+    .dashboard-hero h1 {
+        font-size: clamp(2rem, 4vw, 3.4rem);
+        line-height: 0.95;
+        margin: 10px 0 14px;
+        max-width: 12ch;
+    }
+    .dashboard-hero p {
+        color: var(--muted);
+        max-width: 66ch;
+        line-height: 1.6;
+    }
+    .stats-grid,
+    .apps-grid {
+        display: grid;
+        gap: 16px;
+    }
+    .stats-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .apps-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .stat-card,
+    .app-card {
+        padding: 20px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+    }
+    .stat-card strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 2rem;
+    }
+    .app-card img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 18px;
+        margin-bottom: 14px;
+    }
+    .app-card p {
+        color: var(--muted);
+        line-height: 1.55;
+        margin: 10px 0 14px;
+    }
+    .dashboard-panels {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 18px;
+    }
+    .status-list {
+        display: grid;
+        gap: 12px;
+    }
+    .status-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(147, 170, 189, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+    }
+    @media (max-width: 1100px) {
+        .dashboard-hero,
+        .dashboard-panels {
+            grid-template-columns: 1fr;
+        }
+        .stats-grid,
+        .apps-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 760px) {
+        .stats-grid,
+        .apps-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2 style="margin-bottom: 16px;">Dashboard</h2>
+<section class="dashboard-grid">
+    <section class="hero-card dashboard-hero">
+        <div>
+            <div class="eyebrow">Control Plane</div>
+            <h1>Monitor the OCTO storefront and every supporting app.</h1>
+            <p>
+                This control plane surfaces the Drone Shop, supporting modules, ATP-backed business data, and the telemetry path into OCI APM,
+                OCI Logging, Log Analytics, and downstream Splunk pipelines.
+            </p>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px;">
+                <a class="btn" href="/shop">Open Drone Shop</a>
+                <a class="btn btn-outline" href="/health" target="_blank">Health</a>
+                <a class="btn btn-outline" href="/ready" target="_blank">Readiness</a>
+                <a class="btn btn-outline" href="/api/modules" target="_blank">Module Graph</a>
+            </div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="eyebrow">Customers</span>
+                <strong id="s-customers">-</strong>
+                <div class="muted">Stored in the backend database.</div>
+            </div>
+            <div class="stat-card">
+                <span class="eyebrow">Orders</span>
+                <strong id="s-orders">-</strong>
+                <div class="muted">Persisted and processed by backend flows.</div>
+            </div>
+            <div class="stat-card">
+                <span class="eyebrow">Revenue</span>
+                <strong id="s-revenue">-</strong>
+                <div class="muted">Calculated from order tables.</div>
+            </div>
+            <div class="stat-card">
+                <span class="eyebrow">Products</span>
+                <strong id="s-products">-</strong>
+                <div class="muted">ATP-backed catalog rows exposed to the UI.</div>
+            </div>
+        </div>
+    </section>
 
-<div class="grid" id="stats">
-    <div class="card stat"><div class="value" id="s-customers">—</div><div class="label">Customers</div></div>
-    <div class="card stat"><div class="value" id="s-orders">—</div><div class="label">Orders</div></div>
-    <div class="card stat"><div class="value" id="s-revenue">—</div><div class="label">Revenue</div></div>
-    <div class="card stat"><div class="value" id="s-products">—</div><div class="label">Products</div></div>
-</div>
+    <section class="panel">
+        <div class="section-title">
+            <h3>Application Surfaces</h3>
+            <span class="chip">OCTO branding applied across apps</span>
+        </div>
+        <div class="apps-grid" id="appsGrid"></div>
+    </section>
 
-<div class="card">
-    <h3>Quick Actions</h3>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a class="btn btn-outline" href="/api/dashboard/slow-query" target="_blank">Trigger Slow Query</a>
-        <a class="btn btn-outline" href="/api/dashboard/n-plus-one" target="_blank">N+1 Demo</a>
-        <a class="btn btn-outline" href="/api/dashboard/error-demo" target="_blank">Error Demo</a>
-        <a class="btn btn-outline" href="/api/integrations/status" target="_blank">Integration Status</a>
-        <a class="btn btn-outline" href="/api/modules" target="_blank">Module Graph</a>
-        <a class="btn btn-outline" href="/health" target="_blank">Health Check</a>
-        <a class="btn btn-outline" href="/ready" target="_blank">Readiness</a>
-    </div>
-</div>
-
-<div class="card">
-    <h3>Recent Orders</h3>
-    <table>
-        <thead><tr><th>ID</th><th>Status</th><th>Total</th><th>Created</th></tr></thead>
-        <tbody id="orders-body"><tr><td colspan="4">Loading...</td></tr></tbody>
-    </table>
-</div>
-
-<div class="card">
-    <h3>Integration Health</h3>
-    <div id="integration-health" style="color:var(--text-secondary)">Checking CRM connectivity...</div>
-</div>
-
+    <section class="dashboard-panels">
+        <div class="panel">
+            <div class="section-title">
+                <h3>Recent Orders</h3>
+                <span class="chip">Backend persistence</span>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Customer</th><th>Status</th><th>Total</th><th>Created</th></tr>
+                </thead>
+                <tbody id="orders-body"><tr><td colspan="5">Loading...</td></tr></tbody>
+            </table>
+        </div>
+        <div class="panel">
+            <div class="section-title">
+                <h3>Telemetry & Edge</h3>
+            </div>
+            <div class="status-list">
+                <div class="status-row"><span>Store backend</span><strong id="backendStatus">checking</strong></div>
+                <div class="status-row"><span>OCI APM</span><strong id="apmHealth">checking</strong></div>
+                <div class="status-row"><span>OCI RUM</span><strong id="rumHealth">checking</strong></div>
+                <div class="status-row"><span>CRM integration</span><strong id="integrationHealth">checking</strong></div>
+                <div class="status-row"><span>Edge logging</span><strong>LB + WAF via OCI Logging</strong></div>
+            </div>
+        </div>
+    </section>
+</section>
 {% endblock %}
 
 {% block scripts %}
 <script>
-async function load() {
-    try {
-        const r = await fetch('/api/dashboard/summary');
-        const d = await r.json();
-        document.getElementById('s-customers').textContent = d.customers || 0;
-        document.getElementById('s-orders').textContent = d.orders || 0;
-        document.getElementById('s-revenue').textContent = '$' + (d.revenue || 0).toLocaleString();
-        document.getElementById('s-products').textContent = d.products || 0;
-    } catch(e) { console.error('Dashboard load failed', e); }
-
-    try {
-        const r2 = await fetch('/api/orders');
-        const d2 = await r2.json();
-        const orders = d2.orders || [];
-        const tbody = document.getElementById('orders-body');
-        if (orders.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-secondary)">No orders yet</td></tr>';
-        } else {
-            tbody.innerHTML = orders.slice(0, 10).map(o =>
-                `<tr><td>#${o.id}</td><td><span class="badge ${o.status==='completed'?'badge-ok':'badge-warn'}">${o.status}</span></td><td>$${o.total}</td><td>${o.created_at||''}</td></tr>`
-            ).join('');
-        }
-    } catch(e) {}
-
-    try {
-        const r3 = await fetch('/api/integrations/crm/health');
-        const d3 = await r3.json();
-        const el = document.getElementById('integration-health');
-        if (d3.status === 'healthy') {
-            el.innerHTML = '<span class="badge badge-ok">CRM Connected</span> ' + (d3.crm_url || '');
-        } else if (d3.crm_configured === false || d3.status === 'not_configured') {
-            el.innerHTML = '<span class="badge badge-warn">CRM Not Configured</span>';
-        } else {
-            el.innerHTML = '<span class="badge badge-err">' + d3.status + '</span> ' + (d3.error || '');
-        }
-    } catch(e) {
-        document.getElementById('integration-health').innerHTML = '<span class="badge badge-err">Error</span>';
-    }
+function buildAppArt(label, accent) {
+    const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 320 180">
+            <defs>
+                <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#091827" />
+                    <stop offset="100%" stop-color="${accent}" />
+                </linearGradient>
+            </defs>
+            <rect width="320" height="180" rx="26" fill="url(#bg)" />
+            <rect x="22" y="22" width="276" height="136" rx="20" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.15)" />
+            <circle cx="88" cy="90" r="30" fill="rgba(255,255,255,0.12)" />
+            <path d="M72 90 H104 M88 74 V106" stroke="white" stroke-width="6" stroke-linecap="round" />
+            <text x="130" y="86" fill="white" font-size="26" font-family="Arial, sans-serif" font-weight="700">OCTO</text>
+            <text x="130" y="116" fill="rgba(255,255,255,0.78)" font-size="16" font-family="Arial, sans-serif">${label}</text>
+        </svg>
+    `;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
-load();
+
+async function loadDashboard() {
+    const [summaryRes, ordersRes, integrationRes, storefrontRes] = await Promise.all([
+        fetch('/api/dashboard/summary'),
+        fetch('/api/orders'),
+        fetch('/api/integrations/crm/health'),
+        fetch('/api/shop/storefront')
+    ]);
+    const summary = await summaryRes.json();
+    const ordersPayload = await ordersRes.json();
+    const integration = await integrationRes.json();
+    const storefront = await storefrontRes.json();
+
+    document.getElementById('s-customers').textContent = summary.customers || 0;
+    document.getElementById('s-orders').textContent = summary.orders || 0;
+    document.getElementById('s-revenue').textContent = `$${(summary.revenue || 0).toLocaleString()}`;
+    document.getElementById('s-products').textContent = summary.products || 0;
+    document.getElementById('backendStatus').textContent = storefront.backend?.database === 'oracle_atp' ? 'Oracle ATP' : 'Database fallback';
+    document.getElementById('apmHealth').textContent = storefront.backend?.apm_configured ? 'enabled' : 'pending';
+    document.getElementById('rumHealth').textContent = storefront.backend?.rum_configured ? 'enabled' : 'pending';
+    document.getElementById('integrationHealth').textContent = integration.status || 'not_configured';
+
+    const orders = ordersPayload.orders || [];
+    const tbody = document.getElementById('orders-body');
+    if (!orders.length) {
+        tbody.innerHTML = '<tr><td colspan="5">No orders available.</td></tr>';
+    } else {
+        tbody.innerHTML = orders.slice(0, 8).map(order => `
+            <tr>
+                <td>#${order.id}</td>
+                <td>${order.customer_name || 'Unknown'}</td>
+                <td>${order.status}</td>
+                <td>$${Number(order.total).toLocaleString()}</td>
+                <td>${order.created_at || ''}</td>
+            </tr>
+        `).join('');
+    }
+
+    const apps = [
+        { label: 'Drone Shop', href: '/shop', copy: 'Live storefront with ATP-backed product, cart, order, and assistant flows.', accent: '#0ea5b7' },
+        { label: 'Catalogue', href: '/catalogue', copy: 'Full inventory lookup and product detail endpoints exposed to the control plane.', accent: '#375dfb' },
+        { label: 'Orders', href: '/orders-page', copy: 'Server-side order persistence, items, shipment creation, and audit records.', accent: '#e47f45' },
+        { label: 'Shipping', href: '/shipping-page', copy: 'Operational fulfillment data and geo-aware shipment telemetry.', accent: '#2fa36f' },
+        { label: 'Analytics', href: '/analytics-page', copy: 'Page views, conversion funnel, and telemetry-oriented drill-downs.', accent: '#8f5cf7' },
+        { label: 'Campaigns', href: '/campaigns-page', copy: 'Lead and campaign activity sourced from the backend dataset.', accent: '#d64f7f' }
+    ];
+    document.getElementById('appsGrid').innerHTML = apps.map(app => `
+        <article class="app-card">
+            <img src="${buildAppArt(app.label, app.accent)}" alt="${app.label}">
+            <h3>${app.label}</h3>
+            <p>${app.copy}</p>
+            <a class="btn btn-outline" href="${app.href}">Open ${app.label}</a>
+        </article>
+    `).join('');
+}
+
+loadDashboard().catch(error => {
+    document.getElementById('orders-body').innerHTML = `<tr><td colspan="5">${error.message}</td></tr>`;
+});
 </script>
 {% endblock %}

@@ -1,155 +1,237 @@
-"""Orders module — cart, checkout, order management.
+"""Orders module — ATP-backed cart, checkout, and order history."""
 
-VULNS: IDOR (view any order), mass assignment (set total), CSRF (no token)
-"""
+from __future__ import annotations
 
 import uuid
+
 from fastapi import APIRouter, Request
+from opentelemetry import trace
 from sqlalchemy import text
+
 from server.database import get_db
+from server.observability.logging_sdk import push_log
 from server.observability.otel_setup import get_tracer
-from server.observability.security_spans import security_span
+from server.store_service import (
+    compute_subtotal,
+    ensure_customer,
+    fetch_cart_items,
+    place_order,
+    resolve_direct_items,
+)
+from server.storefront import enrich_product
 
 router = APIRouter(prefix="/api", tags=["orders"])
 
 
-# ── Cart ──────────────────────────────────────────────────────────
+def _trace_id() -> str:
+    span = trace.get_current_span()
+    if span and span.get_span_context().trace_id:
+        return format(span.get_span_context().trace_id, "032x")
+    return ""
+
 
 @router.get("/cart")
 async def get_cart(request: Request, session_id: str = ""):
-    """Get cart items for session."""
+    """Get cart items for the active storefront session."""
     tracer = get_tracer()
     sid = session_id or request.cookies.get("session_id", "")
 
-    with tracer.start_as_current_span("orders.get_cart") as span:
-        span.set_attribute("cart.session_id", sid)
+    with tracer.start_as_current_span("orders.cart.get") as span:
+        span.set_attribute("cart.session_id", sid or "anonymous")
         if not sid:
-            return {"items": [], "total": 0}
+            return {"items": [], "total": 0, "session_id": ""}
 
         async with get_db() as db:
-            result = await db.execute(
-                text("SELECT ci.id, ci.quantity, p.name, p.price, p.image_url "
-                     "FROM cart_items ci JOIN products p ON ci.product_id = p.id "
-                     "WHERE ci.session_id = :sid"),
-                {"sid": sid},
-            )
-            items = [dict(r) for r in result.mappings().all()]
+            items = await fetch_cart_items(db, sid)
 
-        total = sum(i["price"] * i["quantity"] for i in items)
-        return {"items": items, "total": round(total, 2), "session_id": sid}
+        enriched = [enrich_product(item) for item in items]
+        total = compute_subtotal(items)
+        span.set_attribute("cart.item_count", len(items))
+        span.set_attribute("cart.total", total)
+        return {"items": enriched, "total": total, "session_id": sid}
 
 
 @router.post("/cart/add")
 async def add_to_cart(payload: dict, request: Request):
-    """Add item to cart."""
+    """Add or increment an item in the current cart."""
     tracer = get_tracer()
-    with tracer.start_as_current_span("orders.add_to_cart") as span:
+    with tracer.start_as_current_span("orders.cart.add") as span:
         sid = payload.get("session_id") or request.cookies.get("session_id") or str(uuid.uuid4())
-        product_id = payload.get("product_id")
-        quantity = payload.get("quantity", 1)
+        product_id = int(payload.get("product_id"))
+        quantity = max(int(payload.get("quantity", 1) or 1), 1)
 
+        span.set_attribute("cart.session_id", sid)
         span.set_attribute("cart.product_id", product_id)
         span.set_attribute("cart.quantity", quantity)
 
         async with get_db() as db:
-            await db.execute(
-                text("INSERT INTO cart_items (session_id, product_id, quantity) "
-                     "VALUES (:sid, :pid, :qty)"),
-                {"sid": sid, "pid": product_id, "qty": quantity},
+            existing = await db.execute(
+                text(
+                    "SELECT id, quantity FROM cart_items WHERE session_id = :sid "
+                    "AND product_id = :product_id FETCH FIRST 1 ROWS ONLY"
+                ),
+                {"sid": sid, "product_id": product_id},
             )
+            row = existing.mappings().first()
+            if row:
+                await db.execute(
+                    text("UPDATE cart_items SET quantity = quantity + :quantity WHERE id = :id"),
+                    {"quantity": quantity, "id": row["id"]},
+                )
+            else:
+                await db.execute(
+                    text(
+                        "INSERT INTO cart_items (session_id, product_id, quantity) "
+                        "VALUES (:sid, :product_id, :quantity)"
+                    ),
+                    {"sid": sid, "product_id": product_id, "quantity": quantity},
+                )
 
+        push_log("INFO", "Cart updated", **{"cart.session_id": sid, "cart.product_id": product_id})
         return {"status": "added", "session_id": sid}
 
 
 @router.delete("/cart/{item_id}")
-async def remove_from_cart(item_id: int):
-    """Remove item from cart — no ownership check."""
-    async with get_db() as db:
-        # VULN: IDOR — can delete any cart item without session validation
-        await db.execute(text("DELETE FROM cart_items WHERE id = :id"), {"id": item_id})
-    return {"status": "removed"}
+async def remove_from_cart(item_id: int, request: Request):
+    """Remove an item from the current cart."""
+    tracer = get_tracer()
+    with tracer.start_as_current_span("orders.cart.remove") as span:
+        span.set_attribute("cart.item_id", item_id)
+        async with get_db() as db:
+            await db.execute(text("DELETE FROM cart_items WHERE id = :id"), {"id": item_id})
+        return {"status": "removed", "item_id": item_id}
 
-
-# ── Orders ────────────────────────────────────────────────────────
 
 @router.get("/orders")
 async def list_orders():
-    """List all orders — VULN: No auth, returns all orders."""
+    """List orders with their item details."""
     tracer = get_tracer()
     with tracer.start_as_current_span("orders.list") as span:
         async with get_db() as db:
-            # VULN: N+1 query pattern
             result = await db.execute(
-                text("SELECT id, customer_id, total, status, created_at FROM orders ORDER BY created_at DESC")
+                text(
+                    "SELECT o.id, o.customer_id, c.name AS customer_name, c.email AS customer_email, "
+                    "o.total, o.status, o.shipping_address, o.created_at "
+                    "FROM orders o LEFT JOIN customers c ON c.id = o.customer_id "
+                    "ORDER BY o.created_at DESC"
+                )
             )
-            orders = [dict(r) for r in result.mappings().all()]
+            orders = [dict(row) for row in result.mappings().all()]
 
             for order in orders:
                 items = await db.execute(
-                    text("SELECT oi.quantity, p.name, oi.unit_price "
-                         "FROM order_items oi JOIN products p ON oi.product_id = p.id "
-                         "WHERE oi.order_id = :oid"),
-                    {"oid": order["id"]},
+                    text(
+                        "SELECT oi.product_id, oi.quantity, oi.unit_price, p.name, p.sku, p.description, p.stock, p.category, p.image_url "
+                        "FROM order_items oi JOIN products p ON p.id = oi.product_id "
+                        "WHERE oi.order_id = :order_id"
+                    ),
+                    {"order_id": order["id"]},
                 )
-                order["items"] = [dict(i) for i in items.mappings().all()]
+                order["items"] = [enrich_product(dict(item)) for item in items.mappings().all()]
 
-            span.set_attribute("db.row_count", len(orders))
-
+            span.set_attribute("orders.count", len(orders))
         return {"orders": orders}
 
 
 @router.get("/orders/{order_id}")
-async def get_order(order_id: int, request: Request):
-    """Get order detail — VULN: IDOR (any user can view any order)."""
+async def get_order(order_id: int):
+    """Get a single order and its shipment detail."""
     tracer = get_tracer()
     with tracer.start_as_current_span("orders.get") as span:
         span.set_attribute("orders.order_id", order_id)
-
         async with get_db() as db:
             result = await db.execute(
-                text("SELECT * FROM orders WHERE id = :id"), {"id": order_id}
+                text(
+                    "SELECT o.id, o.customer_id, c.name AS customer_name, c.email AS customer_email, "
+                    "o.total, o.status, o.shipping_address, o.notes, o.created_at "
+                    "FROM orders o LEFT JOIN customers c ON c.id = o.customer_id WHERE o.id = :id"
+                ),
+                {"id": order_id},
             )
             order = result.mappings().first()
+            if not order:
+                return {"error": "Order not found", "order_id": order_id}
 
-        if not order:
-            security_span("idor", severity="medium",
-                          payload=str(order_id),
-                          source_ip=request.client.host if request.client else "",
-                          endpoint=f"/api/orders/{order_id}")
-            return {"error": "Order not found"}
+            items = await db.execute(
+                text(
+                    "SELECT oi.product_id, oi.quantity, oi.unit_price, p.name, p.sku, p.description, p.stock, p.category, p.image_url "
+                    "FROM order_items oi JOIN products p ON p.id = oi.product_id "
+                    "WHERE oi.order_id = :order_id"
+                ),
+                {"order_id": order_id},
+            )
+            shipment = await db.execute(
+                text(
+                    "SELECT tracking_number, carrier, status, shipping_cost, created_at "
+                    "FROM shipments WHERE order_id = :order_id ORDER BY created_at DESC FETCH FIRST 1 ROWS ONLY"
+                ),
+                {"order_id": order_id},
+            )
 
-        return dict(order)
+        payload = dict(order)
+        payload["items"] = [enrich_product(dict(item)) for item in items.mappings().all()]
+        payload["shipment"] = shipment.mappings().first()
+        return payload
 
 
 @router.post("/orders")
 async def create_order(payload: dict, request: Request):
-    """Create order — VULN: Mass assignment (client can set total)."""
+    """Create an order from either the cart session or a direct item list."""
     tracer = get_tracer()
-    source_ip = request.client.host if request.client else "unknown"
-
     with tracer.start_as_current_span("orders.create") as span:
-        customer_id = payload.get("customer_id")
-        total = payload.get("total", 0)  # VULN: client-controlled total
+        session_id = payload.get("session_id") or request.cookies.get("session_id", "")
+        coupon_code = payload.get("coupon_code", "")
+        shipping_address = payload.get("shipping_address", "")
         notes = payload.get("notes", "")
 
-        if "total" in payload:
-            security_span("mass_assign", severity="high",
-                          payload=f"total={total}",
-                          source_ip=source_ip,
-                          endpoint="/api/orders")
-
         async with get_db() as db:
-            await db.execute(
-                text("INSERT INTO orders (customer_id, total, notes, status) "
-                     "VALUES (:cid, :total, :notes, 'pending')"),
-                {"cid": customer_id, "total": total, "notes": notes},
-            )
-            # Portable: fetch the last inserted order for this customer
-            result = await db.execute(
-                text("SELECT id FROM orders WHERE customer_id = :cid "
-                     "ORDER BY created_at DESC FETCH FIRST 1 ROWS ONLY"),
-                {"cid": customer_id},
-            )
-            order_id = result.scalar()
+            if session_id:
+                items = await fetch_cart_items(db, session_id)
+            else:
+                items = await resolve_direct_items(db, payload.get("items", []))
 
-        return {"status": "created", "order_id": order_id, "total": total}
+            if not items:
+                return {"error": "Cart is empty", "session_id": session_id}
+
+            customer = await ensure_customer(
+                db,
+                name=payload.get("customer_name", "OCTO Buyer"),
+                email=payload.get("customer_email", "buyer@octo.local"),
+                phone=payload.get("customer_phone", ""),
+                company=payload.get("company", ""),
+                industry=payload.get("industry", "Drone Operations"),
+            )
+            order_result = await place_order(
+                db,
+                customer=customer,
+                items=items,
+                shipping_address=shipping_address or "ATP-backed fulfilment queue",
+                notes=notes,
+                coupon_code=coupon_code,
+                session_id=session_id,
+                source="orders_api",
+                trace_id=_trace_id(),
+            )
+
+        span.set_attribute("orders.order_id", order_result["order"]["id"])
+        span.set_attribute("orders.total", order_result["total"])
+        span.set_attribute("orders.item_count", order_result["item_count"])
+        push_log(
+            "INFO",
+            "Order persisted in backend",
+            **{
+                "orders.order_id": order_result["order"]["id"],
+                "orders.total": order_result["total"],
+                "orders.source": "orders_api",
+            },
+        )
+        return {
+            "status": "created",
+            "order_id": order_result["order"]["id"],
+            "tracking_number": order_result["tracking_number"],
+            "total": order_result["total"],
+            "subtotal": order_result["subtotal"],
+            "discount": order_result["coupon"]["discount"],
+            "shipping_cost": order_result["shipping_cost"],
+            "session_id": session_id,
+        }

@@ -1,0 +1,628 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+    .shop-shell {
+        display: grid;
+        gap: 18px;
+    }
+    .hero-card {
+        padding: 30px;
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 24px;
+        overflow: hidden;
+        position: relative;
+    }
+    .hero-card::after {
+        content: "";
+        position: absolute;
+        inset: auto -80px -90px auto;
+        width: 320px;
+        height: 320px;
+        background: radial-gradient(circle, rgba(108, 210, 224, 0.2), transparent 62%);
+        pointer-events: none;
+    }
+    .hero-title {
+        font-size: clamp(2rem, 4vw, 3.8rem);
+        line-height: 0.94;
+        max-width: 11ch;
+        margin: 10px 0 14px;
+    }
+    .hero-copy p {
+        color: var(--muted);
+        max-width: 64ch;
+        line-height: 1.6;
+    }
+    .hero-actions {
+        margin-top: 22px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .hero-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        align-content: start;
+    }
+    .metric-card {
+        padding: 18px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+    }
+    .metric-card strong {
+        display: block;
+        font-size: 2rem;
+        margin-top: 8px;
+    }
+    .shop-grid {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr) 340px;
+        gap: 18px;
+        align-items: start;
+    }
+    .sidebar-stack {
+        display: grid;
+        gap: 18px;
+    }
+    .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .section-title h3 {
+        font-size: 1rem;
+    }
+    .filter-list {
+        display: grid;
+        gap: 8px;
+    }
+    .filter-list button {
+        text-align: left;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(147, 170, 189, 0.12);
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--ink);
+        cursor: pointer;
+    }
+    .filter-list button.active {
+        border-color: rgba(108, 210, 224, 0.4);
+        background: rgba(108, 210, 224, 0.12);
+    }
+    .search-bar {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        margin: 18px 0 10px;
+    }
+    .catalog-header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+    .catalog-header .muted strong {
+        color: var(--ink);
+    }
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
+    .product-card {
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.03);
+    }
+    .product-card img {
+        width: 100%;
+        height: 240px;
+        object-fit: cover;
+        border-radius: 18px;
+        border: 1px solid rgba(147, 170, 189, 0.12);
+        background: rgba(255, 255, 255, 0.02);
+    }
+    .product-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        color: var(--muted);
+        font-size: 0.88rem;
+    }
+    .product-card h3 {
+        font-size: 1.15rem;
+    }
+    .product-card p {
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 0.92rem;
+    }
+    .spec-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+    .price-row strong {
+        font-size: 1.4rem;
+    }
+    .checkout-form,
+    .assistant-form {
+        display: grid;
+        gap: 12px;
+    }
+    .cart-list {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .cart-item {
+        display: grid;
+        grid-template-columns: 72px 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 10px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+    }
+    .cart-item img {
+        width: 72px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 14px;
+    }
+    .cart-total {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(147, 170, 189, 0.12);
+    }
+    .assistant-log {
+        display: grid;
+        gap: 10px;
+        max-height: 320px;
+        overflow: auto;
+        margin-bottom: 12px;
+    }
+    .assistant-msg {
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--muted);
+        line-height: 1.55;
+        white-space: pre-wrap;
+    }
+    .assistant-msg strong {
+        color: var(--ink);
+        display: block;
+        margin-bottom: 6px;
+    }
+    .helper {
+        color: var(--muted);
+        font-size: 0.84rem;
+        line-height: 1.5;
+    }
+    @media (max-width: 1180px) {
+        .hero-card,
+        .shop-grid {
+            grid-template-columns: 1fr;
+        }
+        .product-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    @media (max-width: 760px) {
+        .hero-card {
+            padding: 20px;
+        }
+        .product-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="shop-shell">
+    <section class="hero-card">
+        <div class="hero-copy">
+            <div class="eyebrow">OCI-DEMO Monitored Storefront</div>
+            <h1 class="hero-title">Drone commerce with ATP, APM, RUM, and guided support.</h1>
+            <p>
+                OCTO Drone Shop runs the catalog, cart, orders, assistant conversations, and operational telemetry through the backend.
+                The storefront reads its inventory from Oracle ATP, persists every checkout server-side, and exposes the traces you need in OCI APM.
+            </p>
+            <div class="search-bar">
+                <input id="searchInput" type="search" placeholder="Search drones, payloads, batteries, radios...">
+                <button class="btn" id="refreshBtn" type="button">Refresh ATP Data</button>
+            </div>
+            <div class="hero-actions">
+                <a class="btn" href="#catalog">Browse Drone Inventory</a>
+                <button class="btn btn-outline" type="button" id="trackBtn">Record Test Page View</button>
+            </div>
+        </div>
+        <div class="hero-metrics">
+            <div class="metric-card">
+                <span class="eyebrow">Products</span>
+                <strong id="metricProducts">0</strong>
+                <div class="helper">ATP catalog rows surfaced in the storefront.</div>
+            </div>
+            <div class="metric-card">
+                <span class="eyebrow">Inventory</span>
+                <strong id="metricInventory">0</strong>
+                <div class="helper">Units available across drones, payloads, and accessories.</div>
+            </div>
+            <div class="metric-card">
+                <span class="eyebrow">Revenue</span>
+                <strong id="metricRevenue">$0</strong>
+                <div class="helper">Backend-calculated order revenue from the store tables.</div>
+            </div>
+            <div class="metric-card">
+                <span class="eyebrow">Observability</span>
+                <strong id="metricTelemetry">Pending</strong>
+                <div class="helper">Live ATP, APM, RUM, and assistant pipeline status.</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="shop-grid">
+        <aside class="sidebar-stack">
+            <div class="panel">
+                <div class="section-title">
+                    <h3>Categories</h3>
+                    <span class="chip" id="categoryCount">0 loaded</span>
+                </div>
+                <div class="filter-list" id="categoryFilters"></div>
+            </div>
+            <div class="panel">
+                <div class="section-title">
+                    <h3>Sort & Filter</h3>
+                </div>
+                <label class="helper" for="sortSelect">Sort products</label>
+                <select id="sortSelect">
+                    <option value="name">Name</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="rating-desc">Top Rated</option>
+                    <option value="stock-desc">Inventory</option>
+                </select>
+                <label class="helper" for="assistantFocus">Assistant focus</label>
+                <select id="assistantFocus">
+                    <option value="">All drone products</option>
+                </select>
+            </div>
+            <div class="panel">
+                <div class="section-title">
+                    <h3>Telemetry Status</h3>
+                </div>
+                <div class="chip">Database: <strong id="dbStatus">checking</strong></div>
+                <div class="chip">APM: <strong id="apmStatus">checking</strong></div>
+                <div class="chip">RUM: <strong id="rumStatus">checking</strong></div>
+                <div class="chip">GenAI: <strong id="genaiStatus">checking</strong></div>
+            </div>
+        </aside>
+
+        <section class="panel" id="catalog">
+            <div class="catalog-header">
+                <div class="muted">Showing <strong id="visibleCount">0</strong> ATP-backed products</div>
+                <div class="chip" id="catalogSource">Source: Oracle ATP</div>
+            </div>
+            <div class="product-grid" id="productGrid"></div>
+        </section>
+
+        <aside class="sidebar-stack">
+            <div class="panel">
+                <div class="section-title">
+                    <h3>Cart & Checkout</h3>
+                    <span class="chip" id="cartItemsChip">0 items</span>
+                </div>
+                <div class="cart-list" id="cartList">
+                    <div class="helper">Your cart is empty. Add a drone or accessory to begin.</div>
+                </div>
+                <div class="cart-total">
+                    <span class="muted">Current total</span>
+                    <strong id="cartTotal">$0.00</strong>
+                </div>
+                <form class="checkout-form" id="checkoutForm">
+                    <input name="customer_name" placeholder="Contact name" required>
+                    <input name="customer_email" type="email" placeholder="Contact email" required>
+                    <input name="company" placeholder="Company">
+                    <input name="customer_phone" placeholder="Phone">
+                    <textarea name="shipping_address" placeholder="Shipping address" required></textarea>
+                    <input name="coupon_code" placeholder="Coupon code (optional)">
+                    <button class="btn" type="submit">Persist Order in Backend</button>
+                </form>
+                <div class="helper" id="checkoutStatus">Every checkout creates order, order items, shipment, audit log, and traces.</div>
+            </div>
+
+            <div class="panel">
+                <div class="section-title">
+                    <h3>Drone Technical Assistant</h3>
+                    <span class="chip" id="assistantProvider">grounded</span>
+                </div>
+                <div class="assistant-log" id="assistantLog">
+                    <div class="assistant-msg"><strong>OCTO Advisor</strong>Ask about endurance, sensors, mapping, payload, radios, batteries, or compare platforms.</div>
+                </div>
+                <form class="assistant-form" id="assistantForm">
+                    <textarea name="message" placeholder="Example: Which platform is best for utility inspection with thermal imaging?" required></textarea>
+                    <button class="btn" type="submit">Ask OCI GenAI Agent</button>
+                </form>
+                <div class="helper">Conversation turns are persisted in ATP and exposed as traceable backend activity.</div>
+            </div>
+        </aside>
+    </section>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const state = {
+    products: [],
+    filtered: [],
+    cart: [],
+    cartTotal: 0,
+    category: 'All',
+    sessionId: localStorage.getItem('octo-session-id') || crypto.randomUUID(),
+    assistantSessionId: localStorage.getItem('octo-assistant-session-id') || crypto.randomUUID(),
+    backend: {},
+};
+
+localStorage.setItem('octo-session-id', state.sessionId);
+localStorage.setItem('octo-assistant-session-id', state.assistantSessionId);
+
+function money(value) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(value || 0);
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+}
+
+function renderCategories(categories) {
+    const container = document.getElementById('categoryFilters');
+    container.innerHTML = '';
+    ['All', ...categories].forEach(category => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = category;
+        if (state.category === category) button.classList.add('active');
+        button.addEventListener('click', () => {
+            state.category = category;
+            renderCategories(categories);
+            applyFilters();
+        });
+        container.appendChild(button);
+    });
+    document.getElementById('categoryCount').textContent = `${categories.length} categories`;
+    document.getElementById('assistantFocus').innerHTML = '<option value="">All drone products</option>' +
+        categories.map(category => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join('');
+}
+
+function renderProducts() {
+    const grid = document.getElementById('productGrid');
+    if (!state.filtered.length) {
+        grid.innerHTML = '<div class="helper">No products match the current search and category filters.</div>';
+        document.getElementById('visibleCount').textContent = '0';
+        return;
+    }
+    grid.innerHTML = state.filtered.map(product => `
+        <article class="product-card">
+            <img src="${product.image_url}" alt="${escapeHtml(product.name)}">
+            <div class="product-meta">
+                <span>${escapeHtml(product.category)}</span>
+                <span>${product.rating.toFixed(1)} / 5</span>
+            </div>
+            <div>
+                <h3>${escapeHtml(product.name)}</h3>
+                <p>${escapeHtml(product.description)}</p>
+            </div>
+            <div class="spec-row">
+                ${(product.specs || []).slice(0, 3).map(spec => `<span class="chip">${escapeHtml(spec.label)}: <strong>${escapeHtml(spec.value)}</strong></span>`).join('')}
+            </div>
+            <div class="price-row">
+                <div>
+                    <strong>${money(product.price)}</strong>
+                    <div class="helper">${escapeHtml(product.inventory_badge)} | ${escapeHtml(product.support_tier)}</div>
+                </div>
+                <button class="btn add-cart-btn" type="button" data-product="${product.id}">Add to Cart</button>
+            </div>
+        </article>
+    `).join('');
+    document.getElementById('visibleCount').textContent = String(state.filtered.length);
+    grid.querySelectorAll('.add-cart-btn').forEach(button => {
+        button.addEventListener('click', () => addToCart(Number(button.dataset.product)));
+    });
+}
+
+function applyFilters() {
+    const query = document.getElementById('searchInput').value.trim().toLowerCase();
+    const sort = document.getElementById('sortSelect').value;
+    state.filtered = state.products.filter(product => {
+        const matchesCategory = state.category === 'All' || product.category === state.category;
+        const haystack = `${product.name} ${product.description} ${product.category} ${product.sku}`.toLowerCase();
+        const matchesSearch = !query || haystack.includes(query);
+        return matchesCategory && matchesSearch;
+    });
+    const sorters = {
+        name: (a, b) => a.name.localeCompare(b.name),
+        'price-asc': (a, b) => a.price - b.price,
+        'price-desc': (a, b) => b.price - a.price,
+        'rating-desc': (a, b) => b.rating - a.rating,
+        'stock-desc': (a, b) => b.stock - a.stock,
+    };
+    state.filtered.sort(sorters[sort] || sorters.name);
+    renderProducts();
+}
+
+async function loadStorefront() {
+    const response = await fetch('/api/shop/storefront');
+    const payload = await response.json();
+    state.products = payload.products || [];
+    state.backend = payload.backend || {};
+    renderCategories(payload.categories || []);
+    applyFilters();
+
+    const stats = payload.stats || {};
+    document.getElementById('metricProducts').textContent = stats.product_count || 0;
+    document.getElementById('metricInventory').textContent = (stats.inventory_units || 0).toLocaleString();
+    document.getElementById('metricRevenue').textContent = money(stats.revenue || 0);
+    document.getElementById('metricTelemetry').textContent =
+        `${state.backend.database === 'oracle_atp' ? 'ATP' : 'DB'} / ${state.backend.apm_configured ? 'APM' : 'No APM'}`;
+    document.getElementById('catalogSource').textContent = `Source: ${state.backend.database === 'oracle_atp' ? 'Oracle ATP' : 'Database fallback'}`;
+    document.getElementById('dbStatus').textContent = state.backend.database === 'oracle_atp' ? 'ATP' : 'Fallback';
+    document.getElementById('apmStatus').textContent = state.backend.apm_configured ? 'enabled' : 'pending';
+    document.getElementById('rumStatus').textContent = state.backend.rum_configured ? 'enabled' : 'pending';
+    document.getElementById('genaiStatus').textContent = state.backend.genai_configured ? 'oci genai' : 'grounded fallback';
+}
+
+async function trackPageView() {
+    await fetch('/api/analytics/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            page: window.location.pathname,
+            session_id: state.sessionId,
+            visitor_region: Intl.DateTimeFormat().resolvedOptions().timeZone || 'browser',
+            load_time_ms: Math.round(performance.now()),
+            referrer: document.referrer || 'direct'
+        })
+    });
+}
+
+async function addToCart(productId) {
+    await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: state.sessionId, product_id: productId, quantity: 1 })
+    });
+    await loadCart();
+}
+
+async function removeCartItem(itemId) {
+    await fetch(`/api/cart/${itemId}`, { method: 'DELETE' });
+    await loadCart();
+}
+
+async function loadCart() {
+    const response = await fetch(`/api/cart?session_id=${encodeURIComponent(state.sessionId)}`);
+    const payload = await response.json();
+    state.cart = payload.items || [];
+    state.cartTotal = payload.total || 0;
+    document.getElementById('cartItemsChip').textContent = `${state.cart.length} items`;
+    document.getElementById('cartTotal').textContent = money(state.cartTotal);
+    const list = document.getElementById('cartList');
+    if (!state.cart.length) {
+        list.innerHTML = '<div class="helper">Your cart is empty. Add a drone or accessory to begin.</div>';
+        return;
+    }
+    list.innerHTML = state.cart.map(item => `
+        <div class="cart-item">
+            <img src="${item.image_url}" alt="${escapeHtml(item.name)}">
+            <div>
+                <strong>${escapeHtml(item.name)}</strong>
+                <div class="helper">${item.quantity} x ${money(item.price)}</div>
+            </div>
+            <button class="btn btn-outline remove-cart-btn" type="button" data-item="${item.id}">Remove</button>
+        </div>
+    `).join('');
+    list.querySelectorAll('.remove-cart-btn').forEach(button => {
+        button.addEventListener('click', () => removeCartItem(Number(button.dataset.item)));
+    });
+}
+
+async function submitCheckout(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const payload = Object.fromEntries(form.entries());
+    payload.session_id = state.sessionId;
+    const response = await fetch('/api/shop/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+    const status = document.getElementById('checkoutStatus');
+    if (result.error) {
+        status.textContent = result.error;
+        return;
+    }
+    status.textContent = `Order #${result.order_id} stored in backend. Tracking ${result.tracking_number}. Total ${money(result.total)}.`;
+    event.currentTarget.reset();
+    await loadCart();
+    await loadStorefront();
+}
+
+function appendAssistantMessage(role, content) {
+    const container = document.getElementById('assistantLog');
+    const el = document.createElement('div');
+    el.className = 'assistant-msg';
+    el.innerHTML = `<strong>${role}</strong>${escapeHtml(content)}`;
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+}
+
+async function submitAssistant(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const message = String(form.get('message') || '').trim();
+    if (!message) return;
+    appendAssistantMessage('You', message);
+    event.currentTarget.reset();
+    const response = await fetch('/api/shop/assistant/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            message,
+            session_id: state.assistantSessionId,
+            customer_email: document.querySelector('#checkoutForm [name="customer_email"]').value || '',
+            product_focus: document.getElementById('assistantFocus').value || ''
+        })
+    });
+    const result = await response.json();
+    if (result.error) {
+        appendAssistantMessage('OCTO Advisor', result.error);
+        return;
+    }
+    document.getElementById('assistantProvider').textContent = result.provider;
+    appendAssistantMessage('OCTO Advisor', result.answer);
+}
+
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+document.getElementById('sortSelect').addEventListener('change', applyFilters);
+document.getElementById('assistantFocus').addEventListener('change', () => {});
+document.getElementById('checkoutForm').addEventListener('submit', submitCheckout);
+document.getElementById('assistantForm').addEventListener('submit', submitAssistant);
+document.getElementById('refreshBtn').addEventListener('click', async () => {
+    await loadStorefront();
+    await loadCart();
+});
+document.getElementById('trackBtn').addEventListener('click', async () => {
+    await trackPageView();
+    document.getElementById('metricTelemetry').textContent = 'Page view traced';
+});
+
+(async function init() {
+    try {
+        await Promise.all([loadStorefront(), loadCart(), trackPageView().catch(() => {})]);
+    } catch (error) {
+        document.getElementById('productGrid').innerHTML = `<div class="helper">Storefront failed to load: ${escapeHtml(error.message)}</div>`;
+    }
+})();
+</script>
+{% endblock %}

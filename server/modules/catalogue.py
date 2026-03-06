@@ -8,6 +8,7 @@ from sqlalchemy import text
 from server.database import get_db
 from server.observability.otel_setup import get_tracer
 from server.observability.security_spans import security_span
+from server.storefront import enrich_product
 
 router = APIRouter(prefix="/api", tags=["catalogue"])
 
@@ -43,7 +44,7 @@ async def list_products(request: Request,
 
             with tracer.start_as_current_span("db.query.products") as db_span:
                 result = await db.execute(text(query))
-                products = [dict(r) for r in result.mappings().all()]
+                products = [enrich_product(dict(r)) for r in result.mappings().all()]
                 db_span.set_attribute("db.row_count", len(products))
 
         return {"products": products}
@@ -70,7 +71,7 @@ async def get_product(product_id: int, request: Request):
                           endpoint=f"/api/products/{product_id}")
             return {"error": "Product not found", "requested_id": product_id}
 
-        return dict(product)
+        return enrich_product(dict(product))
 
 
 @router.get("/categories")

@@ -8,6 +8,7 @@ import random
 from fastapi import APIRouter, Request
 from sqlalchemy import text
 from server.database import get_db
+from server.observability.logging_sdk import push_log
 from server.observability.otel_setup import get_tracer
 from server.observability.security_spans import security_span
 
@@ -136,19 +137,32 @@ async def analytics_funnel():
 async def track_pageview(payload: dict, request: Request):
     """Track a page view — VULN: No validation, stored XSS in referrer."""
     source_ip = request.client.host if request.client else ""
-    async with get_db() as db:
-        await db.execute(
-            text("INSERT INTO page_views (page, visitor_ip, visitor_region, "
-                 "load_time_ms, session_id, user_agent, referrer) "
-                 "VALUES (:page, :ip, :region, :load_time, :session, :ua, :ref)"),
-            {
-                "page": payload.get("page", "/"),
-                "ip": source_ip,
-                "region": payload.get("visitor_region", ""),
-                "load_time": payload.get("load_time_ms", 0),
-                "session": payload.get("session_id", ""),
-                "ua": request.headers.get("user-agent", ""),
-                "ref": payload.get("referrer", ""),
-            },
+    tracer = get_tracer()
+    with tracer.start_as_current_span("analytics.track_pageview") as span:
+        page = payload.get("page", "/")
+        session_id = payload.get("session_id", "")
+        load_time_ms = int(payload.get("load_time_ms", 0) or 0)
+        span.set_attribute("analytics.page", page)
+        span.set_attribute("analytics.session_id", session_id or "anonymous")
+        span.set_attribute("analytics.load_time_ms", load_time_ms)
+        async with get_db() as db:
+            await db.execute(
+                text("INSERT INTO page_views (page, visitor_ip, visitor_region, "
+                     "load_time_ms, session_id, user_agent, referrer) "
+                     "VALUES (:page, :ip, :region, :load_time, :session, :ua, :ref)"),
+                {
+                    "page": page,
+                    "ip": source_ip,
+                    "region": payload.get("visitor_region", ""),
+                    "load_time": load_time_ms,
+                    "session": session_id,
+                    "ua": request.headers.get("user-agent", ""),
+                    "ref": payload.get("referrer", ""),
+                },
+            )
+        push_log(
+            "INFO",
+            "Page view tracked",
+            **{"analytics.page": page, "analytics.session_id": session_id or "anonymous"},
         )
-    return {"status": "tracked"}
+    return {"status": "tracked", "page": page}

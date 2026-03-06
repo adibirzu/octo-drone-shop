@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 
 from server.config import cfg
-from server.database import engine, get_db, init_tables, seed_data
+from server.database import engine, get_db, init_tables, seed_data, sync_engine
 from server.observability.otel_setup import init_otel, get_tracer
 from server.observability.logging_sdk import push_log
 from server.middleware.tracing import TracingMiddleware
@@ -45,6 +45,7 @@ init_otel(
     service_version="1.0.0",
     apm_endpoint=cfg.oci_apm_endpoint,
     apm_private_key=cfg.oci_apm_private_datakey,
+    sync_engine=sync_engine,
 )
 
 
@@ -185,7 +186,10 @@ def _render_page(request: Request, page: str, title: str, **ctx):
         {"request": request, "title": title,
          "rum_endpoint": cfg.oci_apm_rum_endpoint,
          "rum_public_key": cfg.oci_apm_public_datakey,
+         "rum_web_application": cfg.oci_apm_web_application,
          "rum_configured": cfg.rum_configured,
+         "apm_configured": cfg.apm_configured,
+         "genai_configured": bool(cfg.oci_genai_endpoint and cfg.oci_genai_model_id),
          "app_name": cfg.app_name, **ctx},
     )
 
@@ -197,7 +201,7 @@ async def index(request: Request):
 
 @app.get("/shop", response_class=HTMLResponse)
 async def shop_page(request: Request):
-    return _render_page(request, "page", "Drone Shop", module="shop")
+    return _render_page(request, "shop", "Drone Shop", module="shop")
 
 
 @app.get("/catalogue", response_class=HTMLResponse)

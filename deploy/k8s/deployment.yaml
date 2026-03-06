@@ -1,113 +1,169 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mushop-portal
+  name: octo-drone-shop
   namespace: default
   labels:
-    app: mushop-portal
+    app: octo-drone-shop
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: mushop-portal
+      app: octo-drone-shop
   template:
     metadata:
       labels:
-        app: mushop-portal
+        app: octo-drone-shop
     spec:
       containers:
         - name: app
-          image: ${OCIR_REPO}/mushop-portal:latest
+          image: ${OCIR_REPO}/octo-drone-shop:latest
           ports:
             - containerPort: 8080
           env:
-            - name: DATABASE_URL
-              value: "postgresql+asyncpg://mushop:mushop@mushop-postgres:5432/mushop"
-            - name: DATABASE_SYNC_URL
-              value: "postgresql://mushop:mushop@mushop-postgres:5432/mushop"
             - name: APP_NAME
-              value: "mushop-cloudnative"
+              value: "octo-drone-shop"
             - name: APP_RUNTIME
               value: "oke"
+            - name: ENVIRONMENT
+              value: "production"
+            - name: OCI_AUTH_MODE
+              value: "resource_principal"
+            - name: ORACLE_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: octo-atp
+                  key: dsn
+            - name: ORACLE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: octo-atp
+                  key: username
+            - name: ORACLE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: octo-atp
+                  key: password
+            - name: ORACLE_WALLET_DIR
+              value: "/opt/oracle/wallet"
+            - name: ORACLE_WALLET_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: octo-atp
+                  key: wallet-password
             - name: OCI_APM_ENDPOINT
               valueFrom:
                 secretKeyRef:
-                  name: mushop-apm
+                  name: octo-apm
                   key: endpoint
                   optional: true
             - name: OCI_APM_PRIVATE_DATAKEY
               valueFrom:
                 secretKeyRef:
-                  name: mushop-apm
+                  name: octo-apm
                   key: private-key
                   optional: true
             - name: OCI_APM_PUBLIC_DATAKEY
               valueFrom:
                 secretKeyRef:
-                  name: mushop-apm
+                  name: octo-apm
                   key: public-key
                   optional: true
+            - name: OCI_APM_RUM_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: octo-apm
+                  key: rum-endpoint
+                  optional: true
+            - name: OCI_APM_WEB_APPLICATION
+              value: "octo-drone-shop-web"
+            - name: OCI_LOG_ID
+              valueFrom:
+                secretKeyRef:
+                  name: octo-logging
+                  key: log-id
+                  optional: true
+            - name: OCI_LOG_GROUP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: octo-logging
+                  key: log-group-id
+                  optional: true
+            - name: SPLUNK_HEC_URL
+              valueFrom:
+                secretKeyRef:
+                  name: octo-logging
+                  key: splunk-hec-url
+                  optional: true
+            - name: SPLUNK_HEC_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: octo-logging
+                  key: splunk-hec-token
+                  optional: true
+            - name: OCI_COMPARTMENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: octo-genai
+                  key: compartment-id
+                  optional: true
+            - name: OCI_GENAI_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: octo-genai
+                  key: endpoint
+                  optional: true
+            - name: OCI_GENAI_MODEL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: octo-genai
+                  key: model-id
+                  optional: true
+            - name: ENTERPRISE_CRM_URL
+              valueFrom:
+                secretKeyRef:
+                  name: octo-integrations
+                  key: crm-url
+                  optional: true
+          volumeMounts:
+            - name: atp-wallet
+              mountPath: /opt/oracle/wallet
+              readOnly: true
           livenessProbe:
             httpGet:
               path: /health
               port: 8080
-            initialDelaySeconds: 10
+            initialDelaySeconds: 12
             periodSeconds: 15
           readinessProbe:
             httpGet:
               path: /ready
               port: 8080
-            initialDelaySeconds: 15
-            periodSeconds: 10
+            initialDelaySeconds: 18
+            periodSeconds: 12
           resources:
             requests:
-              cpu: 200m
-              memory: 256Mi
+              cpu: 250m
+              memory: 512Mi
             limits:
               cpu: "1"
-              memory: 512Mi
-        - name: postgres
-          image: postgres:16-alpine
-          ports:
-            - containerPort: 5432
-          env:
-            - name: POSTGRES_DB
-              value: mushop
-            - name: POSTGRES_USER
-              value: mushop
-            - name: POSTGRES_PASSWORD
-              value: mushop
-          volumeMounts:
-            - name: init-sql
-              mountPath: /docker-entrypoint-initdb.d
-            - name: pgdata
-              mountPath: /var/lib/postgresql/data
-          livenessProbe:
-            exec:
-              command: ["pg_isready", "-U", "mushop", "-d", "mushop"]
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          resources:
-            requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
+              memory: 1Gi
       volumes:
-        - name: init-sql
-          configMap:
-            name: mushop-db-init
-        - name: pgdata
-          emptyDir: {}
+        - name: atp-wallet
+          secret:
+            secretName: octo-atp-wallet
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mushop-portal
+  name: octo-drone-shop
   namespace: default
   labels:
-    app: mushop-portal
+    app: octo-drone-shop
+  annotations:
+    service.beta.kubernetes.io/oci-load-balancer-shape: "flexible"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-min: "10"
+    service.beta.kubernetes.io/oci-load-balancer-shape-flex-max: "100"
 spec:
   type: LoadBalancer
   ports:
@@ -115,17 +171,4 @@ spec:
       targetPort: 8080
       protocol: TCP
   selector:
-    app: mushop-portal
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: mushop-postgres
-  namespace: default
-spec:
-  type: ClusterIP
-  ports:
-    - port: 5432
-      targetPort: 5432
-  selector:
-    app: mushop-portal
+    app: octo-drone-shop

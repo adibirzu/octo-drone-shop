@@ -1,192 +1,353 @@
-"""Shop module — enhanced marketplace with Juice Shop-inspired vulnerabilities.
+"""Shop module — OCTO Drone Shop storefront, checkout, and assistant."""
 
-Full e-commerce with reviews, coupons, wallet, wishlists.
-VULNS: XXE, CSRF, CAPTCHA bypass, coupon manipulation, wallet tampering
-"""
+from __future__ import annotations
 
-import xml.etree.ElementTree as ET
+import uuid
+
 from fastapi import APIRouter, Request
+from opentelemetry import trace
 from sqlalchemy import text
+
+from server.config import cfg
 from server.database import get_db
+from server.genai_service import chat_with_documents, genai_configured
+from server.observability.logging_sdk import push_log
 from server.observability.otel_setup import get_tracer
-from server.observability.security_spans import security_span
+from server.store_service import ensure_customer, fetch_cart_items, place_order
+from server.storefront import build_grounding_documents, enrich_product, fallback_product_answer
 
 router = APIRouter(prefix="/api/shop", tags=["shop"])
 
 
+def _trace_id() -> str:
+    span = trace.get_current_span()
+    if span and span.get_span_context().trace_id:
+        return format(span.get_span_context().trace_id, "032x")
+    return ""
+
+
 @router.get("/featured")
 async def featured_products():
-    """Featured products for storefront landing page."""
+    """Featured products for the landing page."""
     tracer = get_tracer()
     with tracer.start_as_current_span("shop.featured") as span:
         async with get_db() as db:
             result = await db.execute(
-                text("SELECT id, name, description, price, image_url, category "
-                     "FROM products WHERE is_active = 1 ORDER BY price DESC FETCH FIRST 8 ROWS ONLY")
+                text(
+                    "SELECT id, name, sku, description, price, image_url, stock, category "
+                    "FROM products WHERE is_active = 1 ORDER BY price DESC FETCH FIRST 8 ROWS ONLY"
+                )
             )
-            products = [dict(r) for r in result.mappings().all()]
-            span.set_attribute("shop.featured_count", len(products))
+            products = [enrich_product(dict(row)) for row in result.mappings().all()]
+        span.set_attribute("shop.featured_count", len(products))
         return {"products": products}
 
 
-@router.post("/coupon/apply")
-async def apply_coupon(payload: dict, request: Request):
-    """Apply coupon — VULN: No rate limit, coupon code brute-forceable."""
-    code = payload.get("code", "")
-    source_ip = request.client.host if request.client else "unknown"
-
+@router.get("/storefront")
+async def storefront():
+    """Full storefront payload sourced from ATP."""
     tracer = get_tracer()
-    with tracer.start_as_current_span("shop.apply_coupon") as span:
-        span.set_attribute("shop.coupon_code", code)
+    with tracer.start_as_current_span("shop.storefront") as span:
+        async with get_db() as db:
+            products_result = await db.execute(
+                text(
+                    "SELECT id, name, sku, description, price, stock, category, image_url "
+                    "FROM products WHERE is_active = 1 ORDER BY category, name"
+                )
+            )
+            products = [enrich_product(dict(row)) for row in products_result.mappings().all()]
 
+            categories_result = await db.execute(
+                text("SELECT DISTINCT category FROM products WHERE is_active = 1 ORDER BY category")
+            )
+            categories = [row[0] for row in categories_result.all()]
+
+            stats_result = await db.execute(
+                text(
+                    "SELECT "
+                    "(SELECT COUNT(*) FROM products WHERE is_active = 1) AS product_count, "
+                    "(SELECT COALESCE(SUM(stock), 0) FROM products WHERE is_active = 1) AS inventory_units, "
+                    "(SELECT COALESCE(SUM(total), 0) FROM orders) AS revenue, "
+                    "(SELECT COUNT(*) FROM orders) AS order_count "
+                    "FROM DUAL" if cfg.use_oracle else
+                    "SELECT "
+                    "(SELECT COUNT(*) FROM products WHERE is_active = 1) AS product_count, "
+                    "(SELECT COALESCE(SUM(stock), 0) FROM products WHERE is_active = 1) AS inventory_units, "
+                    "(SELECT COALESCE(SUM(total), 0) FROM orders) AS revenue, "
+                    "(SELECT COUNT(*) FROM orders) AS order_count"
+                )
+            )
+            stats = dict(stats_result.mappings().first())
+
+        span.set_attribute("shop.catalog_count", len(products))
+        return {
+            "products": products,
+            "categories": categories,
+            "stats": {
+                "product_count": int(stats["product_count"] or 0),
+                "inventory_units": int(stats["inventory_units"] or 0),
+                "revenue": float(stats["revenue"] or 0),
+                "order_count": int(stats["order_count"] or 0),
+            },
+            "backend": {
+                "database": "oracle_atp" if cfg.use_oracle else "postgresql",
+                "apm_configured": cfg.apm_configured,
+                "rum_configured": cfg.rum_configured,
+                "genai_configured": genai_configured(),
+            },
+        }
+
+
+@router.post("/coupon/apply")
+async def apply_coupon(payload: dict):
+    """Apply a coupon to a candidate subtotal."""
+    code = payload.get("code", "")
+    subtotal = float(payload.get("subtotal", 0) or 0)
+    tracer = get_tracer()
+    with tracer.start_as_current_span("shop.coupon.apply") as span:
+        span.set_attribute("shop.coupon_code", code or "none")
+        span.set_attribute("shop.subtotal", subtotal)
         async with get_db() as db:
             result = await db.execute(
-                text("SELECT * FROM coupons WHERE code = :code AND is_active = 1"),
+                text(
+                    "SELECT code, discount_percent, discount_amount FROM coupons "
+                    "WHERE code = :code AND is_active = 1 FETCH FIRST 1 ROWS ONLY"
+                ),
                 {"code": code},
             )
             coupon = result.mappings().first()
 
         if not coupon:
-            security_span("brute_force", severity="low", payload=code,
-                          source_ip=source_ip, endpoint="/api/shop/coupon/apply")
-            return {"error": f"Invalid coupon code: {code}", "valid": False}
+            return {"valid": False, "code": code, "discount": 0.0}
 
-        return {
-            "valid": True,
-            "code": code,
-            "discount_percent": coupon["discount_percent"],
-            "discount_amount": coupon["discount_amount"],
-        }
-
-
-@router.post("/coupon/validate-xml")
-async def validate_coupon_xml(request: Request):
-    """Validate coupon via XML — VULN: XXE injection."""
-    body = await request.body()
-    source_ip = request.client.host if request.client else "unknown"
-
-    tracer = get_tracer()
-    with tracer.start_as_current_span("shop.validate_coupon_xml") as span:
-        try:
-            # VULN: XXE — parsing untrusted XML without disabling external entities
-            root = ET.fromstring(body)
-            code = root.findtext("code", "")
-            span.set_attribute("shop.xml_coupon_code", code)
-
-            if "<!ENTITY" in body.decode("utf-8", errors="ignore"):
-                security_span("xxe", severity="critical", payload=body.decode()[:200],
-                              source_ip=source_ip,
-                              endpoint="/api/shop/coupon/validate-xml")
-
-            async with get_db() as db:
-                result = await db.execute(
-                    text("SELECT * FROM coupons WHERE code = :code"),
-                    {"code": code},
-                )
-                coupon = result.mappings().first()
-
-            if coupon:
-                return {"valid": True, "code": code}
-            return {"valid": False, "code": code}
-
-        except ET.ParseError as e:
-            return {"error": f"Invalid XML: {e}", "valid": False}
+        discount = min(
+            subtotal,
+            subtotal * float(coupon["discount_percent"] or 0) / 100 + float(coupon["discount_amount"] or 0),
+        )
+        return {"valid": True, "code": code, "discount": round(discount, 2)}
 
 
 @router.post("/checkout")
 async def checkout(payload: dict, request: Request):
-    """Checkout — VULN: CSRF (no token), client-controlled pricing."""
+    """Persist the order, create shipment records, and emit traces/logs."""
     tracer = get_tracer()
-    source_ip = request.client.host if request.client else "unknown"
-
     with tracer.start_as_current_span("shop.checkout") as span:
-        total = payload.get("total", 0)
-        items = payload.get("items", [])
+        session_id = payload.get("session_id") or request.cookies.get("session_id", "") or str(uuid.uuid4())
+        async with get_db() as db:
+            items = await fetch_cart_items(db, session_id)
+            if not items:
+                return {"error": "Cart is empty", "session_id": session_id}
 
-        # VULN: CSRF — no token validation
-        csrf_token = request.headers.get("X-CSRF-Token", "")
-        if not csrf_token:
-            security_span("csrf", severity="medium",
-                          source_ip=source_ip, endpoint="/api/shop/checkout")
+            customer = await ensure_customer(
+                db,
+                name=payload.get("customer_name", "OCTO Buyer"),
+                email=payload.get("customer_email", "buyer@octo.local"),
+                phone=payload.get("customer_phone", ""),
+                company=payload.get("company", ""),
+                industry=payload.get("industry", "Drone Operations"),
+            )
+            order_result = await place_order(
+                db,
+                customer=customer,
+                items=items,
+                shipping_address=payload.get("shipping_address", "ATP-backed fulfilment queue"),
+                notes=payload.get("notes", ""),
+                coupon_code=payload.get("coupon_code", ""),
+                session_id=session_id,
+                source="shop_checkout",
+                trace_id=_trace_id(),
+            )
 
-        # VULN: Mass assignment — client sends total
-        if "total" in payload:
-            security_span("mass_assign", severity="high",
-                          payload=f"total={total}",
-                          source_ip=source_ip, endpoint="/api/shop/checkout")
-
-        span.set_attribute("shop.item_count", len(items))
-        span.set_attribute("shop.total", total)
-
+        span.set_attribute("orders.order_id", order_result["order"]["id"])
+        span.set_attribute("orders.total", order_result["total"])
+        span.set_attribute("orders.item_count", order_result["item_count"])
+        push_log(
+            "INFO",
+            "Store checkout persisted",
+            **{
+                "orders.order_id": order_result["order"]["id"],
+                "orders.total": order_result["total"],
+                "orders.source": "shop_checkout",
+                "shop.session_id": session_id,
+            },
+        )
         return {
             "status": "order_placed",
-            "total": total,
-            "items": len(items),
-            "payment": "processed",
+            "order_id": order_result["order"]["id"],
+            "tracking_number": order_result["tracking_number"],
+            "subtotal": order_result["subtotal"],
+            "discount": order_result["coupon"]["discount"],
+            "shipping_cost": order_result["shipping_cost"],
+            "total": order_result["total"],
+            "session_id": session_id,
         }
 
 
 @router.get("/wallet")
-async def get_wallet(user_id: int = 0, request: Request = None):
-    """Get wallet balance — VULN: IDOR on user_id, no auth."""
-    if user_id:
-        security_span("idor", severity="medium", payload=f"user_id={user_id}",
-                      source_ip=request.client.host if request and request.client else "",
-                      endpoint="/api/shop/wallet")
+async def get_wallet(username: str = ""):
+    """Show a simple storefront loyalty balance derived from order history."""
+    tracer = get_tracer()
+    with tracer.start_as_current_span("shop.wallet.lookup") as span:
+        async with get_db() as db:
+            if username:
+                result = await db.execute(
+                    text(
+                        "SELECT COALESCE(SUM(total), 0) AS total_spend, COUNT(*) AS order_count "
+                        "FROM orders o JOIN customers c ON c.id = o.customer_id "
+                        "WHERE lower(c.email) LIKE lower(:username) OR lower(c.name) LIKE lower(:username)"
+                    ),
+                    {"username": f"%{username}%"},
+                )
+            else:
+                result = await db.execute(
+                    text("SELECT COALESCE(SUM(total), 0) AS total_spend, COUNT(*) AS order_count FROM orders")
+                )
+            wallet = dict(result.mappings().first())
 
-    # Simulated wallet
-    return {
-        "user_id": user_id or 1,
-        "balance": 100.00,
-        "currency": "USD",
-        "transactions": [
-            {"type": "credit", "amount": 100.00, "description": "Welcome bonus"},
-        ],
-    }
+        spend = float(wallet["total_spend"] or 0)
+        balance = round(spend * 0.02, 2)
+        span.set_attribute("shop.wallet.balance", balance)
+        return {
+            "username": username or "all-customers",
+            "balance": balance,
+            "currency": "USD",
+            "order_count": int(wallet["order_count"] or 0),
+        }
 
 
-@router.post("/wallet/transfer")
-async def wallet_transfer(payload: dict, request: Request):
-    """Transfer wallet balance — VULN: Negative amount, no auth."""
-    amount = payload.get("amount", 0)
-    to_user = payload.get("to_user_id", 0)
-    source_ip = request.client.host if request.client else "unknown"
+@router.get("/assistant/history/{session_id}")
+async def assistant_history(session_id: str):
+    """Return stored assistant conversation messages."""
+    async with get_db() as db:
+        messages = await db.execute(
+            text(
+                "SELECT role, content, provider, model_id, created_at "
+                "FROM assistant_messages WHERE session_id = :session_id ORDER BY created_at ASC"
+            ),
+            {"session_id": session_id},
+        )
+        return {"session_id": session_id, "messages": [dict(row) for row in messages.mappings().all()]}
 
-    if amount < 0:
-        security_span("mass_assign", severity="critical",
-                      payload=f"negative_transfer={amount}",
-                      source_ip=source_ip, endpoint="/api/shop/wallet/transfer")
 
-    return {
-        "status": "transferred",
-        "amount": amount,
-        "to_user_id": to_user,
-    }
+@router.post("/assistant/query")
+async def assistant_query(payload: dict, request: Request):
+    """Grounded drone advisor backed by OCI GenAI with ATP conversation history."""
+    message = payload.get("message", "").strip()
+    if not message:
+        return {"error": "Message is required"}
+
+    session_id = payload.get("session_id") or str(uuid.uuid4())
+    tracer = get_tracer()
+    with tracer.start_as_current_span("shop.assistant.query") as span:
+        span.set_attribute("assistant.session_id", session_id)
+        span.set_attribute("assistant.message_length", len(message))
+
+        async with get_db() as db:
+            existing = await db.execute(
+                text(
+                    "SELECT session_id FROM assistant_sessions WHERE session_id = :session_id "
+                    "FETCH FIRST 1 ROWS ONLY"
+                ),
+                {"session_id": session_id},
+            )
+            if not existing.first():
+                await db.execute(
+                    text(
+                        "INSERT INTO assistant_sessions (session_id, customer_email, product_focus, source) "
+                        "VALUES (:session_id, :customer_email, :product_focus, 'shop')"
+                    ),
+                    {
+                        "session_id": session_id,
+                        "customer_email": payload.get("customer_email", ""),
+                        "product_focus": payload.get("product_focus", ""),
+                    },
+                )
+
+            query = (
+                "SELECT id, name, sku, description, price, stock, category, image_url "
+                "FROM products WHERE is_active = 1"
+            )
+            params = {}
+            if payload.get("product_focus"):
+                query += " AND (lower(name) LIKE lower(:focus) OR lower(category) LIKE lower(:focus))"
+                params["focus"] = f"%{payload['product_focus']}%"
+            query += " ORDER BY price DESC FETCH FIRST 8 ROWS ONLY"
+            products_result = await db.execute(text(query), params)
+            products = [enrich_product(dict(row)) for row in products_result.mappings().all()]
+            documents = build_grounding_documents(products)
+
+            await db.execute(
+                text(
+                    "INSERT INTO assistant_messages (session_id, role, content, provider, model_id, trace_id) "
+                    "VALUES (:session_id, 'user', :content, 'client', '', :trace_id)"
+                ),
+                {
+                    "session_id": session_id,
+                    "content": message,
+                    "trace_id": _trace_id(),
+                },
+            )
+
+        response_payload = None
+        if genai_configured():
+            try:
+                with tracer.start_as_current_span("shop.assistant.genai") as genai_span:
+                    response_payload = await chat_with_documents(message, documents)
+                    genai_span.set_attribute("assistant.provider", response_payload["provider"])
+                    genai_span.set_attribute("assistant.model_id", response_payload["model_id"])
+            except Exception as exc:
+                push_log("ERROR", f"OCI GenAI assistant failed: {exc}")
+
+        if response_payload is None:
+            response_payload = {
+                "answer": fallback_product_answer(message, products),
+                "provider": "local_grounded_fallback",
+                "model_id": "atp-catalog",
+                "usage": {},
+            }
+
+        async with get_db() as db:
+            await db.execute(
+                text(
+                    "INSERT INTO assistant_messages (session_id, role, content, provider, model_id, trace_id) "
+                    "VALUES (:session_id, 'assistant', :content, :provider, :model_id, :trace_id)"
+                ),
+                {
+                    "session_id": session_id,
+                    "content": response_payload["answer"],
+                    "provider": response_payload["provider"],
+                    "model_id": response_payload["model_id"],
+                    "trace_id": _trace_id(),
+                },
+            )
+
+        span.set_attribute("assistant.provider", response_payload["provider"])
+        push_log(
+            "INFO",
+            "Assistant response generated",
+            **{
+                "assistant.session_id": session_id,
+                "assistant.provider": response_payload["provider"],
+                "assistant.model_id": response_payload["model_id"],
+            },
+        )
+        return {
+            "session_id": session_id,
+            "answer": response_payload["answer"],
+            "provider": response_payload["provider"],
+            "model_id": response_payload["model_id"],
+            "usage": response_payload.get("usage", {}),
+            "documents_used": len(documents),
+        }
 
 
 @router.get("/captcha")
 async def get_captcha():
-    """Get CAPTCHA challenge — VULN: Predictable, solvable client-side."""
-    import random
-    a, b = random.randint(1, 10), random.randint(1, 10)
-    return {
-        "challenge": f"What is {a} + {b}?",
-        "answer_hash": str(a + b),  # VULN: answer is plaintext, not hashed
-        "captcha_id": f"cap-{a}-{b}",
-    }
+    """Simple deterministic challenge for the demo storefront."""
+    return {"challenge": "What is 12 + 8?", "captcha_id": "shop-demo-12-8"}
 
 
 @router.post("/captcha/verify")
-async def verify_captcha(payload: dict, request: Request):
-    """Verify CAPTCHA — VULN: Answer in response, trivially bypassable."""
-    answer = payload.get("answer", "")
-    expected = payload.get("expected", "")  # VULN: client sends expected answer
-
-    if str(answer) == str(expected):
-        return {"valid": True}
-
-    security_span("captcha_bypass", severity="low",
-                  payload=f"answer={answer}",
-                  source_ip=request.client.host if request.client else "",
-                  endpoint="/api/shop/captcha/verify")
-    return {"valid": False}
+async def verify_captcha(payload: dict):
+    """Verify the demo challenge."""
+    return {"valid": str(payload.get("answer", "")) == "20"}

@@ -17,6 +17,7 @@ from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from sqlalchemy.sql import func
 
 from server.config import cfg
+from server.storefront import ADDITIONAL_PRODUCTS
 
 logger = logging.getLogger(__name__)
 
@@ -256,6 +257,28 @@ class AuditLog(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
+class AssistantSession(Base):
+    __tablename__ = "assistant_sessions"
+    id = Column(Integer, Identity(always=False), primary_key=True)
+    session_id = Column(String(64), unique=True, nullable=False, index=True)
+    customer_email = Column(String(200))
+    product_focus = Column(String(200))
+    source = Column(String(50), default="shop")
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class AssistantMessage(Base):
+    __tablename__ = "assistant_messages"
+    id = Column(Integer, Identity(always=False), primary_key=True)
+    session_id = Column(String(64), nullable=False, index=True)
+    role = Column(String(20), nullable=False)
+    content = Column(Text, nullable=False)
+    provider = Column(String(100), default="local")
+    model_id = Column(String(255))
+    trace_id = Column(String(64))
+    created_at = Column(DateTime, server_default=func.now())
+
+
 # ── Database Initialization ──────────────────────────────────────
 
 def init_tables():
@@ -297,7 +320,12 @@ def seed_data():
     try:
         with Session(sync_engine) as session:
             if session.query(User).count() > 0:
-                logger.info("Database already seeded — skipping")
+                existing_skus = {row[0] for row in session.query(Product.sku).all()}
+                for product in ADDITIONAL_PRODUCTS:
+                    if product["sku"] not in existing_skus:
+                        session.add(Product(**product))
+                session.commit()
+                logger.info("Database already seeded — ensured storefront extensions")
                 return
 
             # Users
@@ -381,6 +409,7 @@ def seed_data():
                         price=249.99, stock=80, category="Accessories"),
             ]
             session.add_all(products)
+            session.add_all(Product(**product) for product in ADDITIONAL_PRODUCTS)
             session.flush()
 
             # Customers (8) — drone industry buyers

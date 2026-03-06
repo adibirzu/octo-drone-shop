@@ -35,10 +35,16 @@ class Config:
     oci_apm_private_datakey = os.getenv("OCI_APM_PRIVATE_DATAKEY", "")
     oci_apm_public_datakey = os.getenv("OCI_APM_PUBLIC_DATAKEY", "")
     oci_apm_rum_endpoint = os.getenv("OCI_APM_RUM_ENDPOINT", "")
+    oci_apm_web_application = os.getenv("OCI_APM_WEB_APPLICATION", "octo-drone-shop")
 
     # ── OCI Logging SDK ──
     oci_log_id = os.getenv("OCI_LOG_ID", "")
     oci_log_group_id = os.getenv("OCI_LOG_GROUP_ID", "")
+
+    # ── OCI Generative AI ──
+    oci_compartment_id = os.getenv("OCI_COMPARTMENT_ID", "")
+    oci_genai_endpoint = os.getenv("OCI_GENAI_ENDPOINT", "")
+    oci_genai_model_id = os.getenv("OCI_GENAI_MODEL_ID", "")
 
     # ── Splunk HEC ──
     splunk_hec_url = os.getenv("SPLUNK_HEC_URL", "")

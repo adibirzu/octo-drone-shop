@@ -1,5 +1,5 @@
 /*
- * MuShop Cloud Native Portal — k6 Load Test
+ * OCTO Drone Shop — k6 Load Test
  *
  * Multi-scenario testing: browsing, API load, geo-distributed, security probes
  *
