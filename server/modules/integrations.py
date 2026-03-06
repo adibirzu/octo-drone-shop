@@ -30,13 +30,13 @@ def _crm_url() -> str:
     return CRM_BASE_URL or os.getenv("C27_CRM_URL", "")
 
 
-# ── Cross-service: MuShop → CRM ──────────────────────────────────
+# ── Cross-service: OCTO-CRM → CRM ──────────────────────────────────
 
 @router.get("/crm/customer-enrichment")
 async def crm_customer_enrichment(customer_id: int, request: Request):
-    """Enrich a MuShop customer with CRM profile data.
+    """Enrich a OCTO-CRM customer with CRM profile data.
 
-    Creates a distributed trace: MuShop → HTTP → CRM /api/customers/{id}
+    Creates a distributed trace: OCTO-CRM → HTTP → CRM /api/customers/{id}
     The traceparent header is auto-injected by HTTPXClientInstrumentor.
     """
     tracer = get_tracer()
@@ -85,7 +85,7 @@ async def crm_customer_enrichment(customer_id: int, request: Request):
 
 @router.post("/crm/sync-order")
 async def crm_sync_order(payload: dict, request: Request):
-    """Sync a MuShop order to CRM as an invoice/ticket.
+    """Sync a OCTO-CRM order to CRM as an invoice/ticket.
 
     Creates a distributed trace spanning both services.
     """
@@ -109,8 +109,8 @@ async def crm_sync_order(payload: dict, request: Request):
                 resp = await client.post(f"{crm}/api/invoices", json={
                     "customer_email": customer_email,
                     "amount": total,
-                    "description": f"MuShop Order #{order_id}",
-                    "source": "mushop-cloudnative",
+                    "description": f"OCTO-CRM Order #{order_id}",
+                    "source": "octo-crm-apm",
                 })
                 span.set_attribute("integration.crm.status_code", resp.status_code)
 
@@ -133,9 +133,9 @@ async def crm_sync_order(payload: dict, request: Request):
 
 @router.get("/crm/ticket-products")
 async def crm_ticket_products(ticket_id: int, request: Request):
-    """Fetch CRM ticket details and recommend related MuShop products.
+    """Fetch CRM ticket details and recommend related OCTO-CRM products.
 
-    Distributed trace: MuShop → CRM (get ticket) → MuShop (local DB query)
+    Distributed trace: OCTO-CRM → CRM (get ticket) → OCTO-CRM (local DB query)
     """
     tracer = get_tracer()
     crm = _crm_url()
@@ -165,7 +165,7 @@ async def crm_ticket_products(ticket_id: int, request: Request):
                 async with get_db() as db:
                     result = await db.execute(
                         sa_text("SELECT id, name, price, category FROM products "
-                                "WHERE is_active = true ORDER BY RANDOM() LIMIT 3")
+                                "WHERE is_active = 1 FETCH FIRST 3 ROWS ONLY")
                     )
                     products = [dict(r) for r in result.mappings().all()]
                     db_span.set_attribute("db.row_count", len(products))
@@ -174,7 +174,7 @@ async def crm_ticket_products(ticket_id: int, request: Request):
                 "ticket_id": ticket_id,
                 "ticket": ticket,
                 "recommended_products": products,
-                "source": "mushop-cloudnative",
+                "source": "octo-crm-apm",
             }
 
         except Exception as e:

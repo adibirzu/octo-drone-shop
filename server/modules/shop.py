@@ -22,7 +22,7 @@ async def featured_products():
         async with get_db() as db:
             result = await db.execute(
                 text("SELECT id, name, description, price, image_url, category "
-                     "FROM products WHERE is_active = true ORDER BY price DESC LIMIT 8")
+                     "FROM products WHERE is_active = 1 ORDER BY price DESC LIMIT 8")
             )
             products = [dict(r) for r in result.mappings().all()]
             span.set_attribute("shop.featured_count", len(products))
@@ -41,7 +41,7 @@ async def apply_coupon(payload: dict, request: Request):
 
         async with get_db() as db:
             result = await db.execute(
-                text("SELECT * FROM coupons WHERE code = :code AND is_active = true"),
+                text("SELECT * FROM coupons WHERE code = :code AND is_active = 1"),
                 {"code": code},
             )
             coupon = result.mappings().first()

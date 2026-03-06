@@ -26,7 +26,7 @@ async def list_products(request: Request,
 
         async with get_db() as db:
             # VULN: SQL injection in search parameter
-            where = "WHERE is_active = true"
+            where = "WHERE is_active = 1"
             if search:
                 where += f" AND (name LIKE '%{search}%' OR description LIKE '%{search}%')"
                 if any(c in search for c in ["'", ";", "--", "UNION"]):
@@ -78,7 +78,7 @@ async def list_categories():
     """List distinct categories."""
     async with get_db() as db:
         result = await db.execute(
-            text("SELECT DISTINCT category FROM products WHERE is_active = true ORDER BY category")
+            text("SELECT DISTINCT category FROM products WHERE is_active = 1 ORDER BY category")
         )
         return {"categories": [r[0] for r in result.all()]}
 

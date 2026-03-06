@@ -40,7 +40,7 @@ async def analytics_overview():
                 total_revenue = r3.scalar()
 
             with tracer.start_as_current_span("db.query.product_count"):
-                r4 = await db.execute(text("SELECT COUNT(*) FROM products WHERE is_active = true"))
+                r4 = await db.execute(text("SELECT COUNT(*) FROM products WHERE is_active = 1"))
                 total_products = r4.scalar()
 
             with tracer.start_as_current_span("db.query.campaigns"):

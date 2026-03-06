@@ -9,13 +9,13 @@ from server.observability.otel_setup import get_tracer
 
 class TracingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        tracer = get_tracer("mushop")
+        tracer = get_tracer("octo-crm-apm")
         with tracer.start_as_current_span("middleware.entry") as span:
             span.set_attribute("http.method", request.method)
             span.set_attribute("http.url.path", request.url.path)
             span.set_attribute("http.client_ip",
                                request.client.host if request.client else "unknown")
-            span.set_attribute("service.name", "mushop-cloudnative")
+            span.set_attribute("service.name", "octo-crm-apm-cloudnative")
 
             start = time.monotonic()
             response = await call_next(request)

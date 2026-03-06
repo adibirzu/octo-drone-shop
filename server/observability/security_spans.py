@@ -1,4 +1,4 @@
-"""Security span helpers — MITRE ATT&CK + OWASP classification for MuShop."""
+"""Security span helpers — MITRE ATT&CK + OWASP classification for OCTO-CRM-APM."""
 
 from server.observability.otel_setup import get_tracer
 from server.observability.logging_sdk import log_security_event

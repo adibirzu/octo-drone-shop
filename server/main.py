@@ -1,4 +1,4 @@
-"""MuShop Cloud Native Portal — Main application entry point.
+"""OCTO-CRM-APM — Main application entry point.
 
 A cloud-native e-commerce portal with full OCI observability stack
 (APM/OTel, RUM, Logging SDK, Splunk HEC) and deliberate security
@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 
 from server.config import cfg
-from server.database import engine, get_db
+from server.database import engine, get_db, init_tables, seed_data
 from server.observability.otel_setup import init_otel, get_tracer
 from server.observability.logging_sdk import push_log
 from server.middleware.tracing import TracingMiddleware
@@ -50,21 +50,30 @@ init_otel(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("MuShop Cloud Native Portal starting — APM: %s, RUM: %s, DB: %s",
+    logger.info("OCTO-CRM-APM starting — APM: %s, RUM: %s, DB: %s",
                 cfg.apm_configured, cfg.rum_configured,
                 "Oracle ATP" if cfg.use_oracle else "PostgreSQL")
-    push_log("INFO", "MuShop Cloud Native Portal started", **{
+
+    # Create tables and seed data on startup
+    try:
+        init_tables()
+        seed_data()
+        logger.info("Database initialization complete")
+    except Exception as e:
+        logger.error("Database initialization failed: %s (app will still start)", e)
+
+    push_log("INFO", "OCTO-CRM-APM started", **{
         "app.name": cfg.app_name,
         "app.runtime": cfg.app_runtime,
         "app.apm_configured": cfg.apm_configured,
         "app.db_type": "oracle" if cfg.use_oracle else "postgresql",
     })
     yield
-    push_log("INFO", "MuShop Cloud Native Portal shutting down")
+    push_log("INFO", "OCTO-CRM-APM shutting down")
 
 
 app = FastAPI(
-    title="MuShop Cloud Native Portal",
+    title="OCTO-CRM-APM",
     description="Cloud-native e-commerce with full observability (OCI APM, RUM, Logging, Splunk)",
     version="1.0.0",
     lifespan=lifespan,

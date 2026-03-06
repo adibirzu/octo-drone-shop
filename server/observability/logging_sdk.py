@@ -120,13 +120,13 @@ def _push_to_oci_logging(level: str, message: str, extra: dict):
         from oci.loggingingestion.models import PutLogsDetails, LogEntryBatch, LogEntry
         entry = LogEntry(
             data=json.dumps({"message": message, **extra}, default=str),
-            id=f"mushop-{int(time.time() * 1000)}",
+            id=f"octo-{int(time.time() * 1000)}",
             time=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         )
         batch = LogEntryBatch(
             defaultloglevel=level.upper(),
             source=f"{cfg.app_name}-{cfg.app_runtime}",
-            type="mushop-cloudnative",
+            type="octo-crm-apm",
             entries=[entry],
         )
         client.put_logs(
@@ -153,7 +153,7 @@ def _push_to_splunk(level: str, message: str, extra: dict):
         }
         httpx.post(
             f"{cfg.splunk_hec_url}/services/collector/event",
-            json={"event": event, "sourcetype": "oci:mushop:security"},
+            json={"event": event, "sourcetype": "oci:octo-crm-apm:security"},
             headers={"Authorization": f"Splunk {cfg.splunk_hec_token}"},
             verify=False,
             timeout=2.0,

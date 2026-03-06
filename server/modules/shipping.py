@@ -94,6 +94,6 @@ async def list_warehouses():
     """List warehouses."""
     async with get_db() as db:
         result = await db.execute(
-            text("SELECT * FROM warehouses WHERE is_active = true ORDER BY region")
+            text("SELECT * FROM warehouses WHERE is_active = 1 ORDER BY region")
         )
         return {"warehouses": [dict(r) for r in result.mappings().all()]}

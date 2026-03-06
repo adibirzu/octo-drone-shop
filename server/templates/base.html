@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} — MuShop Cloud Native</title>
+    <title>{{ title }} — OCTO-CRM-APM</title>
     <style>
         :root {
             --primary: #1a73e8;
@@ -66,7 +66,8 @@
 </head>
 <body>
     <nav>
-        <span class="brand">MuShop</span>
+        <img src="/static/img/octo-logo.svg" alt="OCTO" style="height:36px;margin-right:4px;vertical-align:middle;">
+        <span class="brand">OCTO-CRM-APM</span>
         <a href="/" {% if module == 'dashboard' or not module %}class="active"{% endif %}>Dashboard</a>
         <a href="/shop" {% if module == 'shop' %}class="active"{% endif %}>Shop</a>
         <a href="/catalogue" {% if module == 'catalogue' %}class="active"{% endif %}>Catalogue</a>
@@ -80,7 +81,7 @@
         {% block content %}{% endblock %}
     </div>
     <footer>
-        MuShop Cloud Native Portal &mdash; {{ app_name }}
+        OCTO-CRM-APM Portal &mdash; {{ app_name }}
         {% if rum_configured %} | RUM Active{% endif %}
     </footer>
     {% if rum_configured and rum_endpoint %}
@@ -94,7 +95,7 @@
                 s.src = rumEndpoint + '/static/jsagent/apmrum.min.js';
                 s.setAttribute('data-key', rumKey);
                 s.setAttribute('data-endpoint', rumEndpoint);
-                s.setAttribute('data-urn', 'mushop-cloudnative');
+                s.setAttribute('data-urn', 'octo-crm-apm');
                 document.head.appendChild(s);
             }
         })();

@@ -1,4 +1,4 @@
-"""OpenTelemetry initialization for MuShop Cloud Native Portal.
+"""OpenTelemetry initialization for OCTO-CRM-APM Portal.
 
 Uses OCI APM OTLP endpoint. Service name is configurable via OTEL_SERVICE_NAME
 to ensure unique trace identification across APM domains.
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 _tracer_provider = None
 
 
-def init_otel(service_name: str = "mushop-cloudnative",
+def init_otel(service_name: str = "octo-crm-apm",
               service_version: str = "1.0.0",
               apm_endpoint: str = "", apm_private_key: str = "",
               sync_engine=None):
@@ -27,7 +27,7 @@ def init_otel(service_name: str = "mushop-cloudnative",
         SERVICE_NAME: service_name,
         SERVICE_VERSION: service_version,
         "deployment.environment": "production",
-        "service.namespace": "mushop",
+        "service.namespace": "octo-crm-apm",
     })
 
     _tracer_provider = TracerProvider(resource=resource)
@@ -56,7 +56,7 @@ def init_otel(service_name: str = "mushop-cloudnative",
             pass
 
     # Auto-instrument httpx — injects W3C traceparent on all outbound HTTP calls
-    # This is critical for distributed tracing between MuShop and CRM
+    # This is critical for distributed tracing between OCTO-CRM-APM and CRM
     try:
         from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
         HTTPXClientInstrumentor().instrument()
@@ -72,5 +72,5 @@ def init_otel(service_name: str = "mushop-cloudnative",
         pass
 
 
-def get_tracer(name: str = "mushop") -> trace.Tracer:
+def get_tracer(name: str = "octo-crm-apm") -> trace.Tracer:
     return trace.get_tracer(name)

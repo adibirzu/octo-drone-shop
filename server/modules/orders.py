@@ -139,10 +139,16 @@ async def create_order(payload: dict, request: Request):
                           endpoint="/api/orders")
 
         async with get_db() as db:
-            result = await db.execute(
+            await db.execute(
                 text("INSERT INTO orders (customer_id, total, notes, status) "
-                     "VALUES (:cid, :total, :notes, 'pending') RETURNING id"),
+                     "VALUES (:cid, :total, :notes, 'pending')"),
                 {"cid": customer_id, "total": total, "notes": notes},
+            )
+            # Portable: fetch the last inserted order for this customer
+            result = await db.execute(
+                text("SELECT id FROM orders WHERE customer_id = :cid "
+                     "ORDER BY created_at DESC FETCH FIRST 1 ROWS ONLY"),
+                {"cid": customer_id},
             )
             order_id = result.scalar()
 

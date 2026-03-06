@@ -6,9 +6,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://mushop:mushop@postgres:5432/mushop
-      - DATABASE_SYNC_URL=postgresql://mushop:mushop@postgres:5432/mushop
-      - APP_NAME=mushop-cloudnative
+      - DATABASE_URL=postgresql+asyncpg://octocrm:octocrm@postgres:5432/octocrm
+      - DATABASE_SYNC_URL=postgresql://octocrm:octocrm@postgres:5432/octocrm
+      - APP_NAME=octo-crm-apm
       - APP_RUNTIME=docker
       - ENVIRONMENT=development
     depends_on:
@@ -21,14 +21,14 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: mushop
-      POSTGRES_USER: mushop
-      POSTGRES_PASSWORD: mushop
+      POSTGRES_DB: octocrm
+      POSTGRES_USER: octocrm
+      POSTGRES_PASSWORD: octocrm
     volumes:
       - ./server/db_init.sql:/docker-entrypoint-initdb.d/01_init.sql
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mushop -d mushop"]
+      test: ["CMD-SHELL", "pg_isready -U octocrm -d octocrm"]
       interval: 5s
       timeout: 5s
       retries: 5

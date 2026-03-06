@@ -1,4 +1,4 @@
-"""MuShop Cloud Native Portal — Configuration.
+"""OCTO-CRM-APM — Configuration.
 
 Loads settings from environment variables with sensible defaults.
 Supports both PostgreSQL (dev/Docker) and Oracle ATP (production/OKE).
@@ -8,9 +8,9 @@ import os
 
 
 class Config:
-    app_name = os.getenv("APP_NAME", "mushop-cloudnative")
+    app_name = os.getenv("APP_NAME", "octo-crm-apm")
     app_runtime = os.getenv("APP_RUNTIME", "docker")  # docker, oke, vm
-    otel_service_name = os.getenv("OTEL_SERVICE_NAME", "mushop-cloudnative")
+    otel_service_name = os.getenv("OTEL_SERVICE_NAME", "octo-crm-apm")
     oci_auth_mode = os.getenv("OCI_AUTH_MODE", "auto")
     port = int(os.getenv("PORT", "8080"))
     environment = os.getenv("ENVIRONMENT", "development")
@@ -18,7 +18,7 @@ class Config:
     # ── Database ──
     # Oracle ATP (production)
     oracle_dsn = os.getenv("ORACLE_DSN", "")  # e.g. "(description=...)" or TNS alias
-    oracle_user = os.getenv("ORACLE_USER", "mushop")
+    oracle_user = os.getenv("ORACLE_USER", "ADMIN")
     oracle_password = os.getenv("ORACLE_PASSWORD", "")
     oracle_wallet_dir = os.getenv("ORACLE_WALLET_DIR", "")
     oracle_wallet_password = os.getenv("ORACLE_WALLET_PASSWORD", "")
@@ -28,10 +28,7 @@ class Config:
     database_sync_url = os.getenv("DATABASE_SYNC_URL", "")
 
     # ── Cross-service integration ──
-    enterprise_crm_url = os.getenv("ENTERPRISE_CRM_URL", "")  # e.g. http://enterprise-crm:8080
-
-    # ── MuShop backend (original oci-cloudnative) ──
-    mushop_backend_url = os.getenv("MUSHOP_BACKEND_URL", "")  # e.g. http://mushop-api:8080
+    enterprise_crm_url = os.getenv("ENTERPRISE_CRM_URL", "")
 
     # ── OCI APM ──
     oci_apm_endpoint = os.getenv("OCI_APM_ENDPOINT", "")
@@ -67,9 +64,8 @@ class Config:
     def database_url(self) -> str:
         """Return async database URL for SQLAlchemy."""
         if self.use_oracle:
-            # oracle+oracledb_async for async Oracle connections
             return f"oracle+oracledb_async://{self.oracle_user}:{self.oracle_password}@"
-        return self.pg_url or "postgresql+asyncpg://mushop:mushop@localhost:5432/mushop"
+        return self.pg_url or "postgresql+asyncpg://octocrm:octocrm@localhost:5432/octocrm"
 
 
 cfg = Config()

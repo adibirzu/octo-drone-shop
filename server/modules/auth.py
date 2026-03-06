@@ -44,7 +44,7 @@ async def login(request: Request, payload: dict):
                 "status": "success",
                 "user": {"id": user["id"], "username": user["username"],
                          "email": user["email"], "role": user["role"]},
-                "token": f"mushop-token-{user['id']}-{user['role']}",
+                "token": f"octo-token-{user['id']}-{user['role']}",
             }
 
         return {"error": "Invalid password", "status": "failed"}
@@ -54,14 +54,14 @@ async def login(request: Request, payload: dict):
 async def profile(request: Request):
     """Get user profile — VULN: Auth bypass with predictable token."""
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    if not token or not token.startswith("mushop-token-"):
+    if not token or not token.startswith("octo-token-"):
         security_span("auth_bypass", severity="medium",
                       payload=token,
                       source_ip=request.client.host if request.client else "",
                       endpoint="/api/auth/profile")
         return {"error": "Unauthorized"}
 
-    # VULN: Token is just "mushop-token-{id}-{role}" — trivially forgeable
+    # VULN: Token is just "octo-token-{id}-{role}" — trivially forgeable
     parts = token.split("-")
     user_id = int(parts[2]) if len(parts) > 2 else 0
 
