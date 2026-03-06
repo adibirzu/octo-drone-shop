@@ -22,7 +22,9 @@ spec:
             - containerPort: 8080
           env:
             - name: APP_NAME
-              value: "octo-drone-shop"
+              value: "enterprise-crm-portal"
+            - name: OTEL_SERVICE_NAME
+              value: "enterprise-crm-portal-oke"
             - name: APP_RUNTIME
               value: "oke"
             - name: ENVIRONMENT
@@ -82,7 +84,7 @@ spec:
                   key: rum-endpoint
                   optional: true
             - name: OCI_APM_WEB_APPLICATION
-              value: "octo-drone-shop-web"
+              value: "enterprise-crm-portal-web"
             - name: OCI_LOG_ID
               valueFrom:
                 secretKeyRef:

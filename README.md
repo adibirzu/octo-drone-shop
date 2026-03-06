@@ -32,6 +32,19 @@ ATP-backed drone commerce demo for OCI monitored-app scenarios.
 - Logging: `OCI_LOG_ID`, optional `SPLUNK_HEC_URL`, `SPLUNK_HEC_TOKEN`
 - Auth: optional `AUTH_TOKEN_SECRET` for signed bearer tokens in multi-instance deployments
 
+## ATP provisioning helper
+
+Use `deploy/oci/ensure_atp.sh` to verify or create the dedicated ATP for this component.
+
+Example:
+
+```bash
+COMPARTMENT_ID="<database compartment ocid>" \
+DISPLAY_NAME="mushop-cloudnative-atp" \
+DB_NAME="mushopcnatp" \
+./deploy/oci/ensure_atp.sh
+```
+
 ## Install paths
 
 - OKE and ATP install/config steps are in [docs/install-guide.md](docs/install-guide.md).

@@ -69,7 +69,7 @@ async def get_config(request: Request):
             "app_name": cfg.app_name,
             "environment": cfg.environment,
             "app_runtime": cfg.app_runtime,
-            "database_backend": "oracle_atp" if cfg.use_oracle else "postgresql",
+            "database_backend": "oracle_atp",
             "apm_configured": cfg.apm_configured,
             "rum_configured": cfg.rum_configured,
             "logging_configured": cfg.logging_configured,

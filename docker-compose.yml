@@ -4,29 +4,21 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://octocrm:octocrm@postgres:5432/octocrm
-      - DATABASE_SYNC_URL=postgresql://octocrm:octocrm@postgres:5432/octocrm
-      - APP_NAME=octo-drone-shop
-      - APP_RUNTIME=docker
-      - ENVIRONMENT=development
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: octocrm
-      POSTGRES_USER: octocrm
-      POSTGRES_PASSWORD: octocrm
+      - APP_NAME=${APP_NAME:-enterprise-crm-portal}
+      - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-enterprise-crm-portal-oke}
+      - APP_RUNTIME=${APP_RUNTIME:-oke}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - ORACLE_DSN=${ORACLE_DSN}
+      - ORACLE_USER=${ORACLE_USER:-ADMIN}
+      - ORACLE_PASSWORD=${ORACLE_PASSWORD}
+      - ORACLE_WALLET_DIR=/opt/oracle/wallet
+      - ORACLE_WALLET_PASSWORD=${ORACLE_WALLET_PASSWORD}
+      - ENTERPRISE_CRM_URL=${ENTERPRISE_CRM_URL:-}
+      - OCI_APM_ENDPOINT=${OCI_APM_ENDPOINT:-}
+      - OCI_APM_PRIVATE_DATAKEY=${OCI_APM_PRIVATE_DATAKEY:-}
+      - OCI_APM_PUBLIC_DATAKEY=${OCI_APM_PUBLIC_DATAKEY:-}
+      - OCI_APM_RUM_ENDPOINT=${OCI_APM_RUM_ENDPOINT:-}
+      - OCI_APM_WEB_APPLICATION=${OCI_APM_WEB_APPLICATION:-enterprise-crm-portal-web}
     volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U octocrm -d octocrm"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  pgdata:
+      - ${ORACLE_WALLET_PATH:-./wallet}:/opt/oracle/wallet:ro
+    restart: unless-stopped

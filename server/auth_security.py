@@ -26,8 +26,7 @@ def _secret_bytes() -> bytes:
         cfg.auth_token_secret
         or cfg.oracle_password
         or cfg.splunk_hec_token
-        or cfg.database_sync_url
-        or cfg.pg_url
+        or cfg.oracle_dsn
         or f"{cfg.app_name}:{cfg.environment}:octo-default-secret"
     )
     return hashlib.sha256(basis.encode("utf-8")).digest()

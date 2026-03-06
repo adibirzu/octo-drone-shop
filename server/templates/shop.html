@@ -184,6 +184,15 @@
         object-fit: cover;
         border-radius: 14px;
     }
+    .crm-customer {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        padding: 10px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+    }
     .cart-total {
         display: flex;
         justify-content: space-between;
@@ -314,6 +323,17 @@
                 <div class="chip">RUM: <strong id="rumStatus">checking</strong></div>
                 <div class="chip">GenAI: <strong id="genaiStatus">checking</strong></div>
             </div>
+            <div class="panel">
+                <div class="section-title">
+                    <h3>Enterprise CRM Customers</h3>
+                    <span class="chip" id="crmSyncChip">idle</span>
+                </div>
+                <div class="helper" id="crmSyncStatus">Waiting for CRM sync status.</div>
+                <div class="cart-list" id="crmCustomerList">
+                    <div class="helper">No CRM customers synced yet.</div>
+                </div>
+                <button class="btn btn-outline" type="button" id="crmRefreshBtn">Sync CRM Customers</button>
+            </div>
         </aside>
 
         <section class="panel" id="catalog">
@@ -379,6 +399,7 @@ const state = {
     sessionId: localStorage.getItem('octo-session-id') || crypto.randomUUID(),
     assistantSessionId: localStorage.getItem('octo-assistant-session-id') || crypto.randomUUID(),
     backend: {},
+    crmSync: {},
 };
 
 localStorage.setItem('octo-session-id', state.sessionId);
@@ -472,9 +493,13 @@ function applyFilters() {
 
 async function loadStorefront() {
     const response = await fetch('/api/shop/storefront');
+    if (!response.ok) {
+        throw new Error(`Storefront API failed (${response.status})`);
+    }
     const payload = await response.json();
     state.products = payload.products || [];
     state.backend = payload.backend || {};
+    state.crmSync = payload.crm_sync || {};
     renderCategories(payload.categories || []);
     applyFilters();
 
@@ -482,10 +507,11 @@ async function loadStorefront() {
     document.getElementById('metricProducts').textContent = stats.product_count || 0;
     document.getElementById('metricInventory').textContent = (stats.inventory_units || 0).toLocaleString();
     document.getElementById('metricRevenue').textContent = money(stats.revenue || 0);
+    const crmLabel = state.crmSync.synced ? 'CRM Synced' : (state.crmSync.configured ? 'CRM Pending' : 'CRM Off');
     document.getElementById('metricTelemetry').textContent =
-        `${state.backend.database === 'oracle_atp' ? 'ATP' : 'DB'} / ${state.backend.apm_configured ? 'APM' : 'No APM'}`;
-    document.getElementById('catalogSource').textContent = `Source: ${state.backend.database === 'oracle_atp' ? 'Oracle ATP' : 'Database fallback'}`;
-    document.getElementById('dbStatus').textContent = state.backend.database === 'oracle_atp' ? 'ATP' : 'Fallback';
+        `ATP / ${state.backend.apm_configured ? 'APM' : 'No APM'} / ${crmLabel}`;
+    document.getElementById('catalogSource').textContent = 'Source: Oracle ATP';
+    document.getElementById('dbStatus').textContent = 'ATP';
     document.getElementById('apmStatus').textContent = state.backend.apm_configured ? 'enabled' : 'pending';
     document.getElementById('rumStatus').textContent = state.backend.rum_configured ? 'enabled' : 'pending';
     document.getElementById('genaiStatus').textContent = state.backend.genai_configured ? 'oci genai' : 'grounded fallback';
@@ -506,11 +532,16 @@ async function trackPageView() {
 }
 
 async function addToCart(productId) {
-    await fetch('/api/cart/add', {
+    const response = await fetch('/api/cart/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: state.sessionId, product_id: productId, quantity: 1 })
     });
+    const payload = await response.json();
+    if (!response.ok || payload.error) {
+        document.getElementById('checkoutStatus').textContent = payload.error || 'Failed to add product to cart.';
+        return;
+    }
     await loadCart();
 }
 
@@ -521,6 +552,9 @@ async function removeCartItem(itemId) {
 
 async function loadCart() {
     const response = await fetch(`/api/cart?session_id=${encodeURIComponent(state.sessionId)}`);
+    if (!response.ok) {
+        throw new Error(`Cart API failed (${response.status})`);
+    }
     const payload = await response.json();
     state.cart = payload.items || [];
     state.cartTotal = payload.total || 0;
@@ -548,24 +582,29 @@ async function loadCart() {
 
 async function submitCheckout(event) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formEl = event.currentTarget;
+    const form = new FormData(formEl);
     const payload = Object.fromEntries(form.entries());
     payload.session_id = state.sessionId;
-    const response = await fetch('/api/shop/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-    const result = await response.json();
     const status = document.getElementById('checkoutStatus');
-    if (result.error) {
-        status.textContent = result.error;
-        return;
+    try {
+        const response = await fetch('/api/shop/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok || result.error) {
+            status.textContent = result.error || `Checkout failed (${response.status})`;
+            return;
+        }
+        const crmMessage = result.crm_sync?.synced ? 'CRM invoice synced.' : (result.crm_sync?.reason ? `CRM sync pending: ${result.crm_sync.reason}` : 'CRM sync pending.');
+        status.textContent = `Order #${result.order_id} stored in backend. Tracking ${result.tracking_number}. Total ${money(result.total)}. ${crmMessage}`;
+        formEl.reset();
+        await Promise.all([loadCart(), loadStorefront(), loadCrmCustomers(false)]);
+    } catch (error) {
+        status.textContent = `Checkout request failed: ${error.message}`;
     }
-    status.textContent = `Order #${result.order_id} stored in backend. Tracking ${result.tracking_number}. Total ${money(result.total)}.`;
-    event.currentTarget.reset();
-    await loadCart();
-    await loadStorefront();
 }
 
 function appendAssistantMessage(role, content) {
@@ -603,6 +642,43 @@ async function submitAssistant(event) {
     appendAssistantMessage('OCTO Advisor', result.answer);
 }
 
+function renderCrmCustomers(customers, sync) {
+    const list = document.getElementById('crmCustomerList');
+    const chip = document.getElementById('crmSyncChip');
+    const status = document.getElementById('crmSyncStatus');
+    const count = customers.length;
+
+    chip.textContent = sync?.synced ? `synced ${sync.last_count || count}` : (sync?.configured ? 'pending' : 'off');
+    status.textContent = sync?.reason
+        ? `CRM sync status: ${sync.reason}`
+        : (sync?.synced ? 'Customer records are synced from enterprise-crm-portal.' : 'CRM sync not yet available.');
+
+    if (!count) {
+        list.innerHTML = '<div class="helper">No CRM customers synced yet.</div>';
+        return;
+    }
+
+    list.innerHTML = customers.slice(0, 8).map(customer => `
+        <div class="crm-customer">
+            <div>
+                <strong>${escapeHtml(customer.name)}</strong>
+                <div class="helper">${escapeHtml(customer.email)}</div>
+            </div>
+            <div class="helper">${escapeHtml(customer.company || customer.industry || 'CRM')}</div>
+        </div>
+    `).join('');
+}
+
+async function loadCrmCustomers(refresh = false) {
+    const url = `/api/integrations/crm/customers?limit=8${refresh ? '&refresh=true' : ''}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`CRM customer API failed (${response.status})`);
+    }
+    const payload = await response.json();
+    renderCrmCustomers(payload.customers || [], payload.sync || {});
+}
+
 document.getElementById('searchInput').addEventListener('input', applyFilters);
 document.getElementById('sortSelect').addEventListener('change', applyFilters);
 document.getElementById('assistantFocus').addEventListener('change', () => {});
@@ -612,6 +688,13 @@ document.getElementById('refreshBtn').addEventListener('click', async () => {
     await loadStorefront();
     await loadCart();
 });
+document.getElementById('crmRefreshBtn').addEventListener('click', async () => {
+    try {
+        await loadCrmCustomers(true);
+    } catch (error) {
+        document.getElementById('crmSyncStatus').textContent = `CRM sync failed: ${error.message}`;
+    }
+});
 document.getElementById('trackBtn').addEventListener('click', async () => {
     await trackPageView();
     document.getElementById('metricTelemetry').textContent = 'Page view traced';
@@ -619,7 +702,12 @@ document.getElementById('trackBtn').addEventListener('click', async () => {
 
 (async function init() {
     try {
-        await Promise.all([loadStorefront(), loadCart(), trackPageView().catch(() => {})]);
+        await Promise.all([
+            loadStorefront(),
+            loadCart(),
+            loadCrmCustomers(false).catch(() => {}),
+            trackPageView().catch(() => {}),
+        ]);
     } catch (error) {
         document.getElementById('productGrid').innerHTML = `<div class="helper">Storefront failed to load: ${escapeHtml(error.message)}</div>`;
     }

@@ -405,35 +405,52 @@ const MODULE_CONFIG = {
         primary: { url: '/api/analytics/overview', key: null },
         extras: [
             { name: 'funnel', url: '/api/analytics/funnel' },
-            { name: 'geo', url: '/api/analytics/geo' }
+            { name: 'geo', url: '/api/analytics/geo' },
+            { name: 'securityEvents', url: '/api/analytics/security/events?limit=100' },
+            { name: 'securityCorrelation', url: '/api/analytics/security/correlations?limit=50' }
         ],
         signals: [
             { label: 'Overview aggregation', state: 'healthy', copy: 'Cross-module metrics summarize customers, orders, campaigns, and shipments.' },
             { label: 'Funnel visibility', state: 'healthy', copy: 'Conversion stages stay visible for demo walkthroughs and load-test interpretation.' },
             { label: 'Geo drill-down', state: 'healthy', copy: 'Regional page-view latency creates a clear observability story for distributed users.' },
-            { label: 'Synthetic events', state: 'healthy', copy: 'The storefront emits page-view tracking events to keep backend analytics active.' }
+            { label: 'Attack telemetry', state: 'healthy', copy: 'Security events are persisted and correlated with product/order activity.' }
         ],
         insights: [
             'Commercial KPIs summarized from multiple modules.',
             'Funnel progression between visits, carts, and completed orders.',
-            'Regional experience variance based on tracked page views.'
+            'Regional experience variance based on tracked page views.',
+            'Attack detections correlated with impacted product and order flows.'
         ],
         sources: [
             'Primary source: `/api/analytics/overview`.',
             'Supporting sources: `/api/analytics/funnel` and `/api/analytics/geo`.',
+            'Security sources: `/api/analytics/security/events` and `/api/analytics/security/correlations`.',
             'Event producer: `/api/analytics/track` from browser flows.'
         ],
         runtimeNote: 'This page is the fastest way to check whether the storefront is still producing meaningful behavioral and operational signal after a deploy.',
         metrics(data) {
             const overview = data.primary || {};
+            const securityEvents = data.extras.securityEvents?.events || [];
+            const productCoverage = data.extras.securityCorrelation?.product_coverage || [];
             return [
                 { label: 'Customers', value: overview.total_customers || 0, copy: 'Customer entities visible to the analytics layer.' },
                 { label: 'Revenue', value: money(overview.total_revenue || 0), copy: 'Completed-order revenue exposed by the analytics summary.' },
                 { label: 'In Transit', value: overview.shipments_in_transit || 0, copy: 'Operational fulfillment load visible in analytics.' },
+                { label: 'Attack Events', value: securityEvents.length, copy: 'Persisted detections available for investigation and triage.' },
+                { label: 'Products With Events', value: productCoverage.filter((item) => Number(item.security_event_count) > 0).length, copy: 'Products currently mapped to at least one security event.' },
                 { label: 'Leads', value: overview.total_leads || 0, copy: 'Campaign lead volume reflected in the same view.' }
             ];
         },
         table(data) {
+            const correlations = data.extras.securityCorrelation?.correlations || [];
+            if (correlations.length) {
+                return {
+                    title: 'Security correlations',
+                    chip: `${correlations.length} correlated rows`,
+                    columns: ['attack_type', 'severity', 'product_name', 'event_count', 'observed_order_units', 'last_seen'],
+                    rows: correlations.slice(0, 20)
+                };
+            }
             return {
                 title: 'Funnel stages',
                 chip: `${(data.extras.funnel?.funnel || []).length} stages`,
@@ -443,10 +460,14 @@ const MODULE_CONFIG = {
         },
         details(data) {
             const geo = data.extras.geo?.regions || [];
+            const productCoverage = data.extras.securityCorrelation?.product_coverage || [];
+            const hottestProduct = [...productCoverage]
+                .sort((a, b) => (Number(b.security_event_count) || 0) - (Number(a.security_event_count) || 0))[0];
             return [
                 { title: 'Geo regions', value: geo.length, copy: 'Distinct tracked visitor regions returned by the geo endpoint.' },
                 { title: 'Fastest region', value: pickFastestRegion(geo), copy: 'Lowest average load time among tracked regions.' },
-                { title: 'Top region views', value: `${Math.max(0, ...geo.map((item) => Number(item.view_count) || 0))}`, copy: 'Highest view concentration among tracked regions.' }
+                { title: 'Top region views', value: `${Math.max(0, ...geo.map((item) => Number(item.view_count) || 0))}`, copy: 'Highest view concentration among tracked regions.' },
+                { title: 'Most targeted product', value: hottestProduct?.name || 'n/a', copy: 'Product with the highest correlated security event count.' }
             ];
         }
     },

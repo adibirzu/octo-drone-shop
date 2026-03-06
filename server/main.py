@@ -51,9 +51,12 @@ init_otel(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("OCTO-CRM-APM starting — APM: %s, RUM: %s, DB: %s",
-                cfg.apm_configured, cfg.rum_configured,
-                "Oracle ATP" if cfg.use_oracle else "PostgreSQL")
+    cfg.validate()
+    logger.info(
+        "OCTO-CRM-APM starting — APM: %s, RUM: %s, DB: Oracle ATP",
+        cfg.apm_configured,
+        cfg.rum_configured,
+    )
 
     # Create tables and seed data on startup
     try:
@@ -67,7 +70,7 @@ async def lifespan(app: FastAPI):
         "app.name": cfg.app_name,
         "app.runtime": cfg.app_runtime,
         "app.apm_configured": cfg.apm_configured,
-        "app.db_type": "oracle" if cfg.use_oracle else "postgresql",
+        "app.db_type": "oracle",
     })
     yield
     push_log("INFO", "OCTO-CRM-APM shutting down")
@@ -130,7 +133,7 @@ async def ready():
         db_ok = False
         try:
             async with get_db() as db:
-                await db.execute(text("SELECT 1 FROM DUAL" if cfg.use_oracle else "SELECT 1"))
+                await db.execute(text("SELECT 1 FROM DUAL"))
                 db_ok = True
         except Exception as e:
             span.set_attribute("health.db_error", str(e))
@@ -138,7 +141,7 @@ async def ready():
         return {
             "ready": db_ok,
             "database": "connected" if db_ok else "disconnected",
-            "db_type": "oracle_atp" if cfg.use_oracle else "postgresql",
+            "db_type": "oracle_atp",
             "apm_configured": cfg.apm_configured,
             "rum_configured": cfg.rum_configured,
         }
@@ -159,7 +162,7 @@ async def list_modules():
              "related_to": ["orders", "warehouses", "analytics"]},
             {"name": "campaigns", "label": "Campaigns", "endpoints": 5,
              "related_to": ["leads", "analytics", "customers"]},
-            {"name": "analytics", "label": "Analytics", "endpoints": 4,
+            {"name": "analytics", "label": "Analytics", "endpoints": 6,
              "related_to": ["orders", "campaigns", "shipping", "page_views"]},
             {"name": "admin", "label": "Admin", "endpoints": 3,
              "related_to": ["users", "audit_logs"]},
@@ -167,12 +170,12 @@ async def list_modules():
              "related_to": ["orders", "catalogue", "customers"]},
             {"name": "simulation", "label": "Simulation", "endpoints": 5,
              "related_to": ["dashboard"]},
-            {"name": "integrations", "label": "Integrations", "endpoints": 5,
+            {"name": "integrations", "label": "Integrations", "endpoints": 7,
              "related_to": ["orders", "customers", "enterprise-crm-portal"],
              "cross_service": True},
         ],
         "total_modules": 10,
-        "total_endpoints": 50,
+        "total_endpoints": 54,
     }
 
 

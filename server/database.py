@@ -1,17 +1,9 @@
-"""OCI APM Test App — Database engine, session, models, and initialization.
+"""Database engine, session, models, and initialization for ATP-only runtime."""
 
-Supports Oracle ATP (production) and PostgreSQL (development).
-Uses SQLAlchemy async for both backends. Creates tables + seeds on startup.
-"""
-
-import os
 import logging
 from contextlib import asynccontextmanager
 
-from sqlalchemy import (
-    Column, Integer, String, Float, Boolean, Text, DateTime, ForeignKey,
-    Identity, create_engine, text, inspect,
-)
+from sqlalchemy import Column, Integer, String, Float, Text, DateTime, ForeignKey, Identity, create_engine, text, inspect
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from sqlalchemy.sql import func
@@ -277,34 +269,30 @@ _engine_kwargs = {
     "pool_pre_ping": True,
 }
 
-if cfg.use_oracle:
-    import oracledb
-    # Use thin mode (pure-Python, no Oracle Instant Client needed)
-    oracledb.defaults.config_dir = cfg.oracle_wallet_dir or ""
-    oracledb.defaults.fetch_lobs = False
+import oracledb
 
-    _connect_args = {}
-    if cfg.oracle_wallet_dir:
-        _connect_args["config_dir"] = cfg.oracle_wallet_dir
-        _connect_args["wallet_location"] = cfg.oracle_wallet_dir
-        _connect_args["wallet_password"] = cfg.oracle_wallet_password
+# Use thin mode (pure-Python, no Oracle Instant Client needed)
+oracledb.defaults.config_dir = cfg.oracle_wallet_dir or ""
+oracledb.defaults.fetch_lobs = False
 
-    engine = create_async_engine(
-        cfg.database_url,
-        connect_args={
-            "dsn": cfg.oracle_dsn,
-            **_connect_args,
-        },
-        **_engine_kwargs,
-    )
-    # Sync engine for create_all (Oracle)
-    _sync_url = f"oracle+oracledb://{cfg.oracle_user}:{cfg.oracle_password}@"
-    _sync_connect = {"dsn": cfg.oracle_dsn, **_connect_args}
-    sync_engine = create_engine(_sync_url, connect_args=_sync_connect)
-else:
-    engine = create_async_engine(cfg.database_url, **_engine_kwargs)
-    _sync_url = cfg.database_sync_url or cfg.database_url.replace("+asyncpg", "").replace("+aiosqlite", "")
-    sync_engine = create_engine(_sync_url) if _sync_url else None
+_connect_args = {}
+if cfg.oracle_wallet_dir:
+    _connect_args["config_dir"] = cfg.oracle_wallet_dir
+    _connect_args["wallet_location"] = cfg.oracle_wallet_dir
+    _connect_args["wallet_password"] = cfg.oracle_wallet_password
+
+engine = create_async_engine(
+    cfg.database_url,
+    connect_args={
+        "dsn": cfg.oracle_dsn,
+        **_connect_args,
+    },
+    **_engine_kwargs,
+)
+# Sync engine for schema and seed operations.
+_sync_url = f"oracle+oracledb://{cfg.oracle_user}:{cfg.oracle_password}@"
+_sync_connect = {"dsn": cfg.oracle_dsn, **_connect_args}
+sync_engine = create_engine(_sync_url, connect_args=_sync_connect)
 
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -502,6 +490,22 @@ class AuditLog(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
+class SecurityEvent(Base):
+    __tablename__ = "security_events"
+    id = Column(Integer, Identity(always=False), primary_key=True)
+    attack_type = Column(String(100), nullable=False)
+    severity = Column(String(20), nullable=False, default="medium")
+    endpoint = Column(String(255))
+    source_ip = Column(String(64))
+    payload = Column(Text)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=True)
+    session_id = Column(String(64))
+    trace_id = Column(String(64))
+    details = Column(Text)
+    created_at = Column(DateTime, server_default=func.now())
+    product = relationship("Product")
+
+
 class AssistantSession(Base):
     __tablename__ = "assistant_sessions"
     id = Column(Integer, Identity(always=False), primary_key=True)
@@ -527,11 +531,7 @@ class AssistantMessage(Base):
 # ── Database Initialization ──────────────────────────────────────
 
 def init_tables():
-    """Create all tables if they don't exist (works with both PG and Oracle).
-
-    If tables exist but are empty and missing Identity columns (Oracle),
-    drops and recreates them with proper Identity columns.
-    """
+    """Create all tables and reconcile Oracle identity-column compatibility."""
     if sync_engine is None:
         logger.warning("No sync engine — skipping table creation")
         return
@@ -539,7 +539,7 @@ def init_tables():
         insp = inspect(sync_engine)
         existing_tables = insp.get_table_names()
 
-        if cfg.use_oracle and "users" in existing_tables:
+        if "users" in existing_tables:
             # Check if users table is empty — if so, drop all and recreate
             # (fixes tables created without IDENTITY columns)
             from sqlalchemy.orm import Session
@@ -550,8 +550,7 @@ def init_tables():
                     Base.metadata.drop_all(sync_engine)
 
         Base.metadata.create_all(sync_engine, checkfirst=True)
-        logger.info("Database tables created/verified (backend: %s)",
-                     "oracle" if cfg.use_oracle else "postgresql")
+        logger.info("Database tables created/verified (backend: oracle_atp)")
     except Exception as e:
         logger.error("Failed to create tables: %s", e)
         raise
