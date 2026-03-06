@@ -130,7 +130,7 @@
             <p id="heroCopy">Loading live module details.</p>
             <div class="hero-actions">
                 <a class="btn" href="/shop">Open Storefront</a>
-                <a class="btn btn-outline" href="/login">Sign In</a>
+                <a class="btn btn-outline" href="/login" id="authActionBtn">Sign In</a>
             </div>
         </div>
         <div class="signal-list" id="signalList"></div>
@@ -181,6 +181,34 @@
             <span class="chip" id="detailChip">loading</span>
         </div>
         <div class="detail-grid" id="detailGrid"></div>
+    </section>
+
+    <section class="panel" id="adminControls" style="display: none;">
+        <div class="section-title">
+            <h3>Admin DB Controls</h3>
+        </div>
+        <div class="detail-grid">
+            <form id="createPartnerForm" class="auth-callout" style="display:grid; gap: 10px; align-items: stretch; background: rgba(108, 210, 224, 0.08); border-color: rgba(108, 210, 224, 0.2);">
+                <p><strong>Create Partner (Shop)</strong></p>
+                <input type="text" name="name" placeholder="Partner Name" required style="padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); color: var(--ink); border-radius: 6px;">
+                <input type="text" name="address" placeholder="Address" required style="padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); color: var(--ink); border-radius: 6px;">
+                <input type="email" name="contact_email" placeholder="Contact Email" style="padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); color: var(--ink); border-radius: 6px;">
+                <input type="text" name="contact_phone" placeholder="Contact Phone" style="padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); color: var(--ink); border-radius: 6px;">
+                <button type="submit" class="btn">Create Partner & Trace</button>
+            </form>
+            <form id="createUserForm" class="auth-callout" style="display:grid; gap: 10px; align-items: stretch; background: rgba(108, 210, 224, 0.08); border-color: rgba(108, 210, 224, 0.2);">
+                <p><strong>Create User</strong></p>
+                <input type="text" name="username" placeholder="Username" required style="padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); color: var(--ink); border-radius: 6px;">
+                <input type="email" name="email" placeholder="Email" required style="padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); color: var(--ink); border-radius: 6px;">
+                <input type="password" name="password" placeholder="Password" required style="padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); color: var(--ink); border-radius: 6px;">
+                <select name="role" style="padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); color: var(--ink); border-radius: 6px;">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <button type="submit" class="btn">Create User & Trace</button>
+            </form>
+        </div>
+        <p id="adminStatusMsg" style="margin-top: 10px; color: var(--ok);"></p>
     </section>
 </section>
 {% endblock %}
@@ -700,6 +728,49 @@ async function loadModule() {
     renderMetrics(config.metrics(data));
     renderTable(config.table(data));
     renderDetails(config.details(data));
+    
+    const token = localStorage.getItem('octo-auth-token');
+    const authBtn = document.getElementById('authActionBtn');
+    if (token && authBtn) {
+        authBtn.textContent = 'Sign Out';
+        authBtn.href = '#';
+        authBtn.onclick = (e) => {
+            e.preventDefault();
+            localStorage.removeItem('octo-auth-token');
+            window.location.reload();
+        };
+    }
+
+    if (MODULE === 'admin' && data.primary && data.primary.length) {
+        const controls = document.getElementById('adminControls');
+        if (controls) {
+            controls.style.display = 'block';
+            document.getElementById('createPartnerForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const f = new FormData(e.target);
+                try {
+                    const p = Object.fromEntries(f.entries());
+                    const res = await fetch('/api/admin/partners', { method: 'POST', headers: {'Content-Type': 'application/json', ...authHeaders(true)}, body: JSON.stringify(p)});
+                    const j = await res.json();
+                    document.getElementById('adminStatusMsg').textContent = j.message || ('Error: ' + j.detail);
+                    e.target.reset();
+                    loadModule();
+                } catch(err) { document.getElementById('adminStatusMsg').textContent = err.message; }
+            };
+            document.getElementById('createUserForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const f = new FormData(e.target);
+                try {
+                    const p = Object.fromEntries(f.entries());
+                    const res = await fetch('/api/admin/users', { method: 'POST', headers: {'Content-Type': 'application/json', ...authHeaders(true)}, body: JSON.stringify(p)});
+                    const j = await res.json();
+                    document.getElementById('adminStatusMsg').textContent = j.message || ('Error: ' + j.detail);
+                    e.target.reset();
+                    loadModule();
+                } catch(err) { document.getElementById('adminStatusMsg').textContent = err.message; }
+            };
+        }
+    }
 }
 
 loadModule().catch((error) => {
