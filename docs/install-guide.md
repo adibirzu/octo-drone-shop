@@ -124,6 +124,7 @@ Create the required secrets first:
 - `octo-logging`
 - `octo-genai`
 - `octo-integrations`
+- `octo-auth` with key `token-secret` for stable signed bearer tokens across replicas
 
 Then deploy:
 

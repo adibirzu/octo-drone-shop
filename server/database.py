@@ -23,6 +23,251 @@ logger = logging.getLogger(__name__)
 
 Base = declarative_base()
 
+DRONE_CATALOG_PRODUCTS = [
+    {
+        "name": "Skydio X10",
+        "sku": "DRN-001",
+        "description": "AI-powered autonomous drone with 6 cameras, 35min flight time. Obstacle avoidance in all directions. Made in USA.",
+        "price": 10999.00,
+        "stock": 25,
+        "category": "Complete Drones",
+    },
+    {
+        "name": "Parrot ANAFI Ai",
+        "sku": "DRN-002",
+        "description": "4G-connected robotic drone, 4K HDR camera, 32min flight. NATO-approved platform. Made in France.",
+        "price": 4499.00,
+        "stock": 40,
+        "category": "Complete Drones",
+    },
+    {
+        "name": "Autel EVO II Pro V3",
+        "sku": "DRN-003",
+        "description": "6K camera, 42min flight time, 9km range. 1-inch CMOS sensor. Designed in USA.",
+        "price": 1899.00,
+        "stock": 60,
+        "category": "Complete Drones",
+    },
+    {
+        "name": "Wingtra WingtraOne GEN II",
+        "sku": "DRN-004",
+        "description": "VTOL survey drone, 59min endurance, 42MP sensor. Survey-grade accuracy. Made in Switzerland.",
+        "price": 24900.00,
+        "stock": 8,
+        "category": "Complete Drones",
+    },
+    {
+        "name": "Quantum-Systems Trinity F90+",
+        "sku": "DRN-005",
+        "description": "Fixed-wing VTOL mapping drone, 90min flight, PPK/RTK. Made in Germany.",
+        "price": 28500.00,
+        "stock": 6,
+        "category": "Complete Drones",
+    },
+    {
+        "name": "Flyability ELIOS 3",
+        "sku": "DRN-006",
+        "description": "Caged inspection drone for confined spaces, LiDAR + 4K camera. Made in Switzerland.",
+        "price": 39900.00,
+        "stock": 4,
+        "category": "Complete Drones",
+    },
+    {
+        "name": "Parrot ANAFI USA",
+        "sku": "DRN-007",
+        "description": "Secure drone with 32x zoom, FLIR thermal, no data connection to external servers. Made in France.",
+        "price": 7499.00,
+        "stock": 15,
+        "category": "Complete Drones",
+    },
+    {
+        "name": "Freefly Astro",
+        "sku": "DRN-008",
+        "description": "Modular cinema drone, 8kg payload, interchangeable camera mounts. Made in USA.",
+        "price": 12495.00,
+        "stock": 10,
+        "category": "Complete Drones",
+    },
+    {
+        "name": "Holybro X500 V2 Frame Kit",
+        "sku": "FRM-001",
+        "description": "500mm quadcopter frame, ARF kit with Pixhawk 6C autopilot. Designed in USA.",
+        "price": 299.00,
+        "stock": 120,
+        "category": "Frames",
+    },
+    {
+        "name": "IFlight Chimera7 Pro Frame",
+        "sku": "FRM-002",
+        "description": "7-inch long-range frame, full carbon fiber, HD compatible. Designed in USA.",
+        "price": 89.99,
+        "stock": 200,
+        "category": "Frames",
+    },
+    {
+        "name": "KDE Direct 4215XF-465 Motor",
+        "sku": "MOT-001",
+        "description": "High-performance brushless motor, 465KV, UAS-grade reliability. Made in USA.",
+        "price": 189.99,
+        "stock": 150,
+        "category": "Motors & ESCs",
+    },
+    {
+        "name": "Holybro Tekko32 F4 4-in-1 ESC",
+        "sku": "ESC-001",
+        "description": "4x50A ESC, BLHeli_32, DShot1200. Current sensor built-in.",
+        "price": 69.99,
+        "stock": 180,
+        "category": "Motors & ESCs",
+    },
+    {
+        "name": "Holybro Pixhawk 6X",
+        "sku": "FLC-001",
+        "description": "Open-source autopilot, STM32H7, triple IMU, industrial-grade. FMUv6X standard.",
+        "price": 399.99,
+        "stock": 75,
+        "category": "Flight Controllers",
+    },
+    {
+        "name": "CUAV X7+ Pro",
+        "sku": "FLC-002",
+        "description": "Industrial autopilot, triple redundant IMU, CAN bus, vibration isolation. Designed in USA.",
+        "price": 549.00,
+        "stock": 45,
+        "category": "Flight Controllers",
+    },
+    {
+        "name": "Freefly MoVI Carbon Gimbal",
+        "sku": "GMB-001",
+        "description": "3-axis cinema gimbal, 15lb payload, Freefly MIMIC control. Made in USA.",
+        "price": 5995.00,
+        "stock": 12,
+        "category": "Cameras & Gimbals",
+    },
+    {
+        "name": "Phase One P3 Payload",
+        "sku": "CAM-001",
+        "description": "100MP metric camera for aerial survey, iXM-RS150F lens. Made in Denmark.",
+        "price": 52000.00,
+        "stock": 3,
+        "category": "Cameras & Gimbals",
+    },
+    {
+        "name": "Tattu 6S 10000mAh LiPo",
+        "sku": "BAT-001",
+        "description": "22.2V 25C high-capacity battery, XT60 connector. 6S for heavy-lift platforms.",
+        "price": 179.99,
+        "stock": 250,
+        "category": "Batteries",
+    },
+    {
+        "name": "EcoFlow DELTA Mini",
+        "sku": "BAT-002",
+        "description": "882Wh portable power station for field charging. 1400W output. Designed in USA.",
+        "price": 799.00,
+        "stock": 30,
+        "category": "Batteries",
+    },
+    {
+        "name": "KDE Direct CF 15.5x5.3 Props (pair)",
+        "sku": "PRP-001",
+        "description": "Carbon fiber propellers, precision-balanced, UAS multi-rotor. Made in USA.",
+        "price": 89.99,
+        "stock": 300,
+        "category": "Propellers",
+    },
+    {
+        "name": "Master Airscrew 13x4.5 Silent (set of 4)",
+        "sku": "PRP-002",
+        "description": "Low-noise propellers, optimized blade geometry. Designed in USA.",
+        "price": 29.99,
+        "stock": 500,
+        "category": "Propellers",
+    },
+    {
+        "name": "Orqa FPV.One Pilot Goggles",
+        "sku": "FPV-001",
+        "description": "OLED FPV goggles, 44-degree FOV, micro HDMI input. Made in Croatia (EU).",
+        "price": 549.00,
+        "stock": 50,
+        "category": "FPV Gear",
+    },
+    {
+        "name": "TBS Crossfire Nano TX",
+        "sku": "FPV-002",
+        "description": "Long-range RC link module, 868/915MHz, up to 40km range. Designed in Switzerland.",
+        "price": 69.99,
+        "stock": 100,
+        "category": "FPV Gear",
+    },
+    {
+        "name": "Hoodman Drone Launch Pad (5ft)",
+        "sku": "ACC-001",
+        "description": "Weighted 5-foot landing pad, high-vis orange. Folds to 24in. Made in USA.",
+        "price": 89.99,
+        "stock": 200,
+        "category": "Accessories",
+    },
+    {
+        "name": "Lowepro DroneGuard BP 450 AW",
+        "sku": "ACC-002",
+        "description": "Drone backpack, fits large quads + accessories, all-weather cover. Designed in USA.",
+        "price": 249.99,
+        "stock": 80,
+        "category": "Accessories",
+    },
+]
+
+LEGACY_MUSHOP_SKUS = {
+    "TEE-001",
+    "HOD-001",
+    "SOC-001",
+    "CAP-001",
+    "STK-001",
+    "MUG-001",
+    "MUG-002",
+    "BAG-001",
+    "NTB-001",
+    "PLH-001",
+    "PST-001",
+    "LAN-001",
+}
+
+SEED_PRODUCTS = [*DRONE_CATALOG_PRODUCTS, *ADDITIONAL_PRODUCTS]
+
+SEED_USERS = [
+    {
+        "username": "admin",
+        "email": "admin@ocitest.local",
+        "password_hash": "$2b$12$stDMKhq3T8ZSu.c.JV/AuuhFkvdoLMWTZeY/wzArJl1fzv2thZ7ZW",
+        "role": "admin",
+    },
+    {
+        "username": "shopper",
+        "email": "shopper@ocitest.local",
+        "password_hash": "$2b$12$xHlGrfFw.WcVjkJRR2cFUuP2WgKqA90AcaBPwwm3ccPBNZmE76gx6",
+        "role": "user",
+    },
+    {
+        "username": "manager",
+        "email": "manager@ocitest.local",
+        "password_hash": "$2b$12$xHlGrfFw.WcVjkJRR2cFUuP2WgKqA90AcaBPwwm3ccPBNZmE76gx6",
+        "role": "manager",
+    },
+    {
+        "username": "analyst",
+        "email": "analyst@ocitest.local",
+        "password_hash": "$2b$12$xHlGrfFw.WcVjkJRR2cFUuP2WgKqA90AcaBPwwm3ccPBNZmE76gx6",
+        "role": "analyst",
+    },
+    {
+        "username": "support",
+        "email": "support@ocitest.local",
+        "password_hash": "$2b$12$xHlGrfFw.WcVjkJRR2cFUuP2WgKqA90AcaBPwwm3ccPBNZmE76gx6",
+        "role": "support",
+    },
+]
+
 # ── Engine creation ──────────────────────────────────────────────
 
 _engine_kwargs = {
@@ -312,6 +557,46 @@ def init_tables():
         raise
 
 
+def _reconcile_product_catalog(session) -> None:
+    desired_by_sku = {product["sku"]: product for product in SEED_PRODUCTS}
+    existing_products = {product.sku: product for product in session.query(Product).all()}
+
+    for sku, payload in desired_by_sku.items():
+        existing = existing_products.get(sku)
+        if existing is None:
+            session.add(Product(**payload))
+            continue
+
+        existing.name = payload["name"]
+        existing.description = payload["description"]
+        existing.price = payload["price"]
+        existing.stock = payload["stock"]
+        existing.category = payload["category"]
+        existing.image_url = payload.get("image_url")
+        existing.is_active = 1
+
+    session.query(Product).filter(Product.sku.in_(LEGACY_MUSHOP_SKUS)).update(
+        {Product.is_active: 0},
+        synchronize_session=False,
+    )
+
+
+def _reconcile_seed_users(session) -> None:
+    desired_by_username = {user["username"]: user for user in SEED_USERS}
+    existing_users = {user.username: user for user in session.query(User).all()}
+
+    for username, payload in desired_by_username.items():
+        existing = existing_users.get(username)
+        if existing is None:
+            session.add(User(**payload))
+            continue
+
+        existing.email = payload["email"]
+        existing.password_hash = payload["password_hash"]
+        existing.role = payload["role"]
+        existing.is_active = 1
+
+
 def seed_data():
     """Insert seed data if tables are empty."""
     if sync_engine is None:
@@ -320,96 +605,17 @@ def seed_data():
     try:
         with Session(sync_engine) as session:
             if session.query(User).count() > 0:
-                existing_skus = {row[0] for row in session.query(Product.sku).all()}
-                for product in ADDITIONAL_PRODUCTS:
-                    if product["sku"] not in existing_skus:
-                        session.add(Product(**product))
+                _reconcile_seed_users(session)
+                _reconcile_product_catalog(session)
                 session.commit()
-                logger.info("Database already seeded — ensured storefront extensions")
+                logger.info("Database already seeded — reconciled users and storefront catalog")
                 return
 
             # Users
-            session.add_all([
-                User(username="admin", email="admin@ocitest.local",
-                     password_hash="$2b$12$LJ3X5wKv7IfAzGMkVbHDneFQ3KQJXhHjqW/Tq3hXqp6NpXq8vU5Lm",
-                     role="admin"),
-                User(username="shopper", email="shopper@ocitest.local",
-                     password_hash="$2b$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
-                     role="user"),
-                User(username="manager", email="manager@ocitest.local",
-                     password_hash="$2b$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
-                     role="manager"),
-                User(username="analyst", email="analyst@ocitest.local",
-                     password_hash="$2b$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
-                     role="analyst"),
-                User(username="support", email="support@ocitest.local",
-                     password_hash="$2b$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
-                     role="support"),
-            ])
+            session.add_all(User(**user) for user in SEED_USERS)
             session.flush()
 
-            # Products — Drone Shop (24 items, EU/US manufacturers only)
-            products = [
-                # Complete Drones
-                Product(name="Skydio X10", sku="DRN-001", description="AI-powered autonomous drone with 6 cameras, 35min flight time. Obstacle avoidance in all directions. Made in USA.",
-                        price=10999.00, stock=25, category="Complete Drones"),
-                Product(name="Parrot ANAFI Ai", sku="DRN-002", description="4G-connected robotic drone, 4K HDR camera, 32min flight. NATO-approved platform. Made in France.",
-                        price=4499.00, stock=40, category="Complete Drones"),
-                Product(name="Autel EVO II Pro V3", sku="DRN-003", description="6K camera, 42min flight time, 9km range. 1-inch CMOS sensor. Designed in USA.",
-                        price=1899.00, stock=60, category="Complete Drones"),
-                Product(name="Wingtra WingtraOne GEN II", sku="DRN-004", description="VTOL survey drone, 59min endurance, 42MP sensor. Survey-grade accuracy. Made in Switzerland.",
-                        price=24900.00, stock=8, category="Complete Drones"),
-                Product(name="Quantum-Systems Trinity F90+", sku="DRN-005", description="Fixed-wing VTOL mapping drone, 90min flight, PPK/RTK. Made in Germany.",
-                        price=28500.00, stock=6, category="Complete Drones"),
-                Product(name="Flyability ELIOS 3", sku="DRN-006", description="Caged inspection drone for confined spaces, LiDAR + 4K camera. Made in Switzerland.",
-                        price=39900.00, stock=4, category="Complete Drones"),
-                Product(name="Parrot ANAFI USA", sku="DRN-007", description="Secure drone with 32x zoom, FLIR thermal, no data connection to external servers. Made in France.",
-                        price=7499.00, stock=15, category="Complete Drones"),
-                Product(name="Freefly Astro", sku="DRN-008", description="Modular cinema drone, 8kg payload, interchangeable camera mounts. Made in USA.",
-                        price=12495.00, stock=10, category="Complete Drones"),
-                # Frames & Components
-                Product(name="Holybro X500 V2 Frame Kit", sku="FRM-001", description="500mm quadcopter frame, ARF kit with Pixhawk 6C autopilot. Designed in USA.",
-                        price=299.00, stock=120, category="Frames"),
-                Product(name="IFlight Chimera7 Pro Frame", sku="FRM-002", description="7-inch long-range frame, full carbon fiber, HD compatible. Designed in USA.",
-                        price=89.99, stock=200, category="Frames"),
-                # Motors & ESCs
-                Product(name="KDE Direct 4215XF-465 Motor", sku="MOT-001", description="High-performance brushless motor, 465KV, UAS-grade reliability. Made in USA.",
-                        price=189.99, stock=150, category="Motors & ESCs"),
-                Product(name="Holybro Tekko32 F4 4-in-1 ESC", sku="ESC-001", description="4x50A ESC, BLHeli_32, DShot1200. Current sensor built-in.",
-                        price=69.99, stock=180, category="Motors & ESCs"),
-                # Flight Controllers
-                Product(name="Holybro Pixhawk 6X", sku="FLC-001", description="Open-source autopilot, STM32H7, triple IMU, industrial-grade. FMUv6X standard.",
-                        price=399.99, stock=75, category="Flight Controllers"),
-                Product(name="CUAV X7+ Pro", sku="FLC-002", description="Industrial autopilot, triple redundant IMU, CAN bus, vibration isolation. Designed in USA.",
-                        price=549.00, stock=45, category="Flight Controllers"),
-                # Cameras & Gimbals
-                Product(name="Freefly MoVI Carbon Gimbal", sku="GMB-001", description="3-axis cinema gimbal, 15lb payload, Freefly MIMIC control. Made in USA.",
-                        price=5995.00, stock=12, category="Cameras & Gimbals"),
-                Product(name="Phase One P3 Payload", sku="CAM-001", description="100MP metric camera for aerial survey, iXM-RS150F lens. Made in Denmark.",
-                        price=52000.00, stock=3, category="Cameras & Gimbals"),
-                # Batteries & Power
-                Product(name="Tattu 6S 10000mAh LiPo", sku="BAT-001", description="22.2V 25C high-capacity battery, XT60 connector. 6S for heavy-lift platforms.",
-                        price=179.99, stock=250, category="Batteries"),
-                Product(name="EcoFlow DELTA Mini", sku="BAT-002", description="882Wh portable power station for field charging. 1400W output. Designed in USA.",
-                        price=799.00, stock=30, category="Batteries"),
-                # Propellers
-                Product(name="KDE Direct CF 15.5x5.3 Props (pair)", sku="PRP-001", description="Carbon fiber propellers, precision-balanced, UAS multi-rotor. Made in USA.",
-                        price=89.99, stock=300, category="Propellers"),
-                Product(name="Master Airscrew 13x4.5 Silent (set of 4)", sku="PRP-002", description="Low-noise propellers, optimized blade geometry. Designed in USA.",
-                        price=29.99, stock=500, category="Propellers"),
-                # FPV Gear
-                Product(name="Orqa FPV.One Pilot Goggles", sku="FPV-001", description="OLED FPV goggles, 44-degree FOV, micro HDMI input. Made in Croatia (EU).",
-                        price=549.00, stock=50, category="FPV Gear"),
-                Product(name="TBS Crossfire Nano TX", sku="FPV-002", description="Long-range RC link module, 868/915MHz, up to 40km range. Designed in Switzerland.",
-                        price=69.99, stock=100, category="FPV Gear"),
-                # Accessories
-                Product(name="Hoodman Drone Launch Pad (5ft)", sku="ACC-001", description="Weighted 5-foot landing pad, high-vis orange. Folds to 24in. Made in USA.",
-                        price=89.99, stock=200, category="Accessories"),
-                Product(name="Lowepro DroneGuard BP 450 AW", sku="ACC-002", description="Drone backpack, fits large quads + accessories, all-weather cover. Designed in USA.",
-                        price=249.99, stock=80, category="Accessories"),
-            ]
-            session.add_all(products)
-            session.add_all(Product(**product) for product in ADDITIONAL_PRODUCTS)
+            session.add_all(Product(**product) for product in SEED_PRODUCTS)
             session.flush()
 
             # Customers (8) — drone industry buyers

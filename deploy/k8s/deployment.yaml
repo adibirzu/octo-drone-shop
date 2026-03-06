@@ -27,6 +27,12 @@ spec:
               value: "oke"
             - name: ENVIRONMENT
               value: "production"
+            - name: AUTH_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: octo-auth
+                  key: token-secret
+                  optional: true
             - name: OCI_AUTH_MODE
               value: "resource_principal"
             - name: ORACLE_DSN

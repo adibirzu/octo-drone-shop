@@ -14,6 +14,7 @@ class Config:
     oci_auth_mode = os.getenv("OCI_AUTH_MODE", "auto")
     port = int(os.getenv("PORT", "8080"))
     environment = os.getenv("ENVIRONMENT", "development")
+    auth_token_secret = os.getenv("AUTH_TOKEN_SECRET", "")
 
     # ── Database ──
     # Oracle ATP (production)

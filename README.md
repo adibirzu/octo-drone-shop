@@ -30,6 +30,7 @@ ATP-backed drone commerce demo for OCI monitored-app scenarios.
 - APM: `OCI_APM_ENDPOINT`, `OCI_APM_PRIVATE_DATAKEY`, `OCI_APM_PUBLIC_DATAKEY`, `OCI_APM_RUM_ENDPOINT`, `OCI_APM_WEB_APPLICATION`
 - GenAI: `OCI_COMPARTMENT_ID`, `OCI_GENAI_ENDPOINT`, `OCI_GENAI_MODEL_ID`
 - Logging: `OCI_LOG_ID`, optional `SPLUNK_HEC_URL`, `SPLUNK_HEC_TOKEN`
+- Auth: optional `AUTH_TOKEN_SECRET` for signed bearer tokens in multi-instance deployments
 
 ## Install paths
 

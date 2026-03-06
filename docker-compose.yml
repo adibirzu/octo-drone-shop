@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   app:
     build: .
@@ -18,14 +16,11 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_DB: octocrm
       POSTGRES_USER: octocrm
       POSTGRES_PASSWORD: octocrm
     volumes:
-      - ./server/db_init.sql:/docker-entrypoint-initdb.d/01_init.sql
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U octocrm -d octocrm"]
