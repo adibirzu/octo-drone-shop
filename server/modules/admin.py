@@ -88,3 +88,17 @@ async def trigger_seed():
         return {"status": "seeded"}
     except Exception as e:
         return {"status": "error", "error": str(e), "traceback": traceback.format_exc()}
+
+
+@router.post("/reseed")
+async def trigger_reseed():
+    """Drop all data and re-seed from scratch."""
+    import traceback
+    from server.database import Base, sync_engine, seed_data
+    try:
+        Base.metadata.drop_all(sync_engine)
+        Base.metadata.create_all(sync_engine)
+        seed_data()
+        return {"status": "reseeded"}
+    except Exception as e:
+        return {"status": "error", "error": str(e), "traceback": traceback.format_exc()}
