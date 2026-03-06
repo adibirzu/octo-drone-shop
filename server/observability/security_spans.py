@@ -1,6 +1,7 @@
 """Security span helpers — MITRE ATT&CK + OWASP classification for MuShop."""
 
 from server.observability.otel_setup import get_tracer
+from server.observability.logging_sdk import log_security_event
 
 MITRE_MAP = {
     "sqli":           ("T1190", "Exploit Public-Facing Application", "Initial Access"),
@@ -63,4 +64,17 @@ def security_span(vuln_type: str, *, severity: str = "medium",
         "owasp.name": owasp[1],
     })
     span.end()
+
+    # Push correlated log for OCI Log Analytics (oracleApmTraceId linkage)
+    log_security_event(
+        vuln_type=vuln_type,
+        severity=severity,
+        message=f"ATTACK:{vuln_type.upper()} detected on {endpoint}",
+        source_ip=source_ip,
+        payload=payload,
+        endpoint=endpoint,
+        mitre_technique_id=mitre[0],
+        mitre_tactic=mitre[2],
+        owasp_category=owasp[0],
+    )
     return span

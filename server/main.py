@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 # ── Pre-initialize OTel ────────────────────────────────────────
 init_otel(
-    service_name=f"{cfg.app_name}-{cfg.app_runtime}",
+    service_name=f"{cfg.otel_service_name}-{cfg.app_runtime}",
     service_version="1.0.0",
     apm_endpoint=cfg.oci_apm_endpoint,
     apm_private_key=cfg.oci_apm_private_datakey,

@@ -10,6 +10,8 @@ import os
 class Config:
     app_name = os.getenv("APP_NAME", "mushop-cloudnative")
     app_runtime = os.getenv("APP_RUNTIME", "docker")  # docker, oke, vm
+    otel_service_name = os.getenv("OTEL_SERVICE_NAME", "mushop-cloudnative")
+    oci_auth_mode = os.getenv("OCI_AUTH_MODE", "auto")
     port = int(os.getenv("PORT", "8080"))
     environment = os.getenv("ENVIRONMENT", "development")
 

@@ -1,4 +1,8 @@
-"""OpenTelemetry initialization for MuShop Cloud Native Portal."""
+"""OpenTelemetry initialization for MuShop Cloud Native Portal.
+
+Uses OCI APM OTLP endpoint. Service name is configurable via OTEL_SERVICE_NAME
+to ensure unique trace identification across APM domains.
+"""
 
 import logging
 from opentelemetry import trace
@@ -33,7 +37,7 @@ def init_otel(service_name: str = "mushop-cloudnative",
             headers={"Authorization": f"dataKey {apm_private_key}"},
         )
         _tracer_provider.add_span_processor(BatchSpanProcessor(exporter))
-        logger.info("OTel OTLP exporter → OCI APM (%s)", service_name)
+        logger.info("OTel OTLP exporter -> OCI APM (%s)", service_name)
     else:
         _tracer_provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
         logger.info("OTel console exporter (no APM): %s", service_name)
@@ -47,6 +51,13 @@ def init_otel(service_name: str = "mushop-cloudnative",
             SQLAlchemyInstrumentor().instrument(engine=sync_engine)
         except Exception:
             pass
+
+    # Inject trace context into Python logging (for log correlation)
+    try:
+        from opentelemetry.instrumentation.logging import LoggingInstrumentor
+        LoggingInstrumentor().instrument(set_logging_format=True)
+    except Exception:
+        pass
 
 
 def get_tracer(name: str = "mushop") -> trace.Tracer:
