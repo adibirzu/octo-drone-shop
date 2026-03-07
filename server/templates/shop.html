@@ -13,6 +13,23 @@
         overflow: hidden;
         position: relative;
     }
+    .hero-proof {
+        display: grid;
+        gap: 18px;
+        align-content: start;
+    }
+    .hero-proof-card {
+        padding: 18px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,0.03);
+    }
+    .hero-proof-card ul {
+        margin-top: 10px;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.7;
+    }
     .hero-card::after {
         content: "";
         position: absolute;
@@ -106,6 +123,12 @@
         gap: 12px;
         margin-bottom: 14px;
     }
+    .catalog-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
     .catalog-header .muted strong {
         color: var(--ink);
     }
@@ -158,6 +181,35 @@
     }
     .price-row strong {
         font-size: 1.4rem;
+    }
+    .mini-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 10px;
+    }
+    .mini-stat {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,0.02);
+    }
+    .mini-stat strong {
+        display: block;
+        font-size: 1.15rem;
+        margin-top: 6px;
+    }
+    .trust-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .order-note {
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px dashed rgba(108, 210, 224, 0.35);
+        background: rgba(108, 210, 224, 0.08);
     }
     .checkout-form,
     .assistant-form {
@@ -261,6 +313,23 @@
             <div class="hero-actions">
                 <a class="btn" href="#catalog">Browse Inventory</a>
             </div>
+            <div class="trust-strip">
+                <span class="chip">ATP-backed catalog</span>
+                <span class="chip">CRM-aware checkout</span>
+                <span class="chip">Service and dealer network</span>
+            </div>
+        </div>
+        <div class="hero-proof">
+            <div class="hero-proof-card">
+                <div class="eyebrow">Operational confidence</div>
+                <h3>Enterprise-ready storefront</h3>
+                <ul>
+                    <li>Mission platforms, payloads, field power, and support services.</li>
+                    <li>Checkout persists orders, shipments, audit trail, and CRM sync metadata.</li>
+                    <li>Grounded assistant helps compare endurance, payload, and inspection fit.</li>
+                </ul>
+            </div>
+            <div class="hero-proof-card mini-stat-grid" id="miniStatGrid"></div>
         </div>
     </section>
 
@@ -295,6 +364,10 @@
         <section class="panel" id="catalog">
             <div class="catalog-header">
                 <div class="muted">Showing <strong id="visibleCount">0</strong> products</div>
+                <div class="catalog-toolbar">
+                    <span class="chip" id="backendChip">ATP status</span>
+                    <span class="chip" id="crmChip">CRM sync</span>
+                </div>
             </div>
             <div class="product-grid" id="productGrid"></div>
         </section>
@@ -312,6 +385,7 @@
                     <span class="muted">Current total</span>
                     <strong id="cartTotal">$0.00</strong>
                 </div>
+                <div class="order-note helper">Orders are correlated with ATP persistence, logistics records, and Enterprise CRM synchronization without exposing backend endpoints in the UI.</div>
                 <form class="checkout-form" id="checkoutForm">
                     <input name="customer_name" placeholder="Contact name" required>
                     <input name="customer_email" type="email" placeholder="Contact email" required>
@@ -405,6 +479,31 @@ function renderCategories(categories) {
         categories.map(category => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join('');
 }
 
+function renderStoreStats(stats = {}) {
+    const items = [
+        { label: 'Products', value: String(stats.product_count || 0) },
+        { label: 'Inventory Units', value: String(stats.inventory_units || 0) },
+        { label: 'Orders', value: String(stats.order_count || 0) },
+        { label: 'Revenue', value: money(stats.revenue || 0) },
+    ];
+    document.getElementById('miniStatGrid').innerHTML = items.map(item => `
+        <div class="mini-stat">
+            <span class="helper">${escapeHtml(item.label)}</span>
+            <strong>${escapeHtml(item.value)}</strong>
+        </div>
+    `).join('');
+}
+
+function renderIntegrationStatus() {
+    const backendChip = document.getElementById('backendChip');
+    const crmChip = document.getElementById('crmChip');
+    backendChip.textContent = state.backend.apm_configured ? 'ATP + APM active' : 'ATP active';
+    const crmLabel = state.crmSync.synced
+        ? `CRM synced${state.crmSync.customers_seen ? ` • ${state.crmSync.customers_seen} seen` : ''}`
+        : (state.crmSync.configured ? 'CRM reachable' : 'CRM optional');
+    crmChip.textContent = crmLabel;
+}
+
 function renderProducts() {
     const grid = document.getElementById('productGrid');
     if (!state.filtered.length) {
@@ -468,7 +567,11 @@ async function loadStorefront() {
     }
     const payload = await response.json();
     state.products = payload.products || [];
+    state.backend = payload.backend || {};
+    state.crmSync = payload.crm_sync || {};
     renderCategories(payload.categories || []);
+    renderStoreStats(payload.stats || {});
+    renderIntegrationStatus();
     applyFilters();
 }
 

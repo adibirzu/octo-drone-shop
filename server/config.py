@@ -49,6 +49,16 @@ class Config:
     splunk_hec_token = os.getenv("SPLUNK_HEC_TOKEN", "")
 
     @property
+    def is_production(self) -> bool:
+        return self.environment.lower() == "production"
+
+    @property
+    def crm_hostname(self) -> str:
+        if not self.enterprise_crm_url:
+            return ""
+        return self.enterprise_crm_url.split("://", 1)[-1].split("/", 1)[0]
+
+    @property
     def apm_configured(self) -> bool:
         return bool(self.oci_apm_endpoint and self.oci_apm_private_datakey)
 
@@ -64,6 +74,25 @@ class Config:
     def database_url(self) -> str:
         """Return async Oracle ATP database URL for SQLAlchemy."""
         return f"oracle+oracledb_async://{self.oracle_user}:{self.oracle_password}@"
+
+    def masked_database_url(self) -> str:
+        return f"oracle+oracledb_async://{self.oracle_user}:***@"
+
+    def safe_runtime_summary(self) -> dict:
+        return {
+            "app_name": self.app_name,
+            "environment": self.environment,
+            "app_runtime": self.app_runtime,
+            "database_backend": "oracle_atp",
+            "database_configured": bool(self.oracle_dsn and self.oracle_password),
+            "apm_configured": self.apm_configured,
+            "rum_configured": self.rum_configured,
+            "logging_configured": self.logging_configured,
+            "splunk_configured": bool(self.splunk_hec_url and self.splunk_hec_token),
+            "genai_configured": bool(self.oci_compartment_id and self.oci_genai_endpoint and self.oci_genai_model_id),
+            "crm_configured": bool(self.enterprise_crm_url),
+            "crm_host": self.crm_hostname or None,
+        }
 
     def validate(self) -> None:
         missing = []

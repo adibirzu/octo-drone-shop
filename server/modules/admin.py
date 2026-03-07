@@ -64,19 +64,7 @@ async def get_config(request: Request):
     with tracer.start_as_current_span("admin.get_config") as span:
         span.set_attribute("admin.requested_by", admin_user["username"])
         span.set_attribute("admin.config_requested", True)
-
-        return {
-            "app_name": cfg.app_name,
-            "environment": cfg.environment,
-            "app_runtime": cfg.app_runtime,
-            "database_backend": "oracle_atp",
-            "apm_configured": cfg.apm_configured,
-            "rum_configured": cfg.rum_configured,
-            "logging_configured": cfg.logging_configured,
-            "splunk_configured": bool(cfg.splunk_hec_url and cfg.splunk_hec_token),
-            "genai_configured": bool(cfg.oci_compartment_id and cfg.oci_genai_endpoint and cfg.oci_genai_model_id),
-            "crm_configured": bool(cfg.enterprise_crm_url),
-        }
+        return cfg.safe_runtime_summary()
 
 
 def _guard_mutation(request: Request) -> dict:

@@ -1,6 +1,7 @@
 """Database engine, session, models, and initialization for ATP-only runtime."""
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from sqlalchemy import Column, Integer, String, Float, Text, DateTime, ForeignKey, Identity, create_engine, text, inspect
@@ -14,6 +15,18 @@ from server.storefront import ADDITIONAL_PRODUCTS
 logger = logging.getLogger(__name__)
 
 Base = declarative_base()
+
+SEED_USER_EMAIL_DOMAIN = os.getenv("SEED_USER_EMAIL_DOMAIN", "example.invalid")
+SEED_PAGEVIEW_IP_PREFIX = os.getenv("SEED_PAGEVIEW_IP_PREFIX", "198.18.0.")
+
+
+def _seed_email(username: str) -> str:
+    return f"{username}@{SEED_USER_EMAIL_DOMAIN}"
+
+
+def _seed_ip(octet: int) -> str:
+    safe_octet = max(1, min(int(octet), 254))
+    return f"{SEED_PAGEVIEW_IP_PREFIX}{safe_octet}"
 
 DRONE_CATALOG_PRODUCTS = [
     {
@@ -265,31 +278,31 @@ SEED_SERVICES = [
 SEED_USERS = [
     {
         "username": "admin",
-        "email": "admin@ocitest.local",
+        "email": _seed_email("admin"),
         "password_hash": "$2b$12$stDMKhq3T8ZSu.c.JV/AuuhFkvdoLMWTZeY/wzArJl1fzv2thZ7ZW",
         "role": "admin",
     },
     {
         "username": "shopper",
-        "email": "shopper@ocitest.local",
+        "email": _seed_email("shopper"),
         "password_hash": "$2b$12$xHlGrfFw.WcVjkJRR2cFUuP2WgKqA90AcaBPwwm3ccPBNZmE76gx6",
         "role": "user",
     },
     {
         "username": "manager",
-        "email": "manager@ocitest.local",
+        "email": _seed_email("manager"),
         "password_hash": "$2b$12$xHlGrfFw.WcVjkJRR2cFUuP2WgKqA90AcaBPwwm3ccPBNZmE76gx6",
         "role": "manager",
     },
     {
         "username": "analyst",
-        "email": "analyst@ocitest.local",
+        "email": _seed_email("analyst"),
         "password_hash": "$2b$12$xHlGrfFw.WcVjkJRR2cFUuP2WgKqA90AcaBPwwm3ccPBNZmE76gx6",
         "role": "analyst",
     },
     {
         "username": "support",
-        "email": "support@ocitest.local",
+        "email": _seed_email("support"),
         "password_hash": "$2b$12$xHlGrfFw.WcVjkJRR2cFUuP2WgKqA90AcaBPwwm3ccPBNZmE76gx6",
         "role": "support",
     },
@@ -304,7 +317,13 @@ _engine_kwargs = {
     "pool_pre_ping": True,
 }
 
-import oracledb
+try:
+    import oracledb
+except ModuleNotFoundError as exc:
+    raise RuntimeError(
+        "The 'oracledb' package is required to run OCTO Drone Shop. "
+        "Install prerequisites with 'python -m pip install -r requirements.txt' before starting the app."
+    ) from exc
 
 # Use thin mode (pure-Python, no Oracle Instant Client needed)
 oracledb.defaults.config_dir = cfg.oracle_wallet_dir or ""
@@ -862,28 +881,28 @@ def seed_data():
 
             # Page Views (15)
             session.add_all([
-                PageView(page="/shop", visitor_ip="10.0.1.1", visitor_region="eu-central-1", load_time_ms=95, session_id="sess-001"),
-                PageView(page="/catalogue", visitor_ip="10.0.1.1", visitor_region="eu-central-1", load_time_ms=110, session_id="sess-001"),
-                PageView(page="/shop", visitor_ip="10.0.2.1", visitor_region="us-east-1", load_time_ms=180, session_id="sess-002"),
-                PageView(page="/shop", visitor_ip="10.0.3.1", visitor_region="ap-northeast-1", load_time_ms=420, session_id="sess-003"),
-                PageView(page="/orders", visitor_ip="10.0.3.1", visitor_region="ap-northeast-1", load_time_ms=380, session_id="sess-003"),
-                PageView(page="/shop", visitor_ip="10.0.4.1", visitor_region="us-west-2", load_time_ms=200, session_id="sess-004"),
-                PageView(page="/analytics", visitor_ip="10.0.5.1", visitor_region="ap-southeast-1", load_time_ms=510, session_id="sess-005"),
-                PageView(page="/shop", visitor_ip="10.0.6.1", visitor_region="sa-east-1", load_time_ms=650, session_id="sess-006"),
-                PageView(page="/catalogue", visitor_ip="10.0.7.1", visitor_region="af-south-1", load_time_ms=870, session_id="sess-007"),
-                PageView(page="/shop", visitor_ip="10.0.1.2", visitor_region="eu-central-1", load_time_ms=88, session_id="sess-008"),
-                PageView(page="/admin-page", visitor_ip="10.0.8.1", visitor_region="me-south-1", load_time_ms=350, session_id="sess-009"),
-                PageView(page="/login", visitor_ip="10.0.9.1", visitor_region="us-east-1", load_time_ms=95, session_id="sess-010"),
-                PageView(page="/shop", visitor_ip="10.0.10.1", visitor_region="eu-west-1", load_time_ms=130, session_id="sess-011"),
-                PageView(page="/catalogue", visitor_ip="10.0.11.1", visitor_region="us-west-2", load_time_ms=160, session_id="sess-012"),
-                PageView(page="/orders", visitor_ip="10.0.12.1", visitor_region="ap-southeast-2", load_time_ms=440, session_id="sess-013"),
+                PageView(page="/shop", visitor_ip=_seed_ip(11), visitor_region="eu-central-1", load_time_ms=95, session_id="sess-001"),
+                PageView(page="/catalogue", visitor_ip=_seed_ip(11), visitor_region="eu-central-1", load_time_ms=110, session_id="sess-001"),
+                PageView(page="/shop", visitor_ip=_seed_ip(21), visitor_region="us-east-1", load_time_ms=180, session_id="sess-002"),
+                PageView(page="/shop", visitor_ip=_seed_ip(31), visitor_region="ap-northeast-1", load_time_ms=420, session_id="sess-003"),
+                PageView(page="/orders", visitor_ip=_seed_ip(31), visitor_region="ap-northeast-1", load_time_ms=380, session_id="sess-003"),
+                PageView(page="/shop", visitor_ip=_seed_ip(41), visitor_region="us-west-2", load_time_ms=200, session_id="sess-004"),
+                PageView(page="/analytics", visitor_ip=_seed_ip(51), visitor_region="ap-southeast-1", load_time_ms=510, session_id="sess-005"),
+                PageView(page="/shop", visitor_ip=_seed_ip(61), visitor_region="sa-east-1", load_time_ms=650, session_id="sess-006"),
+                PageView(page="/catalogue", visitor_ip=_seed_ip(71), visitor_region="af-south-1", load_time_ms=870, session_id="sess-007"),
+                PageView(page="/shop", visitor_ip=_seed_ip(12), visitor_region="eu-central-1", load_time_ms=88, session_id="sess-008"),
+                PageView(page="/admin-page", visitor_ip=_seed_ip(81), visitor_region="me-south-1", load_time_ms=350, session_id="sess-009"),
+                PageView(page="/login", visitor_ip=_seed_ip(91), visitor_region="us-east-1", load_time_ms=95, session_id="sess-010"),
+                PageView(page="/shop", visitor_ip=_seed_ip(101), visitor_region="eu-west-1", load_time_ms=130, session_id="sess-011"),
+                PageView(page="/catalogue", visitor_ip=_seed_ip(111), visitor_region="us-west-2", load_time_ms=160, session_id="sess-012"),
+                PageView(page="/orders", visitor_ip=_seed_ip(121), visitor_region="ap-southeast-2", load_time_ms=440, session_id="sess-013"),
             ])
 
             # Audit Logs (5)
             session.add_all([
-                AuditLog(user_id=1, action="login", resource="auth", details="Admin login from 10.0.1.1"),
+                AuditLog(user_id=1, action="login", resource="auth", details="Admin login from seeded network sample"),
                 AuditLog(user_id=2, action="view_products", resource="catalogue", details="Viewed product list"),
-                AuditLog(user_id=1, action="export_config", resource="admin", details="Exported app config"),
+                AuditLog(user_id=1, action="view_config_summary", resource="admin", details="Viewed sanitized app config summary"),
                 AuditLog(user_id=3, action="create_order", resource="orders", details="Order #1 created"),
                 AuditLog(user_id=1, action="view_audit_logs", resource="admin", details="Viewed audit trail"),
             ])
