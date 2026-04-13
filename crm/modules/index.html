@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -1270,6 +1270,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#operator-workspaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operator Workspaces
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#middleware-stack" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1285,6 +1296,17 @@
     <span class="md-ellipsis">
       
         Authentication
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-catalog-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Catalog Flow
       
     </span>
   </a>
@@ -2529,6 +2551,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#operator-workspaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operator Workspaces
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#middleware-stack" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2544,6 +2577,17 @@
     <span class="md-ellipsis">
       
         Authentication
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-catalog-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Catalog Flow
       
     </span>
   </a>
@@ -2571,7 +2615,7 @@
 
 
 <h1 id="crm-modules">CRM Modules<a class="headerlink" href="#crm-modules" title="Permanent link">&para;</a></h1>
-<p>12 FastAPI router modules with 73 endpoints covering full CRM functionality.</p>
+<p>The CRM portal now acts as the <strong>operations control plane</strong> for the OCTO platform: customers, orders, invoices, support workflows, storefront metadata, and catalog inventory are managed here rather than on the public shop frontend.</p>
 <h2 id="module-map">Module Map<a class="headerlink" href="#module-map" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2604,8 +2648,14 @@
 <tr>
 <td><code>products</code></td>
 <td><code>/api/products</code></td>
-<td>3</td>
-<td>Product catalog management</td>
+<td>4</td>
+<td>Product catalog management, create/update/delete, shop sync</td>
+</tr>
+<tr>
+<td><code>shops</code></td>
+<td><code>/api/shops</code></td>
+<td>4</td>
+<td>Storefront metadata, CRM/public URL linkage, shop lifecycle management</td>
 </tr>
 <tr>
 <td><code>invoices</code></td>
@@ -2675,6 +2725,29 @@
 </tr>
 </tbody>
 </table>
+<h2 id="operator-workspaces">Operator Workspaces<a class="headerlink" href="#operator-workspaces" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Workspace</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Products</code></td>
+<td>Direct product editing for stock, pricing, description, image, category, and shop assignment</td>
+</tr>
+<tr>
+<td><code>Storefront</code></td>
+<td>Shop management plus CRM-controlled product publication and full-shop sync to the storefront</td>
+</tr>
+<tr>
+<td><code>Customers</code> / <code>Orders</code> / <code>Invoices</code></td>
+<td>Operational data editing and support workflows on the shared ATP dataset</td>
+</tr>
+</tbody>
+</table>
 <h2 id="middleware-stack">Middleware Stack<a class="headerlink" href="#middleware-stack" title="Permanent link">&para;</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1">CORSMiddleware (outermost)
 </span><span id="__span-0-2">  → GeoLatencyMiddleware (region-based latency)
@@ -2711,6 +2784,14 @@
 </tbody>
 </table>
 <p>ATP-backed sessions enable session sharing across OKE replicas without sticky sessions.</p>
+<h2 id="current-catalog-flow">Current Catalog Flow<a class="headerlink" href="#current-catalog-flow" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Operator signs into CRM.</li>
+<li>Operator edits or creates products from <code>Products</code> or <code>Storefront</code>.</li>
+<li>CRM writes changes to Oracle ATP.</li>
+<li>CRM publishes catalog changes to the shop sync integration.</li>
+<li>Shop renders the updated catalog as a customer-facing storefront.</li>
+</ol>
 
 
 

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -2460,6 +2460,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#current-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Boundary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#sections" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2495,12 +2506,13 @@
 <p><strong>ATP-backed drone commerce platform</strong> with 98 API routes across 13 modules, full MELTS observability (Metrics, Events, Logs, Traces, SQL), IDCS SSO, and cross-service CRM integration.</p>
 <h2 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>E-commerce</strong> — Product catalog (56 drones + accessories), shopping cart, checkout with shipment tracking</li>
+<li><strong>E-commerce</strong> — Customer-facing product catalog, shopping cart, checkout with shipment tracking</li>
 <li><strong>AI Assistant</strong> — OCI GenAI-powered drone advisor with ATP conversation history</li>
 <li><strong>Workflow Gateway</strong> — Go service for Select AI queries, query lab, scheduled ATP sweeps</li>
 <li><strong>RUM</strong> — Custom browser events: add-to-cart, checkout funnel, search, page load</li>
 <li><strong>Security</strong> — 19 MITRE ATT&amp;CK security span types, WAF protection rules, Cloud Guard, Vault</li>
 <li><strong>Resilience</strong> — Circuit breakers on CRM calls, chaos engineering controls, 5 OCI alarms</li>
+<li><strong>CRM-Controlled Catalog</strong> — Shop consumes products and storefront metadata managed from the CRM control plane</li>
 </ul>
 <h2 id="live-instance">Live Instance<a class="headerlink" href="#live-instance" title="Permanent link">&para;</a></h2>
 <table>
@@ -2512,15 +2524,21 @@
 </thead>
 <tbody>
 <tr>
-<td><a href="https://shop.example.cloud">shop.example.cloud</a></td>
+<td><a href="https://shop.octodemo.cloud">shop.octodemo.cloud</a></td>
 <td>Production (OKE)</td>
 </tr>
 <tr>
-<td><a href="https://shop.example.cloud/api/observability/360">shop.example.cloud/api/observability/360</a></td>
+<td><a href="https://shop.octodemo.cloud/api/observability/360">shop.octodemo.cloud/api/observability/360</a></td>
 <td>360 Dashboard</td>
 </tr>
 </tbody>
 </table>
+<h2 id="current-boundary">Current Boundary<a class="headerlink" href="#current-boundary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The shop is intentionally <strong>not</strong> the place for catalog or storefront administration.</li>
+<li>Operators manage products, stock, and shop metadata in the CRM.</li>
+<li>The shop renders the synchronized catalog as a customer-facing read model and remains focused on browse, cart, checkout, and shipping flows.</li>
+</ul>
 <h2 id="sections">Sections<a class="headerlink" href="#sections" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="modules/">Modules</a> — All 13 modules and their endpoints</li>

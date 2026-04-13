@@ -10,7 +10,7 @@
 <link href="../" rel="prev"/>
 <link href="../system-design/" rel="next"/>
 <link href="../../assets/favicon.ico" rel="icon"/>
-<meta content="mkdocs-1.6.1, mkdocs-material-9.7.6" name="generator"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.7.1" name="generator"/>
 <title>Platform Overview - OCTO Cloud-Native Platform</title>
 <link href="../../assets/stylesheets/main.484c7ddc.min.css" rel="stylesheet"/>
 <link href="../../assets/stylesheets/palette.ab4e12ef.min.css" rel="stylesheet"/>
@@ -428,6 +428,15 @@
 <span class="md-ellipsis">
       
         Shared Infrastructure
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#ownership-boundaries">
+<span class="md-ellipsis">
+      
+        Ownership Boundaries
       
     </span>
 </a>
@@ -1119,6 +1128,15 @@
 </a>
 </li>
 <li class="md-nav__item">
+<a class="md-nav__link" href="#ownership-boundaries">
+<span class="md-ellipsis">
+      
+        Ownership Boundaries
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
 <a class="md-nav__link" href="#design-principles">
 <span class="md-ellipsis">
       
@@ -1135,7 +1153,7 @@
 <div class="md-content" data-md-component="content">
 <article class="md-content__inner md-typeset">
 <h1 id="platform-overview">Platform Overview<a class="headerlink" href="#platform-overview" title="Permanent link">¶</a></h1>
-<p>The OCTO Cloud-Native Platform consists of two application services sharing a single Oracle ATP database, with full OCI observability stack and cross-service distributed tracing.</p>
+<p>The OCTO Cloud-Native Platform consists of two application services sharing a single Oracle ATP database, with full OCI observability stack and cross-service distributed tracing. The current production model uses the shop as the <strong>customer storefront</strong> and the CRM as the <strong>operations control plane</strong> for catalog and storefront changes.</p>
 <h2 id="platform-components">Platform Components<a class="headerlink" href="#platform-components" title="Permanent link">¶</a></h2>
 <pre class="mermaid"><code>flowchart TD
     subgraph Clients ["Clients"]
@@ -1147,11 +1165,11 @@
 
     subgraph OKE ["OCI OKE Cluster"]
         subgraph NS1 ["namespace: octo-drone-shop"]
-            Shop["OCTO Drone Shop&lt;br/&gt;FastAPI · 98 routes · 13 modules"]
+            Shop["OCTO Drone Shop&lt;br/&gt;FastAPI · customer storefront"]
             WGW["Workflow Gateway&lt;br/&gt;Go · Select AI"]
         end
         subgraph NS2 ["namespace: enterprise-crm"]
-            CRM["Enterprise CRM Portal&lt;br/&gt;FastAPI · 73 routes · 12 modules"]
+            CRM["Enterprise CRM Portal&lt;br/&gt;FastAPI · operations control plane"]
         end
     end
 
@@ -1174,7 +1192,7 @@
     K6 --&gt; Shop
     K6 --&gt; CRM
 
-    Shop &lt;--&gt;|"W3C traceparent&lt;br/&gt;customer + order sync"| CRM
+    Shop &lt;--&gt;|"W3C traceparent&lt;br/&gt;customer enrichment + order sync"| CRM
     Shop --&gt; WGW
     Shop --&gt; DB
     CRM --&gt; DB
@@ -1195,7 +1213,6 @@
 <th>Repository</th>
 <th>Component</th>
 <th>Tech</th>
-<th>Routes</th>
 <th>Purpose</th>
 </tr>
 </thead>
@@ -1204,15 +1221,13 @@
 <td><a href="https://github.com/adibirzu/octo-drone-shop">octo-drone-shop</a></td>
 <td>Drone Shop + Workflow Gateway</td>
 <td>Python/FastAPI + Go</td>
-<td>98 + 15</td>
-<td>E-commerce, observability, AI assistant</td>
+<td>Customer storefront, observability, AI assistant, workflow/query surfaces</td>
 </tr>
 <tr>
 <td><a href="https://github.com/adibirzu/enterprise-crm-portal">enterprise-crm-portal</a></td>
 <td>Enterprise CRM Portal</td>
 <td>Python/FastAPI</td>
-<td>73</td>
-<td>CRM, security testing, simulation lab</td>
+<td>CRM operations, storefront management, catalog editing, simulation lab</td>
 </tr>
 </tbody>
 </table>
@@ -1253,12 +1268,49 @@
 </tr>
 </tbody>
 </table>
+<h2 id="ownership-boundaries">Ownership Boundaries<a class="headerlink" href="#ownership-boundaries" title="Permanent link">¶</a></h2>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th>System of Record</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Product catalog and stock</td>
+<td>CRM</td>
+<td>Operators edit products, stock, pricing, category, and shop assignment in CRM</td>
+</tr>
+<tr>
+<td>Storefront metadata</td>
+<td>CRM</td>
+<td>Shop URLs, CRM public URL linkage, and storefront status are managed from CRM</td>
+</tr>
+<tr>
+<td>Customer browse/cart/checkout</td>
+<td>Shop</td>
+<td>Public storefront remains customer-facing only</td>
+</tr>
+<tr>
+<td>Orders and customer sync</td>
+<td>Shared ATP + cross-service sync</td>
+<td>Orders originate in shop and are synchronized into CRM workflows</td>
+</tr>
+<tr>
+<td>Browser-visible CRM links</td>
+<td>Public CRM URL</td>
+<td>Internal cluster-local CRM hostnames are kept backend-only</td>
+</tr>
+</tbody>
+</table>
 <h2 id="design-principles">Design Principles<a class="headerlink" href="#design-principles" title="Permanent link">¶</a></h2>
 <ol>
 <li><strong>Shared Data, Independent Services</strong> — Both services read/write the same ATP tables but run in separate K8s namespaces with independent deployments</li>
 <li><strong>Observability by Default</strong> — Every HTTP request generates traces, logs, and metrics automatically through shared middleware</li>
-<li><strong>Tenancy Portable</strong> — Single <code>DNS_DOMAIN</code> variable configures both services</li>
-<li><strong>Framework Architecture</strong> — New modules can be added to either service without modifying shared infrastructure</li>
+<li><strong>Control Plane Separation</strong> — Administrative catalog and storefront changes happen in CRM, not on the public shop frontend</li>
+<li><strong>Tenancy Portable</strong> — Single <code>DNS_DOMAIN</code> variable configures both services while keeping public and internal URLs separate</li>
 <li><strong>Security-Aware</strong> — CRM includes intentional OWASP vulnerabilities for security training; Drone Shop implements production-grade security controls</li>
 </ol>
 </article>

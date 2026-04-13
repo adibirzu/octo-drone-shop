@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -2068,6 +2068,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#current-ownership-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Ownership Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#distributed-tracing" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2112,6 +2123,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#catalog-sync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Catalog Sync
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2125,6 +2147,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-both-urls-exist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why both URLs exist
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2568,6 +2607,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#current-ownership-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Ownership Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#distributed-tracing" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2612,6 +2662,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#catalog-sync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Catalog Sync
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2625,6 +2686,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-both-urls-exist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why both URLs exist
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2649,7 +2727,7 @@
 
 
 <h1 id="crm-integration">CRM Integration<a class="headerlink" href="#crm-integration" title="Permanent link">&para;</a></h1>
-<p>The Drone Shop connects to the Enterprise CRM Portal for bidirectional customer and order synchronization, with every call creating a distributed trace visible in OCI APM.</p>
+<p>The Drone Shop connects to the Enterprise CRM Portal for customer enrichment, order synchronization, storefront metadata coordination, and CRM-driven catalog publishing. Every call creates a distributed trace visible in OCI APM.</p>
 <h2 id="integration-endpoints">Integration Endpoints<a class="headerlink" href="#integration-endpoints" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2692,6 +2770,13 @@
 </tr>
 </tbody>
 </table>
+<h2 id="current-ownership-model">Current Ownership Model<a class="headerlink" href="#current-ownership-model" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>CRM is the source of truth</strong> for products, stock, price, category, storefront assignment, and storefront metadata.</li>
+<li><strong>Shop is the source of truth</strong> for cart, checkout, and storefront session behavior.</li>
+<li><strong>Shared Oracle ATP</strong> allows both services to correlate the same order, customer, and product lifecycle from different operational surfaces.</li>
+<li><strong>Public CRM URLs stay public</strong>: browser responses and docs point to <code>https://crm.octodemo.cloud</code>, while backend service-to-service calls may still target the in-cluster CRM service URL.</li>
+</ul>
 <h2 id="distributed-tracing">Distributed Tracing<a class="headerlink" href="#distributed-tracing" title="Permanent link">&para;</a></h2>
 <p>W3C <code>traceparent</code> headers are auto-injected by <code>HTTPXClientInstrumentor</code>:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1">Shop (span: integration.crm.sync_customers)
@@ -2713,11 +2798,45 @@
 - Upserts CRM customer if not found
 - Embeds OCTO order ID in CRM notes
 - Circuit breaker protects against CRM outages</p>
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><span class="nv">ENTERPRISE_CRM_URL</span><span class="o">=</span><span class="s2">&quot;http://enterprise-crm-portal.enterprise-crm.svc.cluster.local&quot;</span>
-</span><span id="__span-3-2"><span class="c1"># or</span>
-</span><span id="__span-3-3"><span class="nv">ENTERPRISE_CRM_URL</span><span class="o">=</span><span class="s2">&quot;https://crm.yourcompany.cloud&quot;</span>
+<h3 id="catalog-sync">Catalog Sync<a class="headerlink" href="#catalog-sync" title="Permanent link">&para;</a></h3>
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-3-1">CRM product/storefront edit → CRM DB write → POST /api/integrations/crm/catalog-sync
 </span></code></pre></div>
+- Operators create new drones, batteries, accessories, and other inventory in CRM
+- Stock and sellable state changes are made in CRM, not in the public storefront
+- Shop consumes the synced catalog as a customer-facing read model
+- CRM publishes catalog batches to the shop through the authenticated <code>/api/integrations/crm/catalog-sync</code> endpoint
+- Public storefront pages no longer expose private CRM cluster names</p>
+<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><span class="nv">ENTERPRISE_CRM_URL</span><span class="o">=</span><span class="s2">&quot;http://enterprise-crm-portal.enterprise-crm.svc.cluster.local&quot;</span>
+</span><span id="__span-4-2"><span class="nv">CRM_PUBLIC_URL</span><span class="o">=</span><span class="s2">&quot;https://crm.octodemo.cloud&quot;</span>
+</span><span id="__span-4-3">
+</span><span id="__span-4-4"><span class="c1"># If the backend can call the public CRM directly instead of the in-cluster</span>
+</span><span id="__span-4-5"><span class="c1"># service, ENTERPRISE_CRM_URL may also be public:</span>
+</span><span id="__span-4-6"><span class="nv">ENTERPRISE_CRM_URL</span><span class="o">=</span><span class="s2">&quot;https://crm.octodemo.cloud&quot;</span>
+</span></code></pre></div>
+<h3 id="why-both-urls-exist">Why both URLs exist<a class="headerlink" href="#why-both-urls-exist" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Audience</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ENTERPRISE_CRM_URL</code></td>
+<td>Backend service-to-service</td>
+<td>Private or public URL used by the shop server when calling CRM APIs</td>
+</tr>
+<tr>
+<td><code>CRM_PUBLIC_URL</code></td>
+<td>Browser/public docs</td>
+<td>Public CRM URL used for links, redirects, and user-visible integration surfaces</td>
+</tr>
+</tbody>
+</table>
+<p>This prevents internal <code>.svc.cluster.local</code> hostnames from leaking into storefront responses while still allowing efficient in-cluster traffic.</p>
 
 
 

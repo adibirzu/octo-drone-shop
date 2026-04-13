@@ -10,7 +10,7 @@
 <link href=".." rel="prev"/>
 <link href="../getting-started/" rel="next"/>
 <link href="../assets/favicon.ico" rel="icon"/>
-<meta content="mkdocs-1.6.1, mkdocs-material-9.7.6" name="generator"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.7.1" name="generator"/>
 <title>Introduction - OCTO Cloud-Native Platform</title>
 <link href="../assets/stylesheets/main.484c7ddc.min.css" rel="stylesheet"/>
 <link href="../assets/stylesheets/palette.ab4e12ef.min.css" rel="stylesheet"/>
@@ -314,6 +314,15 @@
 <span class="md-ellipsis">
       
         Architecture Summary
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#current-runtime-model">
+<span class="md-ellipsis">
+      
+        Current Runtime Model
       
     </span>
 </a>
@@ -1204,6 +1213,15 @@
 </a>
 </li>
 <li class="md-nav__item">
+<a class="md-nav__link" href="#current-runtime-model">
+<span class="md-ellipsis">
+      
+        Current Runtime Model
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
 <a class="md-nav__link" href="#oci-services">
 <span class="md-ellipsis">
       
@@ -1330,7 +1348,7 @@
 <li><strong>Demonstrate cloud-native patterns</strong> — FastAPI + Go microservices, shared Oracle ATP database, IDCS SSO, distributed tracing, circuit breakers</li>
 <li><strong>Provide a framework architecture</strong> — add new features without breaking existing capabilities; each module is independent</li>
 <li><strong>Enable AI-driven operations</strong> — integration with OCI Coordinator's Remediation Agent v2 for automated detection → diagnosis → remediation</li>
-<li><strong>Serve as a reference implementation</strong> — tenancy-portable OKE manifests, security best practices, comprehensive test coverage (237 E2E + 3 k6 load suites)</li>
+<li><strong>Serve as a reference implementation</strong> — tenancy-portable OKE manifests, security best practices, comprehensive test coverage, and a clear split between public storefront and internal operations control planes</li>
 </ol>
 <h2 id="architecture-summary">Architecture Summary<a class="headerlink" href="#architecture-summary" title="Permanent link">¶</a></h2>
 <p>Two application services share a single Oracle ATP database:</p>
@@ -1346,19 +1364,29 @@
 <tbody>
 <tr>
 <td><a href="../drone-shop/"><strong>OCTO Drone Shop</strong></a></td>
-<td>E-commerce frontend with AI assistant</td>
+<td>Customer storefront, checkout, AI assistant, observability surfaces</td>
 <td>Python/FastAPI + Go</td>
 <td>98</td>
 </tr>
 <tr>
 <td><a href="../crm/"><strong>Enterprise CRM Portal</strong></a></td>
-<td>CRM with simulation lab and order sync</td>
+<td>CRM operations console, catalog admin, storefront control, simulation lab</td>
 <td>Python/FastAPI</td>
-<td>73</td>
+<td>~80</td>
 </tr>
 </tbody>
 </table>
 <p>Both services integrate with the full OCI observability stack through modular add-ons that activate via environment variables or console configuration — no code changes required.</p>
+<h2 id="current-runtime-model">Current Runtime Model<a class="headerlink" href="#current-runtime-model" title="Permanent link">¶</a></h2>
+<ul>
+<li><strong>Shop frontend</strong>: <code>https://shop.octodemo.cloud</code></li>
+<li><strong>CRM frontend</strong>: <code>https://crm.octodemo.cloud</code></li>
+<li><strong>Shared database</strong>: Oracle ATP</li>
+<li><strong>Catalog source of truth</strong>: CRM</li>
+<li><strong>Browser-visible CRM links</strong>: public URL only</li>
+<li><strong>Backend CRM calls from shop</strong>: may use the internal cluster-local CRM service URL</li>
+</ul>
+<p>This split matters operationally: the shop renders customer-facing catalog and checkout experiences, while the CRM is where operators edit customers, orders, invoices, storefronts, and product inventory.</p>
 <h2 id="oci-services">OCI Services<a class="headerlink" href="#oci-services" title="Permanent link">¶</a></h2>
 <p>The platform integrates with the following OCI services. Each service is an <strong>independent add-on</strong> — the application runs with or without any given service.</p>
 <h3 id="core-compute-networking">Core Compute &amp; Networking<a class="headerlink" href="#core-compute-networking" title="Permanent link">¶</a></h3>
@@ -1662,7 +1690,7 @@
 <td><strong>Drone Shop</strong></td>
 <td>Python/FastAPI</td>
 <td>ATP, APM, RUM, Logging, Monitoring, WAF, Cloud Guard, Vault, IDCS, GenAI</td>
-<td>E-commerce storefront with 13 modules, checkout flow, AI assistant, chaos controls</td>
+<td>E-commerce storefront with checkout flow, AI assistant, customer-facing catalog, and distributed trace integration into CRM</td>
 </tr>
 <tr>
 <td><strong>Workflow Gateway</strong></td>
@@ -1674,7 +1702,7 @@
 <td><strong>Enterprise CRM</strong></td>
 <td>Python/FastAPI</td>
 <td>ATP, APM, RUM, Logging, IDCS</td>
-<td>12 CRM modules with order sync, simulation lab, OIDC SSO</td>
+<td>Operational control plane with order sync, storefront management, catalog editing, simulation lab, and OIDC SSO</td>
 </tr>
 </tbody>
 </table>
