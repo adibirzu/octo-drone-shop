@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -573,6 +573,8 @@
       
         
       
+        
+      
     
     
     
@@ -700,6 +702,34 @@
     
   
     OKE Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/new-tenancy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    New Tenancy
   
 
     
@@ -1337,6 +1367,8 @@
       
         
       
+        
+      
     
     
     
@@ -1391,6 +1423,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../observability/enhancement-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enhancement Plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1651,6 +1711,8 @@
       
         
       
+        
+      
     
     
     
@@ -1806,6 +1868,34 @@
     
   
     APM drill-down
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../observability-v2/stack-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stack Monitoring (ATP)
   
 
     
@@ -2679,16 +2769,16 @@
 <h2 id="manual-workflow">Manual Workflow<a class="headerlink" href="#manual-workflow" title="Permanent link">&para;</a></h2>
 <h3 id="1-sync-to-build-vm">1. Sync to Build VM<a class="headerlink" href="#1-sync-to-build-vm" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1">rsync<span class="w"> </span>-az<span class="w"> </span>--exclude<span class="w"> </span><span class="s1">&#39;.git&#39;</span><span class="w"> </span>--exclude<span class="w"> </span><span class="s1">&#39;__pycache__&#39;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-1-2"><span class="w">  </span>.<span class="w"> </span>control-plane-oci:/tmp/octo-drone-shop/
+</span><span id="__span-1-2"><span class="w">  </span>.<span class="w"> </span>remote-builder:/tmp/octo-drone-shop/
 </span></code></pre></div>
 <h3 id="2-build-native-x86_64">2. Build (Native x86_64)<a class="headerlink" href="#2-build-native-x86_64" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><span class="nv">TAG</span><span class="o">=</span><span class="k">$(</span>date<span class="w"> </span>+%Y%m%d%H%M%S<span class="k">)</span>
-</span><span id="__span-2-2">ssh<span class="w"> </span>control-plane-oci<span class="w"> </span><span class="s2">&quot;cd /tmp/octo-drone-shop &amp;&amp; \</span>
+</span><span id="__span-2-2">ssh<span class="w"> </span>remote-builder<span class="w"> </span><span class="s2">&quot;cd /tmp/octo-drone-shop &amp;&amp; \</span>
 </span><span id="__span-2-3"><span class="s2">  docker build -t </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:</span><span class="si">${</span><span class="nv">TAG</span><span class="si">}</span><span class="s2"> \</span>
 </span><span id="__span-2-4"><span class="s2">               -t </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest .&quot;</span>
 </span></code></pre></div>
 <h3 id="3-push-to-ocir">3. Push to OCIR<a class="headerlink" href="#3-push-to-ocir" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1">ssh<span class="w"> </span>control-plane-oci<span class="w"> </span><span class="s2">&quot;docker push </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:</span><span class="si">${</span><span class="nv">TAG</span><span class="si">}</span><span class="s2"> &amp;&amp; \</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1">ssh<span class="w"> </span>remote-builder<span class="w"> </span><span class="s2">&quot;docker push </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:</span><span class="si">${</span><span class="nv">TAG</span><span class="si">}</span><span class="s2"> &amp;&amp; \</span>
 </span><span id="__span-3-2"><span class="s2">  docker push </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest&quot;</span>
 </span></code></pre></div>
 <h3 id="4-rollout-on-oke">4. Rollout on OKE<a class="headerlink" href="#4-rollout-on-oke" title="Permanent link">&para;</a></h3>

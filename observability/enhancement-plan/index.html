@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://adibirzu.github.io/octo-drone-shop/getting-started/oke-deployment/">
+        <link rel="canonical" href="https://adibirzu.github.io/octo-drone-shop/observability/enhancement-plan/">
       
       
-        <link rel="prev" href="../quickstart/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../new-tenancy/">
+        <link rel="next" href="../addons/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>OKE Deployment - OCTO Cloud-Native Platform</title>
+        <title>Enhancement Plan - OCTO Cloud-Native Platform</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#oke-deployment" class="md-skip">
+        <a href="#enhancement-plan" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              OKE Deployment
+              Enhancement Plan
             
           </span>
         </div>
@@ -260,13 +260,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../getting-started/" class="md-tabs__link">
           
   
   
@@ -350,11 +348,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../observability/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -558,8 +558,6 @@
       
   
   
-    
-  
   
   
     
@@ -581,23 +579,22 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../getting-started/" class="md-nav__link ">
               
   
   
@@ -615,13 +612,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -641,7 +638,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../prerequisites/" class="md-nav__link">
+      <a href="../../getting-started/prerequisites/" class="md-nav__link">
         
   
   
@@ -669,7 +666,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../quickstart/" class="md-nav__link">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
         
   
   
@@ -694,37 +691,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    OKE Deployment
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../getting-started/oke-deployment/" class="md-nav__link">
         
   
   
@@ -740,103 +710,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#1-set-environment" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Set Environment
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-build-and-push" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Build and Push
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-create-k8s-secrets" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Create K8s Secrets
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#4-deploy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Deploy
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#5-provision-oci-services" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        5. Provision OCI Services
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#6-verify" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        6. Verify
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#7-recommended-enhancement-sequence" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        7. Recommended enhancement sequence
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -849,7 +722,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../new-tenancy/" class="md-nav__link">
+      <a href="../../getting-started/new-tenancy/" class="md-nav__link">
         
   
   
@@ -1469,6 +1342,8 @@
       
   
   
+    
+  
   
   
     
@@ -1500,22 +1375,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../observability/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -1533,13 +1409,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1556,10 +1432,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../observability/enhancement-plan/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enhancement Plan
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1575,6 +1478,164 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#golden-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Golden workflows
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rollout-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollout sequence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rollout sequence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-instrument-business-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1. Instrument business flows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-make-oci-apm-the-first-operator-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2. Make OCI APM the first operator surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-complete-the-logging-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3. Complete the logging path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-publish-drilldowns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4. Publish drilldowns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-enable-db-management-and-opsi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5. Enable DB Management and OPSI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-freeze-the-demo-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6. Freeze the demo path
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deliverables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliverables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related pages
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1587,7 +1648,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../observability/addons/" class="md-nav__link">
+      <a href="../addons/" class="md-nav__link">
         
   
   
@@ -1615,7 +1676,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../observability/melts/" class="md-nav__link">
+      <a href="../melts/" class="md-nav__link">
         
   
   
@@ -1643,7 +1704,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../observability/traces/" class="md-nav__link">
+      <a href="../traces/" class="md-nav__link">
         
   
   
@@ -1671,7 +1732,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../observability/metrics/" class="md-nav__link">
+      <a href="../metrics/" class="md-nav__link">
         
   
   
@@ -1699,7 +1760,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../observability/logs/" class="md-nav__link">
+      <a href="../logs/" class="md-nav__link">
         
   
   
@@ -1727,7 +1788,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../observability/security/" class="md-nav__link">
+      <a href="../security/" class="md-nav__link">
         
   
   
@@ -1755,7 +1816,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../observability/rum/" class="md-nav__link">
+      <a href="../rum/" class="md-nav__link">
         
   
   
@@ -1783,7 +1844,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../observability/distributed-traces/" class="md-nav__link">
+      <a href="../distributed-traces/" class="md-nav__link">
         
   
   
@@ -2652,10 +2713,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-set-environment" class="md-nav__link">
+  <a href="#goals" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Set Environment
+        Goals
       
     </span>
   </a>
@@ -2663,10 +2724,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-build-and-push" class="md-nav__link">
+  <a href="#golden-workflows" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Build and Push
+        Golden workflows
       
     </span>
   </a>
@@ -2674,10 +2735,93 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-create-k8s-secrets" class="md-nav__link">
+  <a href="#rollout-sequence" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Create K8s Secrets
+        Rollout sequence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rollout sequence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-instrument-business-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1. Instrument business flows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-make-oci-apm-the-first-operator-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2. Make OCI APM the first operator surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-complete-the-logging-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3. Complete the logging path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-publish-drilldowns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4. Publish drilldowns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-enable-db-management-and-opsi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5. Enable DB Management and OPSI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-freeze-the-demo-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6. Freeze the demo path
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deliverables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliverables
       
     </span>
   </a>
@@ -2685,10 +2829,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-deploy" class="md-nav__link">
+  <a href="#acceptance-criteria" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Deploy
+        Acceptance criteria
       
     </span>
   </a>
@@ -2696,32 +2840,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-provision-oci-services" class="md-nav__link">
+  <a href="#related-pages" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5. Provision OCI Services
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#6-verify" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        6. Verify
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#7-recommended-enhancement-sequence" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        7. Recommended enhancement sequence
+        Related pages
       
     </span>
   </a>
@@ -2748,102 +2870,125 @@
   
 
 
-<h1 id="oke-deployment">OKE Deployment<a class="headerlink" href="#oke-deployment" title="Permanent link">&para;</a></h1>
-<h2 id="1-set-environment">1. Set Environment<a class="headerlink" href="#1-set-environment" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1">cp<span class="w"> </span>deploy/credentials.template<span class="w"> </span>deploy/credentials.env
-</span><span id="__span-0-2"><span class="nb">set</span><span class="w"> </span>-a
-</span><span id="__span-0-3"><span class="nb">source</span><span class="w"> </span>deploy/credentials.env
-</span><span id="__span-0-4"><span class="nb">set</span><span class="w"> </span>+a
-</span><span id="__span-0-5"><span class="nb">export</span><span class="w"> </span><span class="nv">DNS_DOMAIN</span><span class="o">=</span><span class="s2">&quot;&lt;your-domain&gt;&quot;</span>
-</span><span id="__span-0-6"><span class="nb">export</span><span class="w"> </span><span class="nv">AUTH_TOKEN_SECRET</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">32</span><span class="k">)</span><span class="s2">&quot;</span>
-</span><span id="__span-0-7"><span class="nb">export</span><span class="w"> </span><span class="nv">ORACLE_DSN</span><span class="o">=</span><span class="s2">&quot;myatp_low&quot;</span>
-</span><span id="__span-0-8"><span class="nb">export</span><span class="w"> </span><span class="nv">ORACLE_PASSWORD</span><span class="o">=</span><span class="s2">&quot;&lt;your-atp-password&gt;&quot;</span>
-</span><span id="__span-0-9"><span class="nb">export</span><span class="w"> </span><span class="nv">OCI_APM_ENDPOINT</span><span class="o">=</span><span class="s2">&quot;https://&lt;apm-data-upload-endpoint&gt;&quot;</span>
-</span><span id="__span-0-10"><span class="nb">export</span><span class="w"> </span><span class="nv">OCI_APM_PRIVATE_DATAKEY</span><span class="o">=</span><span class="s2">&quot;&lt;private-data-key&gt;&quot;</span>
-</span><span id="__span-0-11"><span class="nb">export</span><span class="w"> </span><span class="nv">OCI_LB_SUBNET_OCID</span><span class="o">=</span><span class="s2">&quot;ocid1.subnet.oc1.&lt;region&gt;....&quot;</span>
-</span><span id="__span-0-12"><span class="nb">export</span><span class="w"> </span><span class="nv">OCIR_REPO</span><span class="o">=</span><span class="s2">&quot;&lt;region&gt;.ocir.io/&lt;namespace&gt;&quot;</span>
-</span></code></pre></div>
-<h2 id="2-build-and-push">2. Build and Push<a class="headerlink" href="#2-build-and-push" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">ARM Machines</p>
-<p>Never build locally on Apple Silicon. Use an x86_64 build VM.</p>
-</div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><span class="c1"># Sync to build VM</span>
-</span><span id="__span-1-2">rsync<span class="w"> </span>-az<span class="w"> </span>--exclude<span class="w"> </span><span class="s1">&#39;.git&#39;</span><span class="w"> </span>--exclude<span class="w"> </span><span class="s1">&#39;__pycache__&#39;</span><span class="w"> </span>.<span class="w"> </span>remote-builder:/tmp/octo-drone-shop/
-</span><span id="__span-1-3">
-</span><span id="__span-1-4"><span class="c1"># Build + push on VM</span>
-</span><span id="__span-1-5">ssh<span class="w"> </span>remote-builder<span class="w"> </span><span class="s2">&quot;cd /tmp/octo-drone-shop &amp;&amp; \</span>
-</span><span id="__span-1-6"><span class="s2">  docker build -t </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest . &amp;&amp; \</span>
-</span><span id="__span-1-7"><span class="s2">  docker push </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest&quot;</span>
-</span></code></pre></div>
-<p>Or use the deploy script:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1">./deploy/deploy.sh
-</span></code></pre></div>
-<h2 id="3-create-k8s-secrets">3. Create K8s Secrets<a class="headerlink" href="#3-create-k8s-secrets" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><span class="nv">NAMESPACE</span><span class="o">=</span><span class="s2">&quot;octo-drone-shop&quot;</span>
-</span><span id="__span-3-2">kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span class="w"> </span><span class="nv">$NAMESPACE</span>
-</span><span id="__span-3-3">
-</span><span id="__span-3-4"><span class="c1"># Required</span>
-</span><span id="__span-3-5">kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>octo-auth<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-6"><span class="w">  </span>--from-literal<span class="o">=</span>token-secret<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">AUTH_TOKEN_SECRET</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-3-7">
-</span><span id="__span-3-8">kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>octo-atp<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-9"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">dsn</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ORACLE_DSN</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-10"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">username</span><span class="o">=</span><span class="s2">&quot;ADMIN&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-11"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">password</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ORACLE_PASSWORD</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-12"><span class="w">  </span>--from-literal<span class="o">=</span>wallet-password<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ORACLE_WALLET_PASSWORD</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-3-13">
-</span><span id="__span-3-14">kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>octo-apm<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-15"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">endpoint</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">OCI_APM_ENDPOINT</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-16"><span class="w">  </span>--from-literal<span class="o">=</span>private-key<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">OCI_APM_PRIVATE_DATAKEY</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-17"><span class="w">  </span>--from-literal<span class="o">=</span>public-key<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">OCI_APM_PUBLIC_DATAKEY</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-18"><span class="w">  </span>--from-literal<span class="o">=</span>rum-endpoint<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">OCI_APM_RUM_ENDPOINT</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-3-19">
-</span><span id="__span-3-20"><span class="c1"># ATP wallet</span>
-</span><span id="__span-3-21">kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>octo-atp-wallet<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-22"><span class="w">  </span>--from-file<span class="o">=</span>cwallet.sso<span class="w"> </span>--from-file<span class="o">=</span>tnsnames.ora<span class="w"> </span>--from-file<span class="o">=</span>sqlnet.ora
-</span></code></pre></div>
-<h2 id="4-deploy">4. Deploy<a class="headerlink" href="#4-deploy" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1">envsubst<span class="w"> </span>&lt;<span class="w"> </span>deploy/k8s/deployment.yaml<span class="w"> </span><span class="p">|</span><span class="w"> </span>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>-
-</span><span id="__span-4-2">kubectl<span class="w"> </span>rollout<span class="w"> </span>status<span class="w"> </span>deployment/octo-drone-shop<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span>
-</span></code></pre></div>
-<h2 id="5-provision-oci-services">5. Provision OCI Services<a class="headerlink" href="#5-provision-oci-services" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><span class="nb">export</span><span class="w"> </span><span class="nv">COMPARTMENT_ID</span><span class="o">=</span><span class="s2">&quot;&lt;compartment-ocid&gt;&quot;</span>
-</span><span id="__span-5-2"><span class="nb">export</span><span class="w"> </span><span class="nv">SHOP_PUBLIC_URL</span><span class="o">=</span><span class="s2">&quot;https://shop.</span><span class="si">${</span><span class="nv">DNS_DOMAIN</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-5-3">
-</span><span id="__span-5-4"><span class="c1"># Monitoring (alarms + health checks)</span>
-</span><span id="__span-5-5">./deploy/oci/ensure_monitoring.sh
-</span><span id="__span-5-6">
-</span><span id="__span-5-7"><span class="c1"># WAF protection rules</span>
-</span><span id="__span-5-8"><span class="nv">LOAD_BALANCER_OCID</span><span class="o">=</span><span class="s2">&quot;&lt;lb-ocid&gt;&quot;</span><span class="w"> </span>./deploy/oci/ensure_waf.sh
-</span><span id="__span-5-9">
-</span><span id="__span-5-10"><span class="c1"># Cloud Guard</span>
-</span><span id="__span-5-11">./deploy/oci/ensure_cloud_guard.sh
-</span><span id="__span-5-12">
-</span><span id="__span-5-13"><span class="c1"># Security Zones</span>
-</span><span id="__span-5-14">./deploy/oci/ensure_security_zones.sh
-</span><span id="__span-5-15">
-</span><span id="__span-5-16"><span class="c1"># Vault</span>
-</span><span id="__span-5-17">./deploy/oci/ensure_vault.sh
-</span><span id="__span-5-18">
-</span><span id="__span-5-19"><span class="c1"># DB Observability</span>
-</span><span id="__span-5-20"><span class="nv">AUTONOMOUS_DATABASE_ID</span><span class="o">=</span><span class="s2">&quot;&lt;atp-ocid&gt;&quot;</span><span class="w"> </span>./deploy/oci/ensure_db_observability.sh
-</span></code></pre></div>
-<h2 id="6-verify">6. Verify<a class="headerlink" href="#6-verify" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1">curl<span class="w"> </span>https://shop.<span class="si">${</span><span class="nv">DNS_DOMAIN</span><span class="si">}</span>/ready<span class="w"> </span><span class="p">|</span><span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>json.tool
-</span><span id="__span-6-2">curl<span class="w"> </span>https://shop.<span class="si">${</span><span class="nv">DNS_DOMAIN</span><span class="si">}</span>/api/observability/360<span class="w"> </span><span class="p">|</span><span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>json.tool
-</span></code></pre></div>
-<h2 id="7-recommended-enhancement-sequence">7. Recommended enhancement sequence<a class="headerlink" href="#7-recommended-enhancement-sequence" title="Permanent link">&para;</a></h2>
-<p>After the application is reachable, enable the OCI showcase in this order:</p>
+<h1 id="enhancement-plan">Enhancement Plan<a class="headerlink" href="#enhancement-plan" title="Permanent link">&para;</a></h1>
+<p>This page defines the recommended rollout for turning OCTO into a complete OCI
+observability showcase rather than just an instrumented application set.</p>
+<h2 id="goals">Goals<a class="headerlink" href="#goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li>demonstrate complex cross-service business calls</li>
+<li>expose every important workflow in OCI APM Trace Explorer and Topology</li>
+<li>land structured logs in OCI Logging, then route them into Log Analytics</li>
+<li>create usable drilldowns between APM, Log Analytics, DB Management, and OPSI</li>
+<li>make the whole flow reproducible from the published docs</li>
+</ul>
+<h2 id="golden-workflows">Golden workflows<a class="headerlink" href="#golden-workflows" title="Permanent link">&para;</a></h2>
+<p>The platform should always be able to showcase these four workflows:</p>
 <ol>
-<li>APM traces and topology</li>
-<li>RUM for browser workflows</li>
-<li>OCI Logging and Log Analytics</li>
-<li>APM drilldowns and console links</li>
-<li>DB Management and Operations Insights</li>
+<li>Shop browse -&gt; cart -&gt; checkout -&gt; order persistence -&gt; CRM sync</li>
+<li>CRM product or storefront update -&gt; shop catalog synchronization</li>
+<li>Shop AI assistant -&gt; workflow gateway -&gt; Oracle ATP query execution</li>
+<li>Simulated failure -&gt; correlated trace, log, and SQL evidence</li>
 </ol>
-<p>Use the published <a href="../../observability/enhancement-plan/">Enhancement Plan</a> to
-drive the post-deploy rollout and validation checkpoints.</p>
+<h2 id="rollout-sequence">Rollout sequence<a class="headerlink" href="#rollout-sequence" title="Permanent link">&para;</a></h2>
+<h3 id="phase-1-instrument-business-flows">Phase 1. Instrument business flows<a class="headerlink" href="#phase-1-instrument-business-flows" title="Permanent link">&para;</a></h3>
+<ul>
+<li>normalize span names around business actions, not only HTTP routes</li>
+<li>standardize attributes such as <code>workflow.id</code>, <code>workflow.step</code>, <code>order.id</code>,
+  <code>product.sku</code>, <code>shop.id</code>, <code>sync.status</code>, and <code>DbOracleSqlId</code></li>
+<li>ensure the shop, CRM, and workflow gateway all propagate <code>traceparent</code></li>
+</ul>
+<h3 id="phase-2-make-oci-apm-the-first-operator-surface">Phase 2. Make OCI APM the first operator surface<a class="headerlink" href="#phase-2-make-oci-apm-the-first-operator-surface" title="Permanent link">&para;</a></h3>
+<ul>
+<li>verify Trace Explorer shows every golden workflow</li>
+<li>verify Topology shows Shop &lt;-&gt; CRM &lt;-&gt; ATP and workflow gateway edges</li>
+<li>create query-based APM dashboard widgets for:</li>
+<li>checkout latency and failures</li>
+<li>CRM sync success / failure</li>
+<li>AI assistant latency and error rate</li>
+<li>database-bound traces and slow SQL spans</li>
+</ul>
+<h3 id="phase-3-complete-the-logging-path">Phase 3. Complete the logging path<a class="headerlink" href="#phase-3-complete-the-logging-path" title="Permanent link">&para;</a></h3>
+<ul>
+<li>emit structured JSON logs from both apps</li>
+<li>preserve <code>trace_id</code>, <code>span_id</code>, <code>oracleApmTraceId</code>, <code>workflow_id</code>, and
+  service metadata</li>
+<li>send logs to OCI Logging first</li>
+<li>route those log groups into Log Analytics</li>
+<li>publish saved searches keyed to the trace id and workflow id</li>
+</ul>
+<h3 id="phase-4-publish-drilldowns">Phase 4. Publish drilldowns<a class="headerlink" href="#phase-4-publish-drilldowns" title="Permanent link">&para;</a></h3>
+<ul>
+<li>APM trace -&gt; Log Analytics search by <code>oracleApmTraceId</code></li>
+<li>APM SQL span -&gt; DB Management Performance Hub via <code>DbOracleSqlId</code></li>
+<li>app dashboards -&gt; OCI console URLs surfaced by <code>/api/observability/360</code></li>
+<li>operator runbooks for checkout, CRM sync, AI assistant, and simulated faults</li>
+</ul>
+<h3 id="phase-5-enable-db-management-and-opsi">Phase 5. Enable DB Management and OPSI<a class="headerlink" href="#phase-5-enable-db-management-and-opsi" title="Permanent link">&para;</a></h3>
+<ul>
+<li>enroll ATP in Database Management</li>
+<li>enroll ATP in Operations Insights</li>
+<li>verify session tagging with <code>MODULE</code>, <code>ACTION</code>, and <code>CLIENT_IDENTIFIER</code></li>
+<li>validate SQL Monitor, Performance Hub, and SQL Warehouse visibility for app
+  traffic from both services</li>
+</ul>
+<h3 id="phase-6-freeze-the-demo-path">Phase 6. Freeze the demo path<a class="headerlink" href="#phase-6-freeze-the-demo-path" title="Permanent link">&para;</a></h3>
+<ul>
+<li>drive the golden workflows with k6 and smoke scripts</li>
+<li>capture the verification checkpoints in the docs</li>
+<li>keep the README, install guide, and published site aligned</li>
+</ul>
+<h2 id="deliverables">Deliverables<a class="headerlink" href="#deliverables" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Workstream</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Complex calls</td>
+<td>repeatable scripts that produce demonstrable cross-service traces</td>
+</tr>
+<tr>
+<td>APM</td>
+<td>dashboard widgets, trace queries, topology validation steps</td>
+</tr>
+<tr>
+<td>Logging</td>
+<td>OCI Logging log groups + Service Connector + Log Analytics searches</td>
+</tr>
+<tr>
+<td>Drilldowns</td>
+<td>documented pivots from trace -&gt; logs -&gt; SQL evidence</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>DB Management and OPSI enablement plus validation screenshots or checks</td>
+</tr>
+<tr>
+<td>Docs</td>
+<td>updated README, install guide, observability pages, and home page links</td>
+</tr>
+</tbody>
+</table>
+<h2 id="acceptance-criteria">Acceptance criteria<a class="headerlink" href="#acceptance-criteria" title="Permanent link">&para;</a></h2>
+<ul>
+<li>one demo run produces traces for checkout, CRM sync, AI assistant, and a
+  simulated failure</li>
+<li>those traces are visible in OCI APM with business-level attributes</li>
+<li>the same trace id can be searched in Log Analytics</li>
+<li>at least one SQL span can be traced into DB Management</li>
+<li>OPSI shows workload aggregated for the same database and app modules</li>
+</ul>
+<h2 id="related-pages">Related pages<a class="headerlink" href="#related-pages" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../addons/">Add-Ons Guide</a></li>
+<li><a href="../traces/">Traces (APM)</a></li>
+<li><a href="../logs/">Logs</a></li>
+<li><a href="../distributed-traces/">Cross-Service Tracing</a></li>
+<li><a href="../../observability-v2/apm-drilldown/">APM Drill-Down</a></li>
+</ul>
 
 
 
@@ -2881,7 +3026,7 @@ drive the post-deploy rollout and validation checkpoints.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../quickstart/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Quick Start">
+          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Observability">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2891,20 +3036,20 @@ drive the post-deploy rollout and validation checkpoints.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Quick Start
+                Observability
               </div>
             </div>
           </a>
         
         
           
-          <a href="../new-tenancy/" class="md-footer__link md-footer__link--next" aria-label="Next: New Tenancy">
+          <a href="../addons/" class="md-footer__link md-footer__link--next" aria-label="Next: Add-Ons Guide">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                New Tenancy
+                Add-Ons Guide
               </div>
             </div>
             <div class="md-footer__button md-icon">

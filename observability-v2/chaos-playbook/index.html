@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -573,6 +573,8 @@
       
         
       
+        
+      
     
     
     
@@ -700,6 +702,34 @@
     
   
     OKE Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/new-tenancy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    New Tenancy
   
 
     
@@ -1337,6 +1367,8 @@
       
         
       
+        
+      
     
     
     
@@ -1391,6 +1423,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../observability/enhancement-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enhancement Plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1637,6 +1697,8 @@
       
         
           
+        
+      
         
       
         
@@ -1900,6 +1962,34 @@
     
   
     APM drill-down
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stack-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stack Monitoring (ATP)
   
 
     
@@ -2597,7 +2687,7 @@
 <p class="admonition-title">Shop has no chaos write endpoints</p>
 <p>The Octo Drone Shop is a <strong>reader</strong> only. Chaos scenarios can be
 applied from either the Enterprise CRM admin page
-(<code>https://crm.octodemo.cloud/admin/chaos</code>) or from the Ops / cp
+(<code>https://crm.example.cloud/admin/chaos</code>) or from the Ops / cp
 portal. Any POST to <code>/api/admin/chaos/*</code> on the shop is a 404.</p>
 </div>
 <h2 id="presets">Presets<a class="headerlink" href="#presets" title="Permanent link">&para;</a></h2>
@@ -2650,13 +2740,13 @@ portal. Any POST to <code>/api/admin/chaos/*</code> on the shop is a 404.</p>
 </tbody>
 </table>
 <h2 id="apply-crm-operator-only">Apply (CRM operator only)<a class="headerlink" href="#apply-crm-operator-only" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1">curl<span class="w"> </span>-sS<span class="w"> </span>https://crm.octodemo.cloud/api/admin/chaos/apply<span class="w"> </span><span class="se">\</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1">curl<span class="w"> </span>-sS<span class="w"> </span>https://crm.example.cloud/api/admin/chaos/apply<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-0-2"><span class="w">  </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
 </span><span id="__span-0-3"><span class="w">  </span>-b<span class="w"> </span>session.cookie<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-0-4"><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;scenario_id&quot;:&quot;db-slow-checkout&quot;,&quot;target&quot;:&quot;shop&quot;,&quot;ttl_seconds&quot;:300,&quot;note&quot;:&quot;demo&quot;}&#39;</span>
 </span></code></pre></div>
 <h2 id="clear">Clear<a class="headerlink" href="#clear" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1">curl<span class="w"> </span>-sS<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://crm.octodemo.cloud/api/admin/chaos/clear<span class="w"> </span>-b<span class="w"> </span>session.cookie
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1">curl<span class="w"> </span>-sS<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://crm.example.cloud/api/admin/chaos/clear<span class="w"> </span>-b<span class="w"> </span>session.cookie
 </span></code></pre></div>
 <p>The <code>chaos-cleanup</code> Coordinator playbook also auto-clears stale scenarios
 (tier <code>low</code>, no approval needed) when they exceed their TTL.</p>

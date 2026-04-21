@@ -16,14 +16,14 @@
         <link rel="prev" href="../log-analytics-dashboards/">
       
       
-        <link rel="next" href="../waf-observability/">
+        <link rel="next" href="../stack-monitoring/">
       
       
         
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -573,6 +573,8 @@
       
         
       
+        
+      
     
     
     
@@ -700,6 +702,34 @@
     
   
     OKE Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/new-tenancy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    New Tenancy
   
 
     
@@ -1337,6 +1367,8 @@
       
         
       
+        
+      
     
     
     
@@ -1391,6 +1423,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../observability/enhancement-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enhancement Plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1653,6 +1713,8 @@
       
         
       
+        
+      
     
     
     
@@ -1861,6 +1923,39 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#provisioning-the-apm-domain-rum-web-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provisioning the APM Domain + RUM Web Application
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operator-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operator goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-widgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended widgets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#copy-paste-trace-url" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1872,10 +1967,43 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#suggested-trace-filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggested trace filters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#linking-from-a-log-row" class="md-nav__link">
     <span class="md-ellipsis">
       
         Linking from a log row
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#linking-from-a-sql-span" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Linking from a SQL span
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance criteria
       
     </span>
   </a>
@@ -1897,6 +2025,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../stack-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stack Monitoring (ATP)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2518,6 +2674,39 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#provisioning-the-apm-domain-rum-web-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provisioning the APM Domain + RUM Web Application
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operator-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operator goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-widgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended widgets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#copy-paste-trace-url" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2529,10 +2718,43 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#suggested-trace-filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggested trace filters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#linking-from-a-log-row" class="md-nav__link">
     <span class="md-ellipsis">
       
         Linking from a log row
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#linking-from-a-sql-span" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Linking from a SQL span
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance criteria
       
     </span>
   </a>
@@ -2574,14 +2796,73 @@
 <p>Every span inherits <code>workflow.id</code>, <code>workflow.step</code>, and <code>service.name</code>
 attributes. Chaos-injected faults register as span <em>events</em> — not
 wrapping spans — so latency budgets still reflect reality.</p>
-<h2 id="copy-paste-trace-url">Copy-paste trace URL<a class="headerlink" href="#copy-paste-trace-url" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1">https://cloud.oracle.com/apm-traces/trace-explorer?region=${OCI_REGION}&amp;apmDomainId=${OCI_APM_DOMAIN_OCID}&amp;traceId=&lt;TRACE_ID&gt;
+<h2 id="provisioning-the-apm-domain-rum-web-application">Provisioning the APM Domain + RUM Web Application<a class="headerlink" href="#provisioning-the-apm-domain-rum-web-application" title="Permanent link">&para;</a></h2>
+<p>A new tenancy needs both an APM Domain and a RUM Web Application before
+traces/RUM events can be ingested. The terraform module
+<code>deploy/terraform/modules/apm_domain</code> creates both:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-0-1"><span class="kr">module</span><span class="w"> </span><span class="nv">&quot;apm_domain&quot;</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-2"><span class="w">  </span><span class="na">source</span><span class="w">                       </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;./modules/apm_domain&quot;</span>
+</span><span id="__span-0-3"><span class="w">  </span><span class="na">compartment_id</span><span class="w">               </span><span class="o">=</span><span class="w"> </span><span class="nv">var.compartment_id</span>
+</span><span id="__span-0-4"><span class="w">  </span><span class="na">display_name</span><span class="w">                 </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;octo-apm&quot;</span>
+</span><span id="__span-0-5"><span class="w">  </span><span class="na">web_application_display_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;octo-drone-shop-web&quot;</span>
+</span><span id="__span-0-6"><span class="p">}</span>
 </span></code></pre></div>
+<p>Outputs include <code>apm_data_upload_endpoint</code>, <code>rum_web_application_id</code>,
+<code>apm_public_datakey</code>, and <code>apm_private_datakey</code> (sensitive). The helper
+script <code>deploy/oci/ensure_apm.sh</code> wraps <code>terraform plan/apply/print</code> and
+emits the matching <code>export OCI_APM_*</code> lines for secret population.</p>
+<h2 id="operator-goals">Operator goals<a class="headerlink" href="#operator-goals" title="Permanent link">&para;</a></h2>
+<p>Drilldowns should let an operator start from any one of these entry points and
+keep context:</p>
+<ul>
+<li>APM trace</li>
+<li>APM dashboard widget</li>
+<li>Log Analytics row</li>
+<li><code>/api/observability/360</code> response</li>
+<li>DB Management or OPSI investigation</li>
+</ul>
+<h2 id="recommended-widgets">Recommended widgets<a class="headerlink" href="#recommended-widgets" title="Permanent link">&para;</a></h2>
+<p>Build query-based APM dashboard widgets around the golden workflows:</p>
+<ul>
+<li>checkout latency and error rate</li>
+<li>CRM sync latency and failure count</li>
+<li>AI assistant latency and downstream query load</li>
+<li>traces containing SQL spans or chaos events</li>
+</ul>
+<p>These widgets should be the top-level navigation surface before an operator
+opens Trace Explorer.</p>
+<h2 id="copy-paste-trace-url">Copy-paste trace URL<a class="headerlink" href="#copy-paste-trace-url" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1">https://cloud.oracle.com/apm-traces/trace-explorer?region=${OCI_REGION}&amp;apmDomainId=${OCI_APM_DOMAIN_OCID}&amp;traceId=&lt;TRACE_ID&gt;
+</span></code></pre></div>
+<h2 id="suggested-trace-filters">Suggested trace filters<a class="headerlink" href="#suggested-trace-filters" title="Permanent link">&para;</a></h2>
+<p>Use repeatable filters for the main demo flows:</p>
+<ul>
+<li><code>serviceName = "octo-drone-shop"</code> for storefront traces</li>
+<li><code>serviceName = "enterprise-crm-portal"</code> for catalog and sync traces</li>
+<li><code>workflow.id = "checkout"</code> for cart-to-order flow</li>
+<li><code>workflow.id = "crm-sync"</code> for order and catalog sync</li>
+<li><code>has(attribute.DbOracleSqlId)</code> for database drilldown candidates</li>
+</ul>
 <h2 id="linking-from-a-log-row">Linking from a log row<a class="headerlink" href="#linking-from-a-log-row" title="Permanent link">&para;</a></h2>
 <p>Log Analytics renders every record with a <code>Trace ID</code> column; click it to
 open the APM trace viewer. Conversely, the Coordinator's
 <code>drilldown_pivot</code> node returns both the APM URL and a saved-search URL
 as <code>evidence_links</code> on the incident.</p>
+<h2 id="linking-from-a-sql-span">Linking from a SQL span<a class="headerlink" href="#linking-from-a-sql-span" title="Permanent link">&para;</a></h2>
+<p>When a trace contains <code>DbOracleSqlId</code>, use that attribute as the bridge into:</p>
+<ul>
+<li>DB Management Performance Hub / SQL Monitor for statement detail</li>
+<li>Operations Insights SQL Warehouse for historical aggregation</li>
+</ul>
+<p>This is the fastest way to move from application latency to database evidence.</p>
+<h2 id="acceptance-criteria">Acceptance criteria<a class="headerlink" href="#acceptance-criteria" title="Permanent link">&para;</a></h2>
+<ul>
+<li>operators can pivot from APM into Log Analytics using the trace id</li>
+<li>at least one checkout and one CRM sync trace contain valid SQL drilldown data</li>
+<li><code>/api/observability/360</code> exposes the console URLs needed for the pivots</li>
+<li>the same workflow can be followed across APM, logs, and DB tooling without
+  manual guesswork</li>
+</ul>
 <h2 id="rum">RUM<a class="headerlink" href="#rum" title="Permanent link">&para;</a></h2>
 <p>RUM sessions now carry <code>workflow_id</code> as a custom dimension (added by
 <code>server/observability/rum_dimensions.py</code> — wave 2 follow-up). Pair the
@@ -2641,13 +2922,13 @@ alongside backend spans.</p>
         
         
           
-          <a href="../waf-observability/" class="md-footer__link md-footer__link--next" aria-label="Next: WAF observability">
+          <a href="../stack-monitoring/" class="md-footer__link md-footer__link--next" aria-label="Next: Stack Monitoring (ATP)">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                WAF observability
+                Stack Monitoring (ATP)
               </div>
             </div>
             <div class="md-footer__button md-icon">

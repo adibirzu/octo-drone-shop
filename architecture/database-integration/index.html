@@ -10,7 +10,7 @@
 <link href="../data-model/" rel="prev"/>
 <link href="../framework/" rel="next"/>
 <link href="../../assets/favicon.ico" rel="icon"/>
-<meta content="mkdocs-1.6.1, mkdocs-material-9.7.1" name="generator"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.7.6" name="generator"/>
 <title>Database Integration - OCTO Cloud-Native Platform</title>
 <link href="../../assets/stylesheets/main.484c7ddc.min.css" rel="stylesheet"/>
 <link href="../../assets/stylesheets/palette.ab4e12ef.min.css" rel="stylesheet"/>
@@ -340,6 +340,18 @@
     
   
     OKE Deployment
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../getting-started/new-tenancy/">
+<span class="md-ellipsis">
+    
+  
+    New Tenancy
   
 
     
@@ -711,6 +723,18 @@
           </label>
 <ul class="md-nav__list" data-md-scrollfix="">
 <li class="md-nav__item">
+<a class="md-nav__link" href="../../observability/enhancement-plan/">
+<span class="md-ellipsis">
+    
+  
+    Enhancement Plan
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
 <a class="md-nav__link" href="../../observability/addons/">
 <span class="md-ellipsis">
     
@@ -878,6 +902,18 @@
     
   
     APM drill-down
+  
+
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../observability-v2/stack-monitoring/">
+<span class="md-ellipsis">
+    
+  
+    Stack Monitoring (ATP)
   
 
     
@@ -1487,11 +1523,11 @@
 <h2 id="oracle-session-tagging">Oracle Session Tagging<a class="headerlink" href="#oracle-session-tagging" title="Permanent link">¶</a></h2>
 <p>Both services tag Oracle sessions for OPSI/DB Management correlation:</p>
 <div class="language-sql highlight"><pre><span></span><code><span id="__span-1-1"><span class="c1">-- Set on pool checkout</span>
-</span><span id="__span-1-2"><span class="n">DBMS_APPLICATION_INFO</span><span class="p">.</span><span class="n">SET_MODULE</span><span class="p">(</span><span class="s1">'octo-drone-shop-oke'</span><span class="p">,</span><span class="w"> </span><span class="s1">'POST /api/shop/checkout'</span><span class="p">);</span>
+</span><span id="__span-1-2"><span class="n">DBMS_APPLICATION_INFO</span><span class="p">.</span><span class="n">SET_MODULE</span><span class="p">(</span><span class="s1">'octo-drone-shop'</span><span class="p">,</span><span class="w"> </span><span class="s1">'POST /api/shop/checkout'</span><span class="p">);</span>
 </span><span id="__span-1-3"><span class="n">DBMS_SESSION</span><span class="p">.</span><span class="n">SET_IDENTIFIER</span><span class="p">(</span><span class="s1">'&lt;trace_id&gt;'</span><span class="p">);</span>
 </span><span id="__span-1-4">
 </span><span id="__span-1-5"><span class="c1">-- Result in V$SESSION</span>
-</span><span id="__span-1-6"><span class="n">MODULE</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="s1">'octo-drone-shop-oke'</span>
+</span><span id="__span-1-6"><span class="n">MODULE</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="s1">'octo-drone-shop'</span>
 </span><span id="__span-1-7"><span class="n">ACTION</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="s1">'POST /api/shop/checkout'</span>
 </span><span id="__span-1-8"><span class="n">CLIENT_IDENTIFIER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'79c76c8173b086043b36e60422a2b317'</span>
 </span></code></pre></div>

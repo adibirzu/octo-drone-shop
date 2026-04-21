@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://adibirzu.github.io/octo-drone-shop/getting-started/oke-deployment/">
+        <link rel="canonical" href="https://adibirzu.github.io/octo-drone-shop/getting-started/new-tenancy/">
       
       
-        <link rel="prev" href="../quickstart/">
+        <link rel="prev" href="../oke-deployment/">
       
       
-        <link rel="next" href="../new-tenancy/">
+        <link rel="next" href="../../architecture/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>OKE Deployment - OCTO Cloud-Native Platform</title>
+        <title>New Tenancy - OCTO Cloud-Native Platform</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#oke-deployment" class="md-skip">
+        <a href="#deploying-to-a-new-oci-tenancy" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              OKE Deployment
+              New Tenancy
             
           </span>
         </div>
@@ -694,6 +694,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../oke-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OKE Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -713,7 +741,7 @@
   <span class="md-ellipsis">
     
   
-    OKE Deployment
+    New Tenancy
   
 
     
@@ -731,7 +759,7 @@
   <span class="md-ellipsis">
     
   
-    OKE Deployment
+    New Tenancy
   
 
     
@@ -757,10 +785,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-set-environment" class="md-nav__link">
+  <a href="#1-prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Set Environment
+        1. Prerequisites
       
     </span>
   </a>
@@ -768,10 +796,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-build-and-push" class="md-nav__link">
+  <a href="#2-pre-flight-check" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Build and Push
+        2. Pre-flight check
       
     </span>
   </a>
@@ -779,10 +807,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-create-k8s-secrets" class="md-nav__link">
+  <a href="#3-bootstrap-the-tenancy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Create K8s Secrets
+        3. Bootstrap the tenancy
       
     </span>
   </a>
@@ -790,10 +818,71 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-deploy" class="md-nav__link">
+  <a href="#4-provision-observability" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Deploy
+        4. Provision observability
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Provision observability">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#apm-domain-rum-web-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        APM Domain + RUM Web Application
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#log-analytics-source-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Log Analytics source registration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#app-log-pipeline-service-connector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        App log pipeline (Service Connector)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stack-monitoring-for-the-autonomous-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stack Monitoring for the Autonomous Database
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-first-deploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. First deploy
       
     </span>
   </a>
@@ -801,32 +890,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-provision-oci-services" class="md-nav__link">
+  <a href="#6-validate" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5. Provision OCI Services
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#6-verify" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        6. Verify
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#7-recommended-enhancement-sequence" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        7. Recommended enhancement sequence
+        6. Validate
       
     </span>
   </a>
@@ -837,34 +904,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../new-tenancy/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    New Tenancy
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -2652,10 +2691,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-set-environment" class="md-nav__link">
+  <a href="#1-prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Set Environment
+        1. Prerequisites
       
     </span>
   </a>
@@ -2663,10 +2702,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-build-and-push" class="md-nav__link">
+  <a href="#2-pre-flight-check" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Build and Push
+        2. Pre-flight check
       
     </span>
   </a>
@@ -2674,10 +2713,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-create-k8s-secrets" class="md-nav__link">
+  <a href="#3-bootstrap-the-tenancy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Create K8s Secrets
+        3. Bootstrap the tenancy
       
     </span>
   </a>
@@ -2685,10 +2724,71 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-deploy" class="md-nav__link">
+  <a href="#4-provision-observability" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Deploy
+        4. Provision observability
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Provision observability">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#apm-domain-rum-web-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        APM Domain + RUM Web Application
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#log-analytics-source-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Log Analytics source registration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#app-log-pipeline-service-connector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        App log pipeline (Service Connector)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stack-monitoring-for-the-autonomous-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stack Monitoring for the Autonomous Database
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-first-deploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. First deploy
       
     </span>
   </a>
@@ -2696,32 +2796,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-provision-oci-services" class="md-nav__link">
+  <a href="#6-validate" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5. Provision OCI Services
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#6-verify" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        6. Verify
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#7-recommended-enhancement-sequence" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        7. Recommended enhancement sequence
+        6. Validate
       
     </span>
   </a>
@@ -2748,102 +2826,142 @@
   
 
 
-<h1 id="oke-deployment">OKE Deployment<a class="headerlink" href="#oke-deployment" title="Permanent link">&para;</a></h1>
-<h2 id="1-set-environment">1. Set Environment<a class="headerlink" href="#1-set-environment" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1">cp<span class="w"> </span>deploy/credentials.template<span class="w"> </span>deploy/credentials.env
-</span><span id="__span-0-2"><span class="nb">set</span><span class="w"> </span>-a
-</span><span id="__span-0-3"><span class="nb">source</span><span class="w"> </span>deploy/credentials.env
-</span><span id="__span-0-4"><span class="nb">set</span><span class="w"> </span>+a
-</span><span id="__span-0-5"><span class="nb">export</span><span class="w"> </span><span class="nv">DNS_DOMAIN</span><span class="o">=</span><span class="s2">&quot;&lt;your-domain&gt;&quot;</span>
-</span><span id="__span-0-6"><span class="nb">export</span><span class="w"> </span><span class="nv">AUTH_TOKEN_SECRET</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">32</span><span class="k">)</span><span class="s2">&quot;</span>
-</span><span id="__span-0-7"><span class="nb">export</span><span class="w"> </span><span class="nv">ORACLE_DSN</span><span class="o">=</span><span class="s2">&quot;myatp_low&quot;</span>
-</span><span id="__span-0-8"><span class="nb">export</span><span class="w"> </span><span class="nv">ORACLE_PASSWORD</span><span class="o">=</span><span class="s2">&quot;&lt;your-atp-password&gt;&quot;</span>
-</span><span id="__span-0-9"><span class="nb">export</span><span class="w"> </span><span class="nv">OCI_APM_ENDPOINT</span><span class="o">=</span><span class="s2">&quot;https://&lt;apm-data-upload-endpoint&gt;&quot;</span>
-</span><span id="__span-0-10"><span class="nb">export</span><span class="w"> </span><span class="nv">OCI_APM_PRIVATE_DATAKEY</span><span class="o">=</span><span class="s2">&quot;&lt;private-data-key&gt;&quot;</span>
-</span><span id="__span-0-11"><span class="nb">export</span><span class="w"> </span><span class="nv">OCI_LB_SUBNET_OCID</span><span class="o">=</span><span class="s2">&quot;ocid1.subnet.oc1.&lt;region&gt;....&quot;</span>
-</span><span id="__span-0-12"><span class="nb">export</span><span class="w"> </span><span class="nv">OCIR_REPO</span><span class="o">=</span><span class="s2">&quot;&lt;region&gt;.ocir.io/&lt;namespace&gt;&quot;</span>
+<h1 id="deploying-to-a-new-oci-tenancy">Deploying to a New OCI Tenancy<a class="headerlink" href="#deploying-to-a-new-oci-tenancy" title="Permanent link">&para;</a></h1>
+<p>This guide bootstraps the OCTO Drone Shop + Enterprise CRM Portal stack
+in a fresh Oracle Cloud tenancy. Every step is env-driven — no tenancy
+OCIDs, region slugs, or public hostnames are committed to source.</p>
+<h2 id="1-prerequisites">1. Prerequisites<a class="headerlink" href="#1-prerequisites" title="Permanent link">&para;</a></h2>
+<ul>
+<li>OCI tenancy with:<ul>
+<li>OKE cluster and kubectl context configured</li>
+<li>Autonomous Database (ATP) provisioned (wallet download access)</li>
+<li>OCIR namespace + compartment for container images</li>
+</ul>
+</li>
+<li>Local tools on PATH: <code>terraform &gt;= 1.6</code>, <code>oci</code> CLI, <code>kubectl</code>, <code>envsubst</code>, <code>docker</code>, <code>ssh</code>.</li>
+<li>Remote build host (x86_64 VM) reachable over SSH for image builds. Apple Silicon CI hosts cannot build the x86 image directly without QEMU.</li>
+</ul>
+<h2 id="2-pre-flight-check">2. Pre-flight check<a class="headerlink" href="#2-pre-flight-check" title="Permanent link">&para;</a></h2>
+<p>Before any infrastructure is created, run the pre-flight validator:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><span class="nv">DNS_DOMAIN</span><span class="o">=</span>tenant-a.customer.example<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-2"><span class="nv">OCIR_REPO</span><span class="o">=</span>&lt;region&gt;.ocir.io/&lt;tenancy-ns&gt;/octo-drone-shop<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-3"><span class="nv">K8S_NAMESPACE</span><span class="o">=</span>octo-drone-shop<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-4">./deploy/pre-flight-check.sh
 </span></code></pre></div>
-<h2 id="2-build-and-push">2. Build and Push<a class="headerlink" href="#2-build-and-push" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">ARM Machines</p>
-<p>Never build locally on Apple Silicon. Use an x86_64 build VM.</p>
-</div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><span class="c1"># Sync to build VM</span>
-</span><span id="__span-1-2">rsync<span class="w"> </span>-az<span class="w"> </span>--exclude<span class="w"> </span><span class="s1">&#39;.git&#39;</span><span class="w"> </span>--exclude<span class="w"> </span><span class="s1">&#39;__pycache__&#39;</span><span class="w"> </span>.<span class="w"> </span>remote-builder:/tmp/octo-drone-shop/
-</span><span id="__span-1-3">
-</span><span id="__span-1-4"><span class="c1"># Build + push on VM</span>
-</span><span id="__span-1-5">ssh<span class="w"> </span>remote-builder<span class="w"> </span><span class="s2">&quot;cd /tmp/octo-drone-shop &amp;&amp; \</span>
-</span><span id="__span-1-6"><span class="s2">  docker build -t </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest . &amp;&amp; \</span>
-</span><span id="__span-1-7"><span class="s2">  docker push </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest&quot;</span>
+<p>The script fails fast if:</p>
+<ul>
+<li><code>DNS_DOMAIN</code>, <code>OCIR_REPO</code>, or <code>K8S_NAMESPACE</code> is unset</li>
+<li>any required variable still contains placeholder text
+  (<code>example.cloud</code>, <code>example.invalid</code>, <code>changeme</code>, <code>TODO</code>, <code>PLACEHOLDER</code>)</li>
+<li><code>kubectl</code> has no current context</li>
+</ul>
+<p>Recommended variables (warnings only, feature-specific):</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Feature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OCI_COMPARTMENT_ID</code></td>
+<td>All OCI service calls (APM, Logging, Monitoring)</td>
+</tr>
+<tr>
+<td><code>OCI_APM_ENDPOINT</code>, <code>OCI_APM_PRIVATE_DATAKEY</code></td>
+<td>APM traces</td>
+</tr>
+<tr>
+<td><code>OCI_LOG_ID</code></td>
+<td>App log ingestion to OCI Logging → Log Analytics</td>
+</tr>
+<tr>
+<td><code>OCI_LB_SUBNET_OCID</code></td>
+<td>OCI LoadBalancer annotation on the Service</td>
+</tr>
+<tr>
+<td><code>IDCS_DOMAIN_URL</code>, <code>IDCS_CLIENT_ID</code>, <code>IDCS_CLIENT_SECRET</code></td>
+<td>OIDC SSO via IAM identity domain</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-bootstrap-the-tenancy">3. Bootstrap the tenancy<a class="headerlink" href="#3-bootstrap-the-tenancy" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><span class="nv">DNS_DOMAIN</span><span class="o">=</span>tenant-a.customer.example<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-2"><span class="nv">OCIR_REGION</span><span class="o">=</span>&lt;region&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-3"><span class="nv">OCIR_TENANCY</span><span class="o">=</span>&lt;tenancy-ns&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-4"><span class="nv">OCI_COMPARTMENT_ID</span><span class="o">=</span>ocid1.compartment.oc1..xxx<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-5"><span class="nv">K8S_NAMESPACE</span><span class="o">=</span>octo-drone-shop<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-6"><span class="nv">ORACLE_DSN</span><span class="o">=</span>&lt;adb-connection-string&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-7"><span class="nv">ORACLE_PASSWORD</span><span class="o">=</span>&lt;admin-password&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-8">./deploy/init-tenancy.sh
 </span></code></pre></div>
-<p>Or use the deploy script:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1">./deploy/deploy.sh
-</span></code></pre></div>
-<h2 id="3-create-k8s-secrets">3. Create K8s Secrets<a class="headerlink" href="#3-create-k8s-secrets" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><span class="nv">NAMESPACE</span><span class="o">=</span><span class="s2">&quot;octo-drone-shop&quot;</span>
-</span><span id="__span-3-2">kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span class="w"> </span><span class="nv">$NAMESPACE</span>
-</span><span id="__span-3-3">
-</span><span id="__span-3-4"><span class="c1"># Required</span>
-</span><span id="__span-3-5">kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>octo-auth<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-6"><span class="w">  </span>--from-literal<span class="o">=</span>token-secret<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">AUTH_TOKEN_SECRET</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-3-7">
-</span><span id="__span-3-8">kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>octo-atp<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-9"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">dsn</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ORACLE_DSN</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-10"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">username</span><span class="o">=</span><span class="s2">&quot;ADMIN&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-11"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">password</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ORACLE_PASSWORD</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-12"><span class="w">  </span>--from-literal<span class="o">=</span>wallet-password<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ORACLE_WALLET_PASSWORD</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-3-13">
-</span><span id="__span-3-14">kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>octo-apm<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-15"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">endpoint</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">OCI_APM_ENDPOINT</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-16"><span class="w">  </span>--from-literal<span class="o">=</span>private-key<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">OCI_APM_PRIVATE_DATAKEY</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-17"><span class="w">  </span>--from-literal<span class="o">=</span>public-key<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">OCI_APM_PUBLIC_DATAKEY</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-18"><span class="w">  </span>--from-literal<span class="o">=</span>rum-endpoint<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">OCI_APM_RUM_ENDPOINT</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-3-19">
-</span><span id="__span-3-20"><span class="c1"># ATP wallet</span>
-</span><span id="__span-3-21">kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>octo-atp-wallet<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-22"><span class="w">  </span>--from-file<span class="o">=</span>cwallet.sso<span class="w"> </span>--from-file<span class="o">=</span>tnsnames.ora<span class="w"> </span>--from-file<span class="o">=</span>sqlnet.ora
-</span></code></pre></div>
-<h2 id="4-deploy">4. Deploy<a class="headerlink" href="#4-deploy" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1">envsubst<span class="w"> </span>&lt;<span class="w"> </span>deploy/k8s/deployment.yaml<span class="w"> </span><span class="p">|</span><span class="w"> </span>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>-
-</span><span id="__span-4-2">kubectl<span class="w"> </span>rollout<span class="w"> </span>status<span class="w"> </span>deployment/octo-drone-shop<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span>
-</span></code></pre></div>
-<h2 id="5-provision-oci-services">5. Provision OCI Services<a class="headerlink" href="#5-provision-oci-services" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><span class="nb">export</span><span class="w"> </span><span class="nv">COMPARTMENT_ID</span><span class="o">=</span><span class="s2">&quot;&lt;compartment-ocid&gt;&quot;</span>
-</span><span id="__span-5-2"><span class="nb">export</span><span class="w"> </span><span class="nv">SHOP_PUBLIC_URL</span><span class="o">=</span><span class="s2">&quot;https://shop.</span><span class="si">${</span><span class="nv">DNS_DOMAIN</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-5-3">
-</span><span id="__span-5-4"><span class="c1"># Monitoring (alarms + health checks)</span>
-</span><span id="__span-5-5">./deploy/oci/ensure_monitoring.sh
-</span><span id="__span-5-6">
-</span><span id="__span-5-7"><span class="c1"># WAF protection rules</span>
-</span><span id="__span-5-8"><span class="nv">LOAD_BALANCER_OCID</span><span class="o">=</span><span class="s2">&quot;&lt;lb-ocid&gt;&quot;</span><span class="w"> </span>./deploy/oci/ensure_waf.sh
-</span><span id="__span-5-9">
-</span><span id="__span-5-10"><span class="c1"># Cloud Guard</span>
-</span><span id="__span-5-11">./deploy/oci/ensure_cloud_guard.sh
-</span><span id="__span-5-12">
-</span><span id="__span-5-13"><span class="c1"># Security Zones</span>
-</span><span id="__span-5-14">./deploy/oci/ensure_security_zones.sh
-</span><span id="__span-5-15">
-</span><span id="__span-5-16"><span class="c1"># Vault</span>
-</span><span id="__span-5-17">./deploy/oci/ensure_vault.sh
-</span><span id="__span-5-18">
-</span><span id="__span-5-19"><span class="c1"># DB Observability</span>
-</span><span id="__span-5-20"><span class="nv">AUTONOMOUS_DATABASE_ID</span><span class="o">=</span><span class="s2">&quot;&lt;atp-ocid&gt;&quot;</span><span class="w"> </span>./deploy/oci/ensure_db_observability.sh
-</span></code></pre></div>
-<h2 id="6-verify">6. Verify<a class="headerlink" href="#6-verify" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1">curl<span class="w"> </span>https://shop.<span class="si">${</span><span class="nv">DNS_DOMAIN</span><span class="si">}</span>/ready<span class="w"> </span><span class="p">|</span><span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>json.tool
-</span><span id="__span-6-2">curl<span class="w"> </span>https://shop.<span class="si">${</span><span class="nv">DNS_DOMAIN</span><span class="si">}</span>/api/observability/360<span class="w"> </span><span class="p">|</span><span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>json.tool
-</span></code></pre></div>
-<h2 id="7-recommended-enhancement-sequence">7. Recommended enhancement sequence<a class="headerlink" href="#7-recommended-enhancement-sequence" title="Permanent link">&para;</a></h2>
-<p>After the application is reachable, enable the OCI showcase in this order:</p>
+<p>The script is idempotent and performs:</p>
 <ol>
-<li>APM traces and topology</li>
-<li>RUM for browser workflows</li>
-<li>OCI Logging and Log Analytics</li>
-<li>APM drilldowns and console links</li>
-<li>DB Management and Operations Insights</li>
+<li><strong>OCIR repository</strong> — creates <code>octo-drone-shop</code> if missing.</li>
+<li><strong>Kubernetes namespace</strong> — creates it if missing.</li>
+<li><strong>Bootstrap secrets</strong> — <code>octo-auth</code> (token + internal service key), <code>octo-atp</code> (DSN, user, password, wallet password). Keys are auto-generated when not supplied.</li>
+<li><strong>Terraform init</strong> — downloads the OCI provider in <code>deploy/terraform/</code>.</li>
 </ol>
-<p>Use the published <a href="../../observability/enhancement-plan/">Enhancement Plan</a> to
-drive the post-deploy rollout and validation checkpoints.</p>
+<p>Remaining secrets (IDCS, APM, RUM) are populated by the observability scripts in the next step.</p>
+<h2 id="4-provision-observability">4. Provision observability<a class="headerlink" href="#4-provision-observability" title="Permanent link">&para;</a></h2>
+<h3 id="apm-domain-rum-web-application">APM Domain + RUM Web Application<a class="headerlink" href="#apm-domain-rum-web-application" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><span class="nv">COMPARTMENT_ID</span><span class="o">=</span><span class="nv">$OCI_COMPARTMENT_ID</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-2">./deploy/oci/ensure_apm.sh<span class="w"> </span>--plan<span class="w">     </span><span class="c1"># review</span>
+</span><span id="__span-2-3"><span class="nv">PLAN_ONLY</span><span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-4"><span class="nv">COMPARTMENT_ID</span><span class="o">=</span><span class="nv">$OCI_COMPARTMENT_ID</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-5">./deploy/oci/ensure_apm.sh<span class="w"> </span>--apply<span class="w">     </span><span class="c1"># actually create</span>
+</span><span id="__span-2-6">./deploy/oci/ensure_apm.sh<span class="w"> </span>--print<span class="w">     </span><span class="c1"># emit `export OCI_APM_*=...`</span>
+</span></code></pre></div>
+<p>The script prints a block of <code>export</code> lines. Pipe them into a Kubernetes secret:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1">./deploy/oci/ensure_apm.sh<span class="w"> </span>--print<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;^export&#39;</span><span class="w"> </span>&gt;<span class="w"> </span>/tmp/apm.env
+</span><span id="__span-3-2"><span class="c1"># ... create octo-apm secret from /tmp/apm.env ...</span>
+</span></code></pre></div>
+<h3 id="log-analytics-source-registration">Log Analytics source registration<a class="headerlink" href="#log-analytics-source-registration" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1">python3<span class="w"> </span>tools/create_la_source.py<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-2"><span class="w">    </span>--la-namespace<span class="w"> </span>&lt;la-namespace&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-3"><span class="w">    </span>--la-log-group-id<span class="w"> </span>&lt;la-log-group-ocid&gt;<span class="w">     </span><span class="c1"># dry run — prints payload</span>
+</span><span id="__span-4-4">python3<span class="w"> </span>tools/create_la_source.py<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-5"><span class="w">    </span>--la-namespace<span class="w"> </span>&lt;la-namespace&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-6"><span class="w">    </span>--la-log-group-id<span class="w"> </span>&lt;la-log-group-ocid&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-7"><span class="w">    </span>--apply<span class="w">                                    </span><span class="c1"># actually call OCI</span>
+</span></code></pre></div>
+<p>This registers the <code>octo-shop-app-json</code> source + JSON parser so Log
+Analytics indexes <code>trace_id</code>, <code>oracleApmTraceId</code>, <code>level</code>, <code>request_id</code>,
+and other app fields as searchable columns.</p>
+<h3 id="app-log-pipeline-service-connector">App log pipeline (Service Connector)<a class="headerlink" href="#app-log-pipeline-service-connector" title="Permanent link">&para;</a></h3>
+<p>The terraform root module exposes <code>module.la_pipeline_app_logs</code>. Set the following in your <code>terraform.tfvars</code>:</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-5-1"><span class="na">app_log_id</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ocid1.log.oc1..xxx&quot;</span><span class="c1">        # same OCID as OCI_LOG_ID</span>
+</span><span id="__span-5-2"><span class="na">app_log_group_id</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ocid1.loggroup.oc1..xxx&quot;</span>
+</span><span id="__span-5-3"><span class="na">la_namespace</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&lt;log-analytics-namespace&gt;&quot;</span>
+</span><span id="__span-5-4"><span class="na">la_log_group_id</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ocid1.loganalyticsloggroup.oc1..xxx&quot;</span>
+</span></code></pre></div>
+<p>Then <code>terraform plan</code> / <code>terraform apply</code> in <code>deploy/terraform/</code> to create the Service Connector.</p>
+<h3 id="stack-monitoring-for-the-autonomous-database">Stack Monitoring for the Autonomous Database<a class="headerlink" href="#stack-monitoring-for-the-autonomous-database" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><span class="nv">COMPARTMENT_ID</span><span class="o">=</span><span class="nv">$OCI_COMPARTMENT_ID</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-2"><span class="nv">AUTONOMOUS_DATABASE_ID</span><span class="o">=</span>&lt;atp-ocid&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-3"><span class="nv">SM_RESOURCE_NAME</span><span class="o">=</span>octo-atp<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-4">./deploy/oci/ensure_stack_monitoring.sh<span class="w">          </span><span class="c1"># dry run by default</span>
+</span><span id="__span-6-5"><span class="nv">DRY_RUN</span><span class="o">=</span><span class="nb">false</span><span class="w"> </span>...<span class="w"> </span>./deploy/oci/ensure_stack_monitoring.sh
+</span></code></pre></div>
+<p>The ATP is registered as a MonitoredResource so it joins the Stack
+Monitoring topology alongside the OKE workloads.</p>
+<h2 id="5-first-deploy">5. First deploy<a class="headerlink" href="#5-first-deploy" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><span class="nv">DNS_DOMAIN</span><span class="o">=</span>tenant-a.customer.example<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-2"><span class="nv">OCIR_REPO</span><span class="o">=</span>&lt;region&gt;.ocir.io/&lt;tenancy-ns&gt;/octo-drone-shop<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-3">./deploy/deploy.sh
+</span></code></pre></div>
+<p>The script builds on the remote VM, pushes to OCIR, and rolls out the
+OKE Deployment. <code>--build-only</code> skips the rollout; <code>--rollout-only</code>
+redeploys the existing <code>:latest</code> image.</p>
+<h2 id="6-validate">6. Validate<a class="headerlink" href="#6-validate" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1">curl<span class="w"> </span>-s<span class="w"> </span>https://shop.&lt;your-domain&gt;/ready<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq
+</span><span id="__span-8-2">curl<span class="w"> </span>-s<span class="w"> </span>https://shop.&lt;your-domain&gt;/api/observability/360<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq
+</span><span id="__span-8-3">curl<span class="w"> </span>-s<span class="w"> </span>https://shop.&lt;your-domain&gt;/api/integrations/schema<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq
+</span></code></pre></div>
+<p>If <code>/api/integrations/schema</code> returns an OpenAPI document that includes
+<code>InternalServiceKey</code> in <code>components.securitySchemes</code>, the cross-service
+contract is live.</p>
 
 
 
@@ -2881,7 +2999,7 @@ drive the post-deploy rollout and validation checkpoints.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../quickstart/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Quick Start">
+          <a href="../oke-deployment/" class="md-footer__link md-footer__link--prev" aria-label="Previous: OKE Deployment">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2891,20 +3009,20 @@ drive the post-deploy rollout and validation checkpoints.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Quick Start
+                OKE Deployment
               </div>
             </div>
           </a>
         
         
           
-          <a href="../new-tenancy/" class="md-footer__link md-footer__link--next" aria-label="Next: New Tenancy">
+          <a href="../../architecture/" class="md-footer__link md-footer__link--next" aria-label="Next: Architecture">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                New Tenancy
+                Architecture
               </div>
             </div>
             <div class="md-footer__button md-icon">
