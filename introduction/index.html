@@ -10,7 +10,7 @@
 <link href=".." rel="prev"/>
 <link href="../getting-started/" rel="next"/>
 <link href="../assets/favicon.ico" rel="icon"/>
-<meta content="mkdocs-1.6.1, mkdocs-material-9.7.6" name="generator"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.7.1" name="generator"/>
 <title>Introduction - OCTO Cloud-Native Platform</title>
 <link href="../assets/stylesheets/main.484c7ddc.min.css" rel="stylesheet"/>
 <link href="../assets/stylesheets/palette.ab4e12ef.min.css" rel="stylesheet"/>
@@ -323,6 +323,15 @@
 <span class="md-ellipsis">
       
         Current Runtime Model
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#provisioning-a-new-tenancy">
+<span class="md-ellipsis">
+      
+        Provisioning a New Tenancy
       
     </span>
 </a>
@@ -1282,6 +1291,15 @@
 </a>
 </li>
 <li class="md-nav__item">
+<a class="md-nav__link" href="#provisioning-a-new-tenancy">
+<span class="md-ellipsis">
+      
+        Provisioning a New Tenancy
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
 <a class="md-nav__link" href="#oci-services">
 <span class="md-ellipsis">
       
@@ -1401,7 +1419,23 @@
 <div class="md-content" data-md-component="content">
 <article class="md-content__inner md-typeset">
 <h1 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">¶</a></h1>
-<p>The <strong>OCTO Cloud-Native Platform</strong> is a reference implementation of enterprise applications running on Oracle Cloud Infrastructure (OCI). It demonstrates how to integrate OCI's observability, security, database, and AI services with cloud-native applications deployed on Oracle Kubernetes Engine (OKE).</p>
+<p>The <strong>OCTO Cloud-Native Platform</strong> is now maintained as a unified
+two-service deployment in
+<a href="https://github.com/adibirzu/octo-apm-demo"><code>adibirzu/octo-apm-demo</code></a>.
+That repository owns the fresh-tenancy workflow, private Compute
+Resource Manager stack, shared Terraform, Helm chart, OKE manifests, VM
+deployment, E2E tests, and operational docs for <strong>both</strong> OCTO Drone Shop
+and Enterprise CRM.</p>
+<p>This <code>octo-drone-shop</code> documentation remains the component reference for
+the customer storefront and workflow gateway. If you are provisioning a
+new OCI tenancy now, start from the unified project:</p>
+<p><a class="md-button md-button--primary" href="https://adibirzu.github.io/octo-apm-demo/getting-started/new-tenancy/"><span class="twemoji"><svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m13.13 22.19-1.63-3.83c1.57-.58 3.04-1.36 4.4-2.27zM5.64 12.5l-3.83-1.63 6.1-2.77C7 9.46 6.22 10.93 5.64 12.5M21.61 2.39S16.66.269 11 5.93c-2.19 2.19-3.5 4.6-4.35 6.71-.28.75-.09 1.57.46 2.13l2.13 2.12c.55.56 1.37.74 2.12.46A19.1 19.1 0 0 0 18.07 13c5.66-5.66 3.54-10.61 3.54-10.61m-7.07 7.07c-.78-.78-.78-2.05 0-2.83s2.05-.78 2.83 0c.77.78.78 2.05 0 2.83s-2.05.78-2.83 0m-5.66 7.07-1.41-1.41zM6.24 22l3.64-3.64c-.34-.09-.67-.24-.97-.45L4.83 22zM2 22h1.41l4.77-4.76-1.42-1.41L2 20.59zm0-2.83 4.09-4.08c-.21-.3-.36-.62-.45-.97L2 17.76z"></path></svg></span> Unified New Tenancy Guide</a>
+<a class="md-button" href="https://github.com/adibirzu/octo-apm-demo"><span class="twemoji"><svg viewbox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M8 0c4.42 0 8 3.58 8 8a8.01 8.01 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27s-1.36.09-2 .27c-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8"></path></svg></span> Unified Repo</a>
+<a class="md-button md-button--primary" href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https://github.com/adibirzu/octo-apm-demo/releases/download/compute-resource-manager-stack-20260504/octo-compute-stack.zip"><span class="twemoji"><svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M11 20H6.5q-2.28 0-3.89-1.57Q1 16.85 1 14.58q0-1.95 1.17-3.48 1.18-1.53 3.08-1.95.63-2.3 2.5-3.72Q9.63 4 12 4q2.93 0 4.96 2.04Q19 8.07 19 11q1.73.2 2.86 1.5 1.14 1.28 1.14 3 0 1.88-1.31 3.19T18.5 20H13v-7.15l1.6 1.55L16 13l-4-4-4 4 1.4 1.4 1.6-1.55Z"></path></svg></span> Deploy Private Compute Stack</a>
+<a class="md-button" href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https://github.com/adibirzu/octo-apm-demo/releases/download/resource-manager-stack/octo-stack.zip"><span class="twemoji"><svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M11 20H6.5q-2.28 0-3.89-1.57Q1 16.85 1 14.58q0-1.95 1.17-3.48 1.18-1.53 3.08-1.95.63-2.3 2.5-3.72Q9.63 4 12 4q2.93 0 4.96 2.04Q19 8.07 19 11q1.73.2 2.86 1.5 1.14 1.28 1.14 3 0 1.88-1.31 3.19T18.5 20H13v-7.15l1.6 1.55L16 13l-4-4-4 4 1.4 1.4 1.6-1.55Z"></path></svg></span> Deploy Resource Manager Stack</a></p>
+<p>Use the unified repo for provisioning and this site for Drone Shop
+internals, route behavior, observability surfaces, and local component
+development.</p>
 <h2 id="goals">Goals<a class="headerlink" href="#goals" title="Permanent link">¶</a></h2>
 <ol>
 <li><strong>Showcase OCI observability services</strong> — APM, Logging, Monitoring, Log Analytics, DB Management, Operations Insights — as modular add-ons that can be activated independently</li>
@@ -1439,14 +1473,49 @@
 <p>Both services integrate with the full OCI observability stack through modular add-ons that activate via environment variables or console configuration — no code changes required.</p>
 <h2 id="current-runtime-model">Current Runtime Model<a class="headerlink" href="#current-runtime-model" title="Permanent link">¶</a></h2>
 <ul>
-<li><strong>Shop frontend</strong>: <code>https://shop.example.cloud</code></li>
-<li><strong>CRM frontend</strong>: <code>https://crm.example.cloud</code></li>
+<li><strong>Canonical deployment repo</strong>: <a href="https://github.com/adibirzu/octo-apm-demo"><code>adibirzu/octo-apm-demo</code></a></li>
+<li><strong>Canonical docs site</strong>: <a href="https://adibirzu.github.io/octo-apm-demo">https://adibirzu.github.io/octo-apm-demo</a></li>
+<li><strong>Default shared deployment hostnames</strong>: <code>https://shop.cyber-sec.ro</code> and <code>https://crm.cyber-sec.ro</code></li>
+<li><strong>Validated private Compute hostnames</strong>: <code>http://shop.1.octodemo.cloud</code> and <code>http://crm.1.octodemo.cloud</code></li>
+<li><strong>Template hostnames for other tenancies</strong>: <code>https://shop.&lt;your-domain&gt;</code> and <code>https://crm.&lt;your-domain&gt;</code></li>
 <li><strong>Shared database</strong>: Oracle ATP</li>
 <li><strong>Catalog source of truth</strong>: CRM</li>
 <li><strong>Browser-visible CRM links</strong>: public URL only</li>
-<li><strong>Backend CRM calls from shop</strong>: may use the internal cluster-local CRM service URL</li>
+<li><strong>Backend CRM calls from shop</strong>: may use the internal cluster-local CRM service URL on OKE or the private CRM instance IP on the Compute stack</li>
 </ul>
 <p>This split matters operationally: the shop renders customer-facing catalog and checkout experiences, while the CRM is where operators edit customers, orders, invoices, storefronts, and product inventory.</p>
+<h2 id="provisioning-a-new-tenancy">Provisioning a New Tenancy<a class="headerlink" href="#provisioning-a-new-tenancy" title="Permanent link">¶</a></h2>
+<p>Use the unified <code>octo-apm-demo</code> repo for new tenancy work. It contains the
+current <code>deploy/bootstrap.sh</code> flow, private Compute Resource Manager
+package, Helm chart, cross-service E2E tests, and deployment runbooks.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1">git<span class="w"> </span>clone<span class="w"> </span>https://github.com/adibirzu/octo-apm-demo.git
+</span><span id="__span-0-2"><span class="nb">cd</span><span class="w"> </span>octo-apm-demo
+</span><span id="__span-0-3">./deploy/verify.sh
+</span></code></pre></div>
+<p>Recommended fresh-tenancy path:</p>
+<p><a href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https://github.com/adibirzu/octo-apm-demo/releases/download/compute-resource-manager-stack-20260504/octo-compute-stack.zip"><img alt="Deploy Full Compute Stack to Oracle Cloud" src="https://oci-resourcemanager-plugin.plugins.oci.oraclecloud.com/latest/deploy-to-oracle-cloud.svg"/></a></p>
+<p>That stack can create the VCN, public LB subnet, private app subnet,
+private DB subnet, NAT Gateway, Service Gateway, NSGs/security lists,
+two private Podman Compute instances, dedicated private ATP, OCI
+LB/WAF, APM, OCI Logging, Log Analytics pipelines, DB Management,
+Operations Insights, and Stack Monitoring Standard.</p>
+<p>OKE bootstrap remains available:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><span class="nv">OCI_PROFILE</span><span class="o">=</span>DEFAULT<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-2"><span class="nv">OCI_COMPARTMENT_ID</span><span class="o">=</span>ocid1.compartment.oc1..xxxx<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-3"><span class="nv">DNS_BASE_DOMAIN</span><span class="o">=</span>&lt;your-domain&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-4"><span class="nv">REMOTE_BUILD_HOST</span><span class="o">=</span>&lt;ssh-host-with-ocir-login&gt;<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-5">./deploy/bootstrap.sh
+</span></code></pre></div>
+<p>For the shared <code>DEFAULT</code> / <code>oci4cca</code> profile, the baked-in domain is
+<code>cyber-sec.ro</code>, so the target hosts are <code>shop.cyber-sec.ro</code> and
+<code>crm.cyber-sec.ro</code>. Check the unified current-status page before treating
+that shared environment as E2E-ready:
+<a href="https://adibirzu.github.io/octo-apm-demo/operations/current-status/">https://adibirzu.github.io/octo-apm-demo/operations/current-status/</a>.</p>
+<p>If you prefer the Console-led observability/WAF pre-flight, use the
+Resource Manager button above. It provisions tenancy-level observability
+and security resources only; it does not create OKE, ATP, DNS, or deploy
+the app containers. Use <code>deploy/bootstrap.sh</code> for the full end-to-end
+application rollout.</p>
 <h2 id="oci-services">OCI Services<a class="headerlink" href="#oci-services" title="Permanent link">¶</a></h2>
 <p>The platform integrates with the following OCI services. Each service is an <strong>independent add-on</strong> — the application runs with or without any given service.</p>
 <h3 id="core-compute-networking">Core Compute &amp; Networking<a class="headerlink" href="#core-compute-networking" title="Permanent link">¶</a></h3>
@@ -1777,20 +1846,37 @@
 </thead>
 <tbody>
 <tr>
-<td><a href="../getting-started/quickstart/">Local Docker</a></td>
-<td>5 min</td>
-<td>Development and testing</td>
+<td><a href="https://adibirzu.github.io/octo-apm-demo/getting-started/new-tenancy/">Unified new tenancy</a></td>
+<td>45-90 min</td>
+<td>Full OCI rollout of Shop + CRM</td>
 </tr>
 <tr>
-<td><a href="../getting-started/oke-deployment/">OKE Deployment</a></td>
+<td><a href="https://adibirzu.github.io/octo-apm-demo/getting-started/compute-deployment/">Private Compute stack</a></td>
+<td>60-90 min</td>
+<td>Production demo with LB/WAF, private Podman Compute, private ATP, APM, Logging, LA, and Stack Monitoring</td>
+</tr>
+<tr>
+<td><a href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https://github.com/adibirzu/octo-apm-demo/releases/download/resource-manager-stack/octo-stack.zip">Deploy to Oracle Cloud</a></td>
+<td>5-10 min</td>
+<td>Resource Manager pre-flight for APM, RUM, LA, and WAF</td>
+</tr>
+<tr>
+<td><a href="../getting-started/quickstart/">Local Docker</a></td>
+<td>5 min</td>
+<td>Drone Shop component development and testing</td>
+</tr>
+<tr>
+<td><a href="../getting-started/oke-deployment/">Component OKE Deployment</a></td>
 <td>30 min</td>
-<td>Production with full OCI observability</td>
+<td>Legacy/component-only deployment references</td>
 </tr>
 </tbody>
 </table>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">¶</a></h2>
 <ul>
-<li><a href="../getting-started/">Getting Started</a> — Prerequisites and deployment guide</li>
+<li><a href="https://adibirzu.github.io/octo-apm-demo/getting-started/new-tenancy/">Unified New Tenancy Guide</a> — current end-to-end provisioning path</li>
+<li><a href="https://adibirzu.github.io/octo-apm-demo/getting-started/deployment-options/">Unified Deployment Options</a> — private Compute, OKE, Helm, Resource Manager, VM, and local-stack paths</li>
+<li><a href="../getting-started/">Getting Started</a> — Drone Shop component prerequisites and local development</li>
 <li><a href="../architecture/">Architecture</a> — System design, data model, framework approach</li>
 <li><a href="../observability/addons/">OCI Observability Add-Ons</a> — 8-level progressive enablement guide</li>
 <li><a href="../architecture/database-integration/">Cross-Service Integration</a> — How Drone Shop and CRM share ATP</li>
@@ -1805,8 +1891,12 @@
 </thead>
 <tbody>
 <tr>
+<td><a href="https://github.com/adibirzu/octo-apm-demo">octo-apm-demo</a></td>
+<td>Unified deployment surface, docs, Resource Manager stack, Helm chart, Terraform, E2E tests</td>
+</tr>
+<tr>
 <td><a href="https://github.com/adibirzu/octo-drone-shop">octo-drone-shop</a></td>
-<td>Drone Shop + Workflow Gateway + Documentation source</td>
+<td>Drone Shop + Workflow Gateway component source</td>
 </tr>
 <tr>
 <td><a href="https://github.com/adibirzu/enterprise-crm-portal">enterprise-crm-portal</a></td>

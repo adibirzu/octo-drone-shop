@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -1566,6 +1566,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#current-cap-baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current cap baseline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#golden-workflows" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1656,6 +1667,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps-after-cap-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next steps after cap recovery
+      
+    </span>
+  </a>
   
 </li>
       
@@ -2784,6 +2806,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#current-cap-baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current cap baseline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#golden-workflows" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2878,6 +2911,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#next-steps-after-cap-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next steps after cap recovery
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#deliverables" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2941,6 +2985,22 @@ observability showcase rather than just an instrumented application set.</p>
 <li>create usable drilldowns between APM, Log Analytics, DB Management, and OPSI</li>
 <li>make the whole flow reproducible from the published docs</li>
 </ul>
+<h2 id="current-cap-baseline">Current cap baseline<a class="headerlink" href="#current-cap-baseline" title="Permanent link">&para;</a></h2>
+<p>As of 2026-05-04, <code>octodemo.cloud</code> is restored on the cap profile:</p>
+<ul>
+<li>cap kubectl context: <code>emdemo</code></li>
+<li>cap OCI profile: <code>cap</code></li>
+<li>shop host: <code>shop.octodemo.cloud</code></li>
+<li>CRM host: <code>crm.octodemo.cloud</code></li>
+<li>shared ATP alias: <code>ocidemoatp_low</code></li>
+</ul>
+<p>Use <code>DEFAULT</code> only for later tests with different domains.</p>
+<p>The cap deployment is healthy when these checks return 200:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1">./scripts/demo/cap_smoke.sh
+</span></code></pre></div>
+<p>CRM currently has APM traces and RUM enabled, with unsupported OTLP metric
+export disabled. Until the next CRM image is rebuilt, cap carries a temporary
+<code>crm-metrics-hotfix</code> ConfigMap mount for that change.</p>
 <h2 id="golden-workflows">Golden workflows<a class="headerlink" href="#golden-workflows" title="Permanent link">&para;</a></h2>
 <p>The platform should always be able to showcase these four workflows:</p>
 <ol>
@@ -2997,6 +3057,82 @@ observability showcase rather than just an instrumented application set.</p>
 <li>capture the verification checkpoints in the docs</li>
 <li>keep the README, install guide, and published site aligned</li>
 </ul>
+<h2 id="next-steps-after-cap-recovery">Next steps after cap recovery<a class="headerlink" href="#next-steps-after-cap-recovery" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Promote durable images:</li>
+<li>rebuild/push CRM with the metrics exporter fix as an immutable
+     <code>linux/amd64</code> tag</li>
+<li>rebuild/push shop with the ATP <code>orders</code> payment-provider migration as an
+     immutable <code>linux/amd64</code> tag</li>
+<li>roll <code>deployment/enterprise-crm-portal</code> in <code>enterprise-crm</code> using
+     container <code>app</code></li>
+<li>roll <code>deployment/mushop-portal</code> in <code>mushop-portal</code> using container
+     <code>mushop</code></li>
+<li>
+<p>remove the live <code>crm-metrics-hotfix</code> mount after CRM is rebuilt</p>
+</li>
+<li>
+<p>Normalize cap deployment:</p>
+</li>
+<li>decide whether shop stays in <code>mushop-portal</code> for cap compatibility or
+     moves to <code>octo-drone-shop</code></li>
+<li>encode that choice in deployment scripts and docs</li>
+<li>
+<p>keep <code>octodemo.cloud</code> separate from future <code>DEFAULT</code> profile test domains</p>
+</li>
+<li>
+<p>Run automated smoke checks:</p>
+</li>
+<li>use <code>./scripts/demo/cap_smoke.sh</code> before demos and after cap deploys</li>
+<li>
+<p>have future CI call the same script with explicit <code>SHOP_URL</code>, <code>CRM_URL</code>,
+     and <code>KUBE_CONTEXT</code></p>
+</li>
+<li>
+<p>Prove the observability story:</p>
+</li>
+<li>checkout trace visible in APM</li>
+<li>CRM order-sync trace visible in APM</li>
+<li>trace id searchable in logs</li>
+<li>
+<p>SQL visible in DB Management or OPSI by service module</p>
+</li>
+<li>
+<p>Document rollback:</p>
+</li>
+<li>previous image digests</li>
+<li>rollout undo command for both deployments</li>
+<li>ConfigMap hotfix removal command after CRM image promotion</li>
+</ol>
+<p>Promotion and rollback reference:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span><span class="nb">set</span><span class="w"> </span>image<span class="w"> </span>deploy/enterprise-crm-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-2"><span class="w">  </span>-n<span class="w"> </span>enterprise-crm<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-3"><span class="w">  </span><span class="nv">app</span><span class="o">=</span>eu-frankfurt-1.ocir.io/fr4zqfimuxtr/enterprise-crm-portal:&lt;tag&gt;
+</span><span id="__span-1-4">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>rollout<span class="w"> </span>status<span class="w"> </span>deploy/enterprise-crm-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-5"><span class="w">  </span>-n<span class="w"> </span>enterprise-crm
+</span><span id="__span-1-6">
+</span><span id="__span-1-7">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span><span class="nb">set</span><span class="w"> </span>image<span class="w"> </span>deploy/mushop-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-8"><span class="w">  </span>-n<span class="w"> </span>mushop-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-9"><span class="w">  </span><span class="nv">mushop</span><span class="o">=</span>eu-frankfurt-1.ocir.io/fr4zqfimuxtr/octo-drone-shop:&lt;tag&gt;
+</span><span id="__span-1-10">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>rollout<span class="w"> </span>status<span class="w"> </span>deploy/mushop-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-11"><span class="w">  </span>-n<span class="w"> </span>mushop-portal
+</span><span id="__span-1-12">
+</span><span id="__span-1-13">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>rollout<span class="w"> </span>undo<span class="w"> </span>deploy/enterprise-crm-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-14"><span class="w">  </span>-n<span class="w"> </span>enterprise-crm
+</span><span id="__span-1-15">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>rollout<span class="w"> </span>undo<span class="w"> </span>deploy/mushop-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-16"><span class="w">  </span>-n<span class="w"> </span>mushop-portal
+</span></code></pre></div>
+<p>Hotfix removal reference after the fixed CRM image is active:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>patch<span class="w"> </span>deploy<span class="w"> </span>enterprise-crm-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-2"><span class="w">  </span>-n<span class="w"> </span>enterprise-crm<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-3"><span class="w">  </span>--type<span class="o">=</span>strategic<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-4"><span class="w">  </span>-p<span class="w"> </span><span class="s1">&#39;{&quot;spec&quot;:{&quot;template&quot;:{&quot;spec&quot;:{&quot;containers&quot;:[{&quot;name&quot;:&quot;app&quot;,&quot;volumeMounts&quot;:[{&quot;name&quot;:&quot;metrics-hotfix&quot;,&quot;$patch&quot;:&quot;delete&quot;}]}],&quot;volumes&quot;:[{&quot;name&quot;:&quot;metrics-hotfix&quot;,&quot;$patch&quot;:&quot;delete&quot;}]}}}}&#39;</span>
+</span><span id="__span-2-5">
+</span><span id="__span-2-6">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>rollout<span class="w"> </span>status<span class="w"> </span>deploy/enterprise-crm-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-7"><span class="w">  </span>-n<span class="w"> </span>enterprise-crm
+</span><span id="__span-2-8">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>delete<span class="w"> </span>configmap<span class="w"> </span>crm-metrics-hotfix<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-9"><span class="w">  </span>-n<span class="w"> </span>enterprise-crm
+</span></code></pre></div>
 <h2 id="deliverables">Deliverables<a class="headerlink" href="#deliverables" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

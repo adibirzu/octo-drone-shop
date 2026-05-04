@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -2619,6 +2619,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#cap-profile-runbook-octodemocloud" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cap Profile Runbook (octodemo.cloud)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cap Profile Runbook (octodemo.cloud)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#temporary-crm-metrics-hotfix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Temporary CRM Metrics Hotfix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-promotion-and-rollback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Promotion and Rollback
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2800,6 +2839,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#cap-profile-runbook-octodemocloud" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cap Profile Runbook (octodemo.cloud)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cap Profile Runbook (octodemo.cloud)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#temporary-crm-metrics-hotfix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Temporary CRM Metrics Hotfix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-promotion-and-rollback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Promotion and Rollback
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2821,6 +2899,16 @@
 
 
 <h1 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h1>
+<p>The current unified deployment surface lives in
+<a href="https://github.com/adibirzu/octo-apm-demo"><code>adibirzu/octo-apm-demo</code></a>.
+Use that repository for new OKE, private Compute, Resource Manager, or
+single-VM deployments. This page remains as the service-level OKE
+rollout reference for Drone Shop.</p>
+<p>For the production-demo path without Kubernetes, use the
+<a href="https://adibirzu.github.io/octo-apm-demo/getting-started/compute-deployment/">Private Compute Deployment</a>
+stack. It deploys Shop and CRM on private Podman Compute instances with
+public OCI LB/WAF, private ATP, APM, OCI Logging, Log Analytics, DB
+Management, Operations Insights, and Stack Monitoring Standard.</p>
 <h2 id="automated-deploy-script">Automated Deploy Script<a class="headerlink" href="#automated-deploy-script" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1">./deploy/deploy.sh<span class="w">                  </span><span class="c1"># Build + push + rollout</span>
 </span><span id="__span-0-2">./deploy/deploy.sh<span class="w"> </span>--build-only<span class="w">     </span><span class="c1"># Build + push, no rollout</span>
@@ -2856,6 +2944,100 @@
 <li><strong>Image pull</strong>: OCIR with <code>ocir-pull-secret</code></li>
 <li><strong>ATP wallet</strong>: Mounted as read-only volume</li>
 </ul>
+<h2 id="cap-profile-runbook-octodemocloud">Cap Profile Runbook (<code>octodemo.cloud</code>)<a class="headerlink" href="#cap-profile-runbook-octodemocloud" title="Permanent link">&para;</a></h2>
+<p><code>octodemo.cloud</code> currently runs on the cap profile. Use explicit context and
+profile flags:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>...
+</span><span id="__span-5-2">oci<span class="w"> </span>--profile<span class="w"> </span>cap<span class="w"> </span>...
+</span></code></pre></div>
+<p>Do not use <code>DEFAULT</code> for <code>octodemo.cloud</code>; it is reserved for later tests with
+different domains.</p>
+<p>Current live objects:</p>
+<table>
+<thead>
+<tr>
+<th>Host</th>
+<th>Namespace</th>
+<th>Deployment</th>
+<th>Service</th>
+<th>Ingress</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>shop.octodemo.cloud</code></td>
+<td><code>mushop-portal</code></td>
+<td><code>mushop-portal</code></td>
+<td><code>mushop-portal</code></td>
+<td><code>octodemo-shop</code></td>
+</tr>
+<tr>
+<td><code>crm.octodemo.cloud</code></td>
+<td><code>enterprise-crm</code></td>
+<td><code>enterprise-crm-portal</code></td>
+<td><code>enterprise-crm-portal</code></td>
+<td><code>octodemo-crm</code></td>
+</tr>
+</tbody>
+</table>
+<p>Smoke check:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1">./scripts/demo/cap_smoke.sh
+</span></code></pre></div>
+<p>If either public root returns nginx <code>404 Not Found</code>, check ingress presence
+first:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>get<span class="w"> </span>ingress<span class="w"> </span>-A<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>octodemo
+</span></code></pre></div>
+<p>If <code>/api/dashboard/summary</code> returns 500 and logs mention
+<code>payment_provider_reference</code>, run the current shop image or migration against
+the shared ATP; the live schema must include <code>orders.payment_provider</code> and
+<code>orders.payment_provider_reference</code>.</p>
+<h3 id="temporary-crm-metrics-hotfix">Temporary CRM Metrics Hotfix<a class="headerlink" href="#temporary-crm-metrics-hotfix" title="Permanent link">&para;</a></h3>
+<p>The live cap CRM deployment currently mounts <code>configmap/crm-metrics-hotfix</code>
+over <code>/app/server/observability/metrics.py</code>. This disables unsupported OTLP
+metric export to OCI APM while keeping:</p>
+<ul>
+<li>OCI APM traces</li>
+<li>OCI APM RUM</li>
+<li>Prometheus <code>/metrics</code></li>
+</ul>
+<p>Remove the mount after rebuilding and promoting a CRM image that includes the
+same code change:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>get<span class="w"> </span>deploy<span class="w"> </span>enterprise-crm-portal<span class="w"> </span>-n<span class="w"> </span>enterprise-crm<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-2"><span class="w">  </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{range .spec.template.spec.containers[0].volumeMounts[*]}{.name}{&quot; &quot;}{.mountPath}{&quot;\n&quot;}{end}&#39;</span>
+</span></code></pre></div>
+<p>The current hotfix mount is named <code>metrics-hotfix</code> and points at
+<code>configmap/crm-metrics-hotfix</code>. After the fixed image is active, remove the
+mount and delete the ConfigMap:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>patch<span class="w"> </span>deploy<span class="w"> </span>enterprise-crm-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-2"><span class="w">  </span>-n<span class="w"> </span>enterprise-crm<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-3"><span class="w">  </span>--type<span class="o">=</span>strategic<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-4"><span class="w">  </span>-p<span class="w"> </span><span class="s1">&#39;{&quot;spec&quot;:{&quot;template&quot;:{&quot;spec&quot;:{&quot;containers&quot;:[{&quot;name&quot;:&quot;app&quot;,&quot;volumeMounts&quot;:[{&quot;name&quot;:&quot;metrics-hotfix&quot;,&quot;$patch&quot;:&quot;delete&quot;}]}],&quot;volumes&quot;:[{&quot;name&quot;:&quot;metrics-hotfix&quot;,&quot;$patch&quot;:&quot;delete&quot;}]}}}}&#39;</span>
+</span><span id="__span-9-5">
+</span><span id="__span-9-6">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>rollout<span class="w"> </span>status<span class="w"> </span>deploy/enterprise-crm-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-7"><span class="w">  </span>-n<span class="w"> </span>enterprise-crm
+</span><span id="__span-9-8">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>delete<span class="w"> </span>configmap<span class="w"> </span>crm-metrics-hotfix<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-9-9"><span class="w">  </span>-n<span class="w"> </span>enterprise-crm
+</span></code></pre></div>
+<h3 id="image-promotion-and-rollback">Image Promotion and Rollback<a class="headerlink" href="#image-promotion-and-rollback" title="Permanent link">&para;</a></h3>
+<p>Record the current image before each cap rollout:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>get<span class="w"> </span>deploy<span class="w"> </span>mushop-portal<span class="w"> </span>-n<span class="w"> </span>mushop-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-10-2"><span class="w">  </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.spec.template.spec.containers[0].image}{&quot;\n&quot;}&#39;</span>
+</span><span id="__span-10-3">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>get<span class="w"> </span>deploy<span class="w"> </span>enterprise-crm-portal<span class="w"> </span>-n<span class="w"> </span>enterprise-crm<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-10-4"><span class="w">  </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.spec.template.spec.containers[0].image}{&quot;\n&quot;}&#39;</span>
+</span></code></pre></div>
+<p>Promote immutable tags instead of relying only on <code>latest</code>:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span><span class="nb">set</span><span class="w"> </span>image<span class="w"> </span>deploy/mushop-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-2"><span class="w">  </span>-n<span class="w"> </span>mushop-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-3"><span class="w">  </span><span class="nv">mushop</span><span class="o">=</span>eu-frankfurt-1.ocir.io/fr4zqfimuxtr/octo-drone-shop:&lt;tag&gt;
+</span><span id="__span-11-4">
+</span><span id="__span-11-5">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span><span class="nb">set</span><span class="w"> </span>image<span class="w"> </span>deploy/enterprise-crm-portal<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-6"><span class="w">  </span>-n<span class="w"> </span>enterprise-crm<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-7"><span class="w">  </span><span class="nv">app</span><span class="o">=</span>eu-frankfurt-1.ocir.io/fr4zqfimuxtr/enterprise-crm-portal:&lt;tag&gt;
+</span></code></pre></div>
+<p>Rollback uses the Kubernetes rollout history:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>rollout<span class="w"> </span>undo<span class="w"> </span>deploy/mushop-portal<span class="w"> </span>-n<span class="w"> </span>mushop-portal
+</span><span id="__span-12-2">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>rollout<span class="w"> </span>undo<span class="w"> </span>deploy/enterprise-crm-portal<span class="w"> </span>-n<span class="w"> </span>enterprise-crm
+</span></code></pre></div>
 
 
 

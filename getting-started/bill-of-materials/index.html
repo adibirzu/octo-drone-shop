@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -815,6 +815,17 @@
     <span class="md-ellipsis">
       
         Full production deploy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#private-compute-production-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Private Compute production demo
       
     </span>
   </a>
@@ -2712,6 +2723,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#private-compute-production-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Private Compute production demo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#variable-script-map-excerpt" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2745,7 +2767,7 @@
 <h1 id="deployment-bill-of-materials">Deployment Bill of Materials<a class="headerlink" href="#deployment-bill-of-materials" title="Permanent link">&para;</a></h1>
 <p>The authoritative minimal list of tenancy resources, secrets, CLIs, and
 container images required to redeploy the platform from a blank slate.
-Mirrored from <a href="https://github.com/adibirzu/octo-drone-shop/blob/main/deploy/BOM.md"><code>deploy/BOM.md</code></a>
+Mirrored from <a href="https://github.com/adibirzu/octo-apm-demo/blob/main/deploy/BOM.md"><code>deploy/BOM.md</code></a>
 in the repo so both <code>pre-flight-check.sh</code> and new operators are reading
 the same source of truth.</p>
 <div class="admonition note">
@@ -2822,8 +2844,8 @@ script validates against. Skip it at your peril.</p>
 </tr>
 <tr>
 <td>Runtime</td>
-<td>OKE cluster <strong>OR</strong> 1 Compute VM</td>
-<td>Console or Terraform</td>
+<td>OKE cluster <strong>OR</strong> private two-instance Compute stack <strong>OR</strong> 1 Compute VM</td>
+<td>Console, Terraform, or Resource Manager</td>
 </tr>
 <tr>
 <td>Container images</td>
@@ -2832,7 +2854,7 @@ script validates against. Skip it at your peril.</p>
 </tr>
 </tbody>
 </table>
-<p>Full row-by-row detail in <a href="https://github.com/adibirzu/octo-drone-shop/blob/main/deploy/BOM.md"><code>deploy/BOM.md</code></a>.</p>
+<p>Full row-by-row detail in <a href="https://github.com/adibirzu/octo-apm-demo/blob/main/deploy/BOM.md"><code>deploy/BOM.md</code></a>.</p>
 <h2 id="smallest-viable-deploy-workshopdemo">Smallest viable deploy (workshop/demo)<a class="headerlink" href="#smallest-viable-deploy-workshopdemo" title="Permanent link">&para;</a></h2>
 <ul>
 <li>1 compartment, 1 ATP (free tier), 1 Compute VM</li>
@@ -2847,6 +2869,17 @@ script validates against. Skip it at your peril.</p>
 <li>OCI Vault + Secrets Store CSI driver</li>
 <li>Resource Manager stack for the observability + WAF surface</li>
 <li><strong>45–90 minutes</strong> first time; <strong>~15 minutes</strong> for subsequent tenancies via the RM stack.</li>
+</ul>
+<h2 id="private-compute-production-demo">Private Compute production demo<a class="headerlink" href="#private-compute-production-demo" title="Permanent link">&para;</a></h2>
+<ul>
+<li>VCN with public LB subnet, private app subnet, private DB subnet, NAT,
+  Service Gateway, NSGs, and security lists</li>
+<li>Two private Compute instances running Shop and CRM with Podman</li>
+<li>Dedicated private ATP, public OCI LB/WAF, APM, OCI Logging, Log
+  Analytics, DB Management, Operations Insights, and Stack Monitoring
+  Standard</li>
+<li>Resource Manager one-click stack:
+  <a href="https://adibirzu.github.io/octo-apm-demo/getting-started/compute-deployment/">https://adibirzu.github.io/octo-apm-demo/getting-started/compute-deployment/</a></li>
 </ul>
 <h2 id="variable-script-map-excerpt">Variable → script map (excerpt)<a class="headerlink" href="#variable-script-map-excerpt" title="Permanent link">&para;</a></h2>
 <table>

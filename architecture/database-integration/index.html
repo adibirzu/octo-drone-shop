@@ -10,7 +10,7 @@
 <link href="../data-model/" rel="prev"/>
 <link href="../framework/" rel="next"/>
 <link href="../../assets/favicon.ico" rel="icon"/>
-<meta content="mkdocs-1.6.1, mkdocs-material-9.7.6" name="generator"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.7.1" name="generator"/>
 <title>Database Integration - OCTO Cloud-Native Platform</title>
 <link href="../../assets/stylesheets/main.484c7ddc.min.css" rel="stylesheet"/>
 <link href="../../assets/stylesheets/palette.ab4e12ef.min.css" rel="stylesheet"/>
@@ -507,6 +507,19 @@
       
     </span>
 </a>
+<nav aria-label="Shared Tables" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#payment-column-compatibility">
+<span class="md-ellipsis">
+      
+        Payment column compatibility
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
 </li>
 <li class="md-nav__item">
 <a class="md-nav__link" href="#service-exclusive-tables">
@@ -1225,6 +1238,19 @@
       
     </span>
 </a>
+<nav aria-label="Shared Tables" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#payment-column-compatibility">
+<span class="md-ellipsis">
+      
+        Payment column compatibility
+      
+    </span>
+</a>
+</li>
+</ul>
+</nav>
 </li>
 <li class="md-nav__item">
 <a class="md-nav__link" href="#service-exclusive-tables">
@@ -1424,6 +1450,20 @@
 </tr>
 </tbody>
 </table>
+<h3 id="payment-column-compatibility">Payment column compatibility<a class="headerlink" href="#payment-column-compatibility" title="Permanent link">¶</a></h3>
+<p>Older ATP instances may have <code>orders.payment_method</code> and
+<code>orders.payment_status</code> but not the newer provider fields required by the
+current shop dashboard and payment webhook code:</p>
+<div class="language-sql highlight"><pre><span></span><code><span id="__span-0-1"><span class="n">payment_provider</span><span class="w">           </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+</span><span id="__span-0-2"><span class="n">payment_provider_reference</span><span class="w"> </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>
+</span></code></pre></div>
+<p>The shop startup migration adds these columns if they are missing. Validate the
+cap database before a demo with:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1">curl<span class="w"> </span>--noproxy<span class="w"> </span><span class="s1">'*'</span><span class="w"> </span>-fsS<span class="w"> </span>https://shop.octodemo.cloud/api/dashboard/summary
+</span></code></pre></div>
+<p>A missing <code>payment_provider_reference</code> column causes the dashboard summary API
+to return 500 because the ORM selects the full <code>orders</code> model for recent
+orders.</p>
 <h2 id="service-exclusive-tables">Service-Exclusive Tables<a class="headerlink" href="#service-exclusive-tables" title="Permanent link">¶</a></h2>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio"><input id="__tabbed_1_2" name="__tabbed_1" type="radio"><div class="tabbed-labels"><label for="__tabbed_1_1">Drone Shop Only</label><label for="__tabbed_1_2">CRM Only</label></div>
 <div class="tabbed-content">
@@ -1533,27 +1573,27 @@
     Note over ATP: correlation_id links to APM trace</code></pre>
 <h3 id="sync-metadata">Sync Metadata<a class="headerlink" href="#sync-metadata" title="Permanent link">¶</a></h3>
 <p>Orders synced from Drone Shop carry extra CRM columns:</p>
-<div class="language-sql highlight"><pre><span></span><code><span id="__span-0-1"><span class="c1">-- CRM order columns for sync tracking</span>
-</span><span id="__span-0-2"><span class="n">source_system</span><span class="w">       </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="w">   </span><span class="c1">-- 'octo-drone-shop'</span>
-</span><span id="__span-0-3"><span class="n">source_order_id</span><span class="w">     </span><span class="nb">NUMBER</span><span class="w">         </span><span class="c1">-- Shop order ID</span>
-</span><span id="__span-0-4"><span class="n">source_customer_email</span><span class="w"> </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="c1">-- Normalized email</span>
-</span><span id="__span-0-5"><span class="n">sync_status</span><span class="w">         </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="w">   </span><span class="c1">-- 'synced' | 'failed' | 'local'</span>
-</span><span id="__span-0-6"><span class="n">backlog_status</span><span class="w">      </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="w">   </span><span class="c1">-- 'backlog' | 'current'</span>
-</span><span id="__span-0-7"><span class="n">sync_error</span><span class="w">          </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">4000</span><span class="p">)</span><span class="w"> </span><span class="c1">-- Error message if failed</span>
-</span><span id="__span-0-8"><span class="n">source_payload</span><span class="w">      </span><span class="k">CLOB</span><span class="w">           </span><span class="c1">-- Original JSON (audit)</span>
-</span><span id="__span-0-9"><span class="n">correlation_id</span><span class="w">      </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span><span class="w">   </span><span class="c1">-- W3C trace ID</span>
-</span><span id="__span-0-10"><span class="n">last_synced_at</span><span class="w">      </span><span class="k">TIMESTAMP</span>
+<div class="language-sql highlight"><pre><span></span><code><span id="__span-2-1"><span class="c1">-- CRM order columns for sync tracking</span>
+</span><span id="__span-2-2"><span class="n">source_system</span><span class="w">       </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="w">   </span><span class="c1">-- 'octo-drone-shop'</span>
+</span><span id="__span-2-3"><span class="n">source_order_id</span><span class="w">     </span><span class="nb">NUMBER</span><span class="w">         </span><span class="c1">-- Shop order ID</span>
+</span><span id="__span-2-4"><span class="n">source_customer_email</span><span class="w"> </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span><span class="w"> </span><span class="c1">-- Normalized email</span>
+</span><span id="__span-2-5"><span class="n">sync_status</span><span class="w">         </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="w">   </span><span class="c1">-- 'synced' | 'failed' | 'local'</span>
+</span><span id="__span-2-6"><span class="n">backlog_status</span><span class="w">      </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="w">   </span><span class="c1">-- 'backlog' | 'current'</span>
+</span><span id="__span-2-7"><span class="n">sync_error</span><span class="w">          </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">4000</span><span class="p">)</span><span class="w"> </span><span class="c1">-- Error message if failed</span>
+</span><span id="__span-2-8"><span class="n">source_payload</span><span class="w">      </span><span class="k">CLOB</span><span class="w">           </span><span class="c1">-- Original JSON (audit)</span>
+</span><span id="__span-2-9"><span class="n">correlation_id</span><span class="w">      </span><span class="n">VARCHAR2</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span><span class="w">   </span><span class="c1">-- W3C trace ID</span>
+</span><span id="__span-2-10"><span class="n">last_synced_at</span><span class="w">      </span><span class="k">TIMESTAMP</span>
 </span></code></pre></div>
 <h2 id="oracle-session-tagging">Oracle Session Tagging<a class="headerlink" href="#oracle-session-tagging" title="Permanent link">¶</a></h2>
 <p>Both services tag Oracle sessions for OPSI/DB Management correlation:</p>
-<div class="language-sql highlight"><pre><span></span><code><span id="__span-1-1"><span class="c1">-- Set on pool checkout</span>
-</span><span id="__span-1-2"><span class="n">DBMS_APPLICATION_INFO</span><span class="p">.</span><span class="n">SET_MODULE</span><span class="p">(</span><span class="s1">'octo-drone-shop'</span><span class="p">,</span><span class="w"> </span><span class="s1">'POST /api/shop/checkout'</span><span class="p">);</span>
-</span><span id="__span-1-3"><span class="n">DBMS_SESSION</span><span class="p">.</span><span class="n">SET_IDENTIFIER</span><span class="p">(</span><span class="s1">'&lt;trace_id&gt;'</span><span class="p">);</span>
-</span><span id="__span-1-4">
-</span><span id="__span-1-5"><span class="c1">-- Result in V$SESSION</span>
-</span><span id="__span-1-6"><span class="n">MODULE</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="s1">'octo-drone-shop'</span>
-</span><span id="__span-1-7"><span class="n">ACTION</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="s1">'POST /api/shop/checkout'</span>
-</span><span id="__span-1-8"><span class="n">CLIENT_IDENTIFIER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'79c76c8173b086043b36e60422a2b317'</span>
+<div class="language-sql highlight"><pre><span></span><code><span id="__span-3-1"><span class="c1">-- Set on pool checkout</span>
+</span><span id="__span-3-2"><span class="n">DBMS_APPLICATION_INFO</span><span class="p">.</span><span class="n">SET_MODULE</span><span class="p">(</span><span class="s1">'octo-drone-shop'</span><span class="p">,</span><span class="w"> </span><span class="s1">'POST /api/shop/checkout'</span><span class="p">);</span>
+</span><span id="__span-3-3"><span class="n">DBMS_SESSION</span><span class="p">.</span><span class="n">SET_IDENTIFIER</span><span class="p">(</span><span class="s1">'&lt;trace_id&gt;'</span><span class="p">);</span>
+</span><span id="__span-3-4">
+</span><span id="__span-3-5"><span class="c1">-- Result in V$SESSION</span>
+</span><span id="__span-3-6"><span class="n">MODULE</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="s1">'octo-drone-shop'</span>
+</span><span id="__span-3-7"><span class="n">ACTION</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="s1">'POST /api/shop/checkout'</span>
+</span><span id="__span-3-8"><span class="n">CLIENT_IDENTIFIER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'79c76c8173b086043b36e60422a2b317'</span>
 </span></code></pre></div>
 <p>This enables:
 - <strong>DB Management</strong> → Performance Hub → filter by MODULE to see per-service SQL
@@ -1561,8 +1601,8 @@
 - <strong>APM</strong> → Trace Explorer → click SQL span → see DbOracleSqlId → jump to Performance Hub</p>
 <h2 id="sql-id-computation">SQL ID Computation<a class="headerlink" href="#sql-id-computation" title="Permanent link">¶</a></h2>
 <p>Both services compute Oracle-compatible SQL_IDs for APM → OPSI bridging:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><span class="c1"># MD5(sql + '\0') → last 8 bytes → base-32 (Oracle alphabet)</span>
-</span><span id="__span-2-2"><span class="c1"># Result: 13-char SQL_ID matching V$SQL.SQL_ID</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><span class="c1"># MD5(sql + '\0') → last 8 bytes → base-32 (Oracle alphabet)</span>
+</span><span id="__span-4-2"><span class="c1"># Result: 13-char SQL_ID matching V$SQL.SQL_ID</span>
 </span></code></pre></div>
 <p>Span attribute <code>DbOracleSqlId</code> enables clicking a SQL span in APM Trace Explorer and jumping directly to the matching query in DB Management Performance Hub.</p>
 </article>
