@@ -1,6 +1,24 @@
 # Introduction
 
-The **OCTO Cloud-Native Platform** is a reference implementation of enterprise applications running on Oracle Cloud Infrastructure (OCI). It demonstrates how to integrate OCI's observability, security, database, and AI services with cloud-native applications deployed on Oracle Kubernetes Engine (OKE).
+The **OCTO Cloud-Native Platform** is now maintained as a unified
+two-service deployment in
+[`adibirzu/octo-apm-demo`](https://github.com/adibirzu/octo-apm-demo).
+That repository owns the fresh-tenancy workflow, shared Terraform and
+Resource Manager stack, Helm chart, OKE manifests, VM deployment, E2E
+tests, and operational docs for **both** OCTO Drone Shop and Enterprise
+CRM.
+
+This `octo-drone-shop` documentation remains the component reference for
+the customer storefront and workflow gateway. If you are provisioning a
+new OCI tenancy now, start from the unified project:
+
+[:material-rocket-launch: Unified New Tenancy Guide](https://adibirzu.github.io/octo-apm-demo/getting-started/new-tenancy/){ .md-button .md-button--primary }
+[:octicons-mark-github-16: Unified Repo](https://github.com/adibirzu/octo-apm-demo){ .md-button }
+[:material-cloud-upload: Deploy Resource Manager Stack](https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https://github.com/adibirzu/octo-apm-demo/releases/download/resource-manager-stack/octo-stack.zip){ .md-button }
+
+Use the unified repo for provisioning and this site for Drone Shop
+internals, route behavior, observability surfaces, and local component
+development.
 
 ## Goals
 
@@ -23,14 +41,50 @@ Both services integrate with the full OCI observability stack through modular ad
 
 ## Current Runtime Model
 
-- **Shop frontend**: `https://shop.example.cloud`
-- **CRM frontend**: `https://crm.example.cloud`
+- **Canonical deployment repo**: [`adibirzu/octo-apm-demo`](https://github.com/adibirzu/octo-apm-demo)
+- **Canonical docs site**: <https://adibirzu.github.io/octo-apm-demo>
+- **Default shared deployment hostnames**: `https://shop.cyber-sec.ro` and `https://crm.cyber-sec.ro`
+- **Template hostnames for other tenancies**: `https://shop.<your-domain>` and `https://crm.<your-domain>`
 - **Shared database**: Oracle ATP
 - **Catalog source of truth**: CRM
 - **Browser-visible CRM links**: public URL only
 - **Backend CRM calls from shop**: may use the internal cluster-local CRM service URL
 
 This split matters operationally: the shop renders customer-facing catalog and checkout experiences, while the CRM is where operators edit customers, orders, invoices, storefronts, and product inventory.
+
+## Provisioning a New Tenancy
+
+Use the unified `octo-apm-demo` repo for new tenancy work. It contains the
+current `deploy/bootstrap.sh` flow, Resource Manager package, Helm chart,
+cross-service E2E tests, and deployment runbooks.
+
+```bash
+git clone https://github.com/adibirzu/octo-apm-demo.git
+cd octo-apm-demo
+./deploy/verify.sh
+```
+
+Recommended fresh-tenancy path:
+
+```bash
+OCI_PROFILE=DEFAULT \
+OCI_COMPARTMENT_ID=ocid1.compartment.oc1..xxxx \
+DNS_BASE_DOMAIN=<your-domain> \
+REMOTE_BUILD_HOST=<ssh-host-with-ocir-login> \
+./deploy/bootstrap.sh
+```
+
+For the shared `DEFAULT` / `oci4cca` profile, the baked-in domain is
+`cyber-sec.ro`, so the target hosts are `shop.cyber-sec.ro` and
+`crm.cyber-sec.ro`. Check the unified current-status page before treating
+that shared environment as E2E-ready:
+<https://adibirzu.github.io/octo-apm-demo/operations/current-status/>.
+
+If you prefer the Console-led observability/WAF pre-flight, use the
+Resource Manager button above. It provisions tenancy-level observability
+and security resources only; it does not create OKE, ATP, DNS, or deploy
+the app containers. Use `deploy/bootstrap.sh` for the full end-to-end
+application rollout.
 
 ## OCI Services
 
@@ -176,12 +230,16 @@ flowchart TD
 
 | Option | Time | Best For |
 |---|---|---|
-| [Local Docker](getting-started/quickstart.md) | 5 min | Development and testing |
-| [OKE Deployment](getting-started/oke-deployment.md) | 30 min | Production with full OCI observability |
+| [Unified new tenancy](https://adibirzu.github.io/octo-apm-demo/getting-started/new-tenancy/) | 45-90 min | Full OCI rollout of Shop + CRM |
+| [Deploy to Oracle Cloud](https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https://github.com/adibirzu/octo-apm-demo/releases/download/resource-manager-stack/octo-stack.zip) | 5-10 min | Resource Manager pre-flight for APM, RUM, LA, and WAF |
+| [Local Docker](getting-started/quickstart.md) | 5 min | Drone Shop component development and testing |
+| [Component OKE Deployment](getting-started/oke-deployment.md) | 30 min | Legacy/component-only deployment references |
 
 ## Next Steps
 
-- [Getting Started](getting-started/index.md) — Prerequisites and deployment guide
+- [Unified New Tenancy Guide](https://adibirzu.github.io/octo-apm-demo/getting-started/new-tenancy/) — current end-to-end provisioning path
+- [Unified Deployment Options](https://adibirzu.github.io/octo-apm-demo/getting-started/deployment-options/) — OKE, Helm, Resource Manager, VM, and local-stack paths
+- [Getting Started](getting-started/index.md) — Drone Shop component prerequisites and local development
 - [Architecture](architecture/index.md) — System design, data model, framework approach
 - [OCI Observability Add-Ons](observability/addons.md) — 8-level progressive enablement guide
 - [Cross-Service Integration](architecture/database-integration.md) — How Drone Shop and CRM share ATP
@@ -190,5 +248,6 @@ flowchart TD
 
 | Repository | Component |
 |---|---|
-| [octo-drone-shop](https://github.com/adibirzu/octo-drone-shop) | Drone Shop + Workflow Gateway + Documentation source |
+| [octo-apm-demo](https://github.com/adibirzu/octo-apm-demo) | Unified deployment surface, docs, Resource Manager stack, Helm chart, Terraform, E2E tests |
+| [octo-drone-shop](https://github.com/adibirzu/octo-drone-shop) | Drone Shop + Workflow Gateway component source |
 | [enterprise-crm-portal](https://github.com/adibirzu/enterprise-crm-portal) | Enterprise CRM Portal |
