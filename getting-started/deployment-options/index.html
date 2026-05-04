@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -765,6 +765,17 @@
     <span class="md-ellipsis">
       
         OKE (Kubernetes)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-instance-compute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-instance Compute
       
     </span>
   </a>
@@ -2690,6 +2701,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#two-instance-compute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-instance Compute
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#oci-resource-manager-stack" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2743,9 +2765,11 @@
 
 
 <h1 id="deployment-options">Deployment options<a class="headerlink" href="#deployment-options" title="Permanent link">&para;</a></h1>
-<p>The platform ships three supported install paths. Pick the one that
-matches the environment; all three target the same container images
-and the same Oracle Autonomous Database backend.</p>
+<p>The current deployment source of truth is the unified
+<a href="https://github.com/adibirzu/octo-apm-demo"><code>octo-apm-demo</code></a> project.
+Pick the path that matches the environment; all paths target the same
+Shop and CRM container images and the same Oracle Autonomous Database
+integration contract.</p>
 <table>
 <thead>
 <tr>
@@ -2763,6 +2787,13 @@ and the same Oracle Autonomous Database backend.</p>
 <td>45–90 min</td>
 <td>Horizontal + vertical</td>
 <td>Yes (rolling)</td>
+</tr>
+<tr>
+<td><strong>Two-instance Compute</strong></td>
+<td>Production demo without Kubernetes; private app tier with LB/WAF</td>
+<td>60–90 min</td>
+<td>Vertical per app</td>
+<td>Restart-based</td>
 </tr>
 <tr>
 <td><strong>OCI Resource Manager stack</strong></td>
@@ -2786,6 +2817,16 @@ WAF, shared Autonomous Database, observability wired via <code>ensure_apm.sh</co
 / <code>ensure_stack_monitoring.sh</code>. See
 <a href="../new-tenancy/">new-tenancy.md</a> and
 <a href="../oke-deployment/">oke-deployment.md</a>.</p>
+<h2 id="two-instance-compute">Two-instance Compute<a class="headerlink" href="#two-instance-compute" title="Permanent link">&para;</a></h2>
+<p>Production-demo path for teams that want no Kubernetes moving parts but
+still want network isolation. The unified stack creates or selects a
+VCN, keeps Shop and CRM on private Podman Compute instances, keeps ATP
+on a private endpoint, and puts public OCI Load Balancer plus WAF in
+front. It also wires APM, OCI Logging, Log Analytics connectors, DB
+Management, Operations Insights, and Stack Monitoring Standard.</p>
+<p><a href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https://github.com/adibirzu/octo-apm-demo/releases/download/compute-resource-manager-stack-20260504/octo-compute-stack.zip"><img alt="Deploy Full Compute Stack to Oracle Cloud" src="https://oci-resourcemanager-plugin.plugins.oci.oraclecloud.com/latest/deploy-to-oracle-cloud.svg" /></a></p>
+<p>Full walkthrough:
+<a href="https://adibirzu.github.io/octo-apm-demo/getting-started/compute-deployment/">Compute Deployment</a>.</p>
 <h2 id="oci-resource-manager-stack">OCI Resource Manager stack<a class="headerlink" href="#oci-resource-manager-stack" title="Permanent link">&para;</a></h2>
 <p>A pre-packaged Terraform stack that provisions only the <strong>tenancy-level
 observability + security surface</strong> (APM Domain, RUM app, Log Analytics
@@ -2799,7 +2840,7 @@ Autonomous Database — you select those from the picker widgets.</p>
 Stacks → Create Stack</strong> (source = My Configuration, file =
 <code>octo-stack.zip</code>). The schema groups variables into Tenancy, DNS,
 APM/RUM, Log Analytics, and WAF sections with native OCI pickers.</p>
-<p>Full details: <a href="https://github.com/adibirzu/octo-drone-shop/blob/main/deploy/resource-manager/README.md">deploy/resource-manager/README.md</a>.</p>
+<p>Full details: <a href="https://github.com/adibirzu/octo-apm-demo/blob/main/deploy/resource-manager/README.md">deploy/resource-manager/README.md</a>.</p>
 <h2 id="unified-single-vm">Unified single VM<a class="headerlink" href="#unified-single-vm" title="Permanent link">&para;</a></h2>
 <p>One OCI Compute instance runs both apps behind nginx, talking to your
 existing Autonomous Database over the wallet. Useful for workshops,
@@ -2809,16 +2850,17 @@ local reproductions, or air-gapped deployments.</p>
 </span><span id="__span-1-3">unzip<span class="w"> </span>/path/to/Wallet_&lt;DB&gt;.zip<span class="w"> </span>-d<span class="w"> </span>wallet
 </span><span id="__span-1-4">sudo<span class="w"> </span>./install.sh
 </span></code></pre></div>
-<p>Or paste <a href="https://github.com/adibirzu/octo-drone-shop/blob/main/deploy/vm/cloud-init.yaml"><code>deploy/vm/cloud-init.yaml</code></a> into the
+<p>Or paste <a href="https://github.com/adibirzu/octo-apm-demo/blob/main/deploy/vm/cloud-init.yaml"><code>deploy/vm/cloud-init.yaml</code></a> into the
 OCI Console Compute create form for a one-shot bootstrap. Full
-walkthrough: <a href="https://github.com/adibirzu/octo-drone-shop/blob/main/deploy/vm/README.md">deploy/vm/README.md</a>.</p>
+walkthrough: <a href="https://github.com/adibirzu/octo-apm-demo/blob/main/deploy/vm/README.md">deploy/vm/README.md</a>.</p>
 <h2 id="matrix-of-cross-service-contract-parity">Matrix of cross-service contract parity<a class="headerlink" href="#matrix-of-cross-service-contract-parity" title="Permanent link">&para;</a></h2>
-<p>All three paths enforce the same integration contract:</p>
+<p>All app deployment paths enforce the same integration contract:</p>
 <table>
 <thead>
 <tr>
 <th></th>
 <th>OKE</th>
+<th>Two-instance Compute</th>
 <th>Resource Manager</th>
 <th>Unified VM</th>
 </tr>
@@ -2827,11 +2869,13 @@ walkthrough: <a href="https://github.com/adibirzu/octo-drone-shop/blob/main/depl
 <tr>
 <td><code>SERVICE_CRM_URL</code> / <code>SERVICE_SHOP_URL</code></td>
 <td>✅</td>
+<td>✅ (private IP)</td>
 <td>n/a</td>
 <td>✅ (loopback)</td>
 </tr>
 <tr>
 <td><code>INTERNAL_SERVICE_KEY</code> header on cross-service POSTs</td>
+<td>✅</td>
 <td>✅</td>
 <td>n/a</td>
 <td>✅</td>
@@ -2839,17 +2883,20 @@ walkthrough: <a href="https://github.com/adibirzu/octo-drone-shop/blob/main/depl
 <tr>
 <td><code>idempotency_token</code> + <code>source_order_id</code> dedup</td>
 <td>✅</td>
+<td>✅</td>
 <td>n/a</td>
 <td>✅</td>
 </tr>
 <tr>
 <td><code>/api/integrations/schema</code> discovery</td>
 <td>✅</td>
+<td>✅</td>
 <td>n/a</td>
 <td>✅</td>
 </tr>
 <tr>
 <td>APM + RUM + Log Analytics + Stack Monitoring</td>
+<td>✅</td>
 <td>✅</td>
 <td>✅ (provisions)</td>
 <td>✅ (consumes)</td>
