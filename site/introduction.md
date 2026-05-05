@@ -58,7 +58,8 @@ This split matters operationally: the shop renders customer-facing catalog and c
 
 Use the unified `octo-apm-demo` repo for new tenancy work. It contains the
 current `deploy/bootstrap.sh` flow, private Compute Resource Manager
-package, Helm chart, cross-service E2E tests, and deployment runbooks.
+package, Helm chart, cross-service E2E tests, deployment runbooks, and the
+read-only `deploy/compute/verify-deployment.sh` production-demo gate.
 
 ```bash
 git clone https://github.com/adibirzu/octo-apm-demo.git
@@ -75,6 +76,12 @@ private DB subnet, NAT Gateway, Service Gateway, NSGs/security lists,
 two private Podman Compute instances, dedicated private ATP, OCI
 LB/WAF, APM, OCI Logging, Log Analytics pipelines, DB Management,
 Operations Insights, and Stack Monitoring Standard.
+
+After provisioning, run
+`./deploy/compute/verify-deployment.sh --profile <profile> --plan` from the
+unified repo to verify Terraform drift, public `/ready`, LB backend
+health, WAF, Log Analytics connectors, Management Agents, and Stack
+Monitoring HOST auto-promote state.
 
 OKE bootstrap remains available:
 
