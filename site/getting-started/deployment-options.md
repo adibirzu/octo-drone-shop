@@ -32,6 +32,12 @@ Management, Operations Insights, and Stack Monitoring Standard.
 
 [![Deploy Full Compute Stack to Oracle Cloud](https://oci-resourcemanager-plugin.plugins.oci.oraclecloud.com/latest/deploy-to-oracle-cloud.svg)](https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https://github.com/adibirzu/octo-apm-demo/releases/download/compute-resource-manager-stack-20260504/octo-compute-stack.zip)
 
+After apply, run
+`./deploy/compute/verify-deployment.sh --profile <profile> --plan` from
+the unified repo to check `/ready`, Load Balancer backend health, WAF,
+Log Analytics Service Connectors, Management Agents, and Stack
+Monitoring HOST auto-promote state.
+
 Full walkthrough:
 [Compute Deployment](https://adibirzu.github.io/octo-apm-demo/getting-started/compute-deployment/).
 
