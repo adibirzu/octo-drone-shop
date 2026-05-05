@@ -1487,7 +1487,8 @@ development.</p>
 <h2 id="provisioning-a-new-tenancy">Provisioning a New Tenancy<a class="headerlink" href="#provisioning-a-new-tenancy" title="Permanent link">¶</a></h2>
 <p>Use the unified <code>octo-apm-demo</code> repo for new tenancy work. It contains the
 current <code>deploy/bootstrap.sh</code> flow, private Compute Resource Manager
-package, Helm chart, cross-service E2E tests, and deployment runbooks.</p>
+package, Helm chart, cross-service E2E tests, deployment runbooks, and the
+read-only <code>deploy/compute/verify-deployment.sh</code> production-demo gate.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1">git<span class="w"> </span>clone<span class="w"> </span>https://github.com/adibirzu/octo-apm-demo.git
 </span><span id="__span-0-2"><span class="nb">cd</span><span class="w"> </span>octo-apm-demo
 </span><span id="__span-0-3">./deploy/verify.sh
@@ -1499,6 +1500,11 @@ private DB subnet, NAT Gateway, Service Gateway, NSGs/security lists,
 two private Podman Compute instances, dedicated private ATP, OCI
 LB/WAF, APM, OCI Logging, Log Analytics pipelines, DB Management,
 Operations Insights, and Stack Monitoring Standard.</p>
+<p>After provisioning, run
+<code>./deploy/compute/verify-deployment.sh --profile &lt;profile&gt; --plan</code> from the
+unified repo to verify Terraform drift, public <code>/ready</code>, LB backend
+health, WAF, Log Analytics connectors, Management Agents, and Stack
+Monitoring HOST auto-promote state.</p>
 <p>OKE bootstrap remains available:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><span class="nv">OCI_PROFILE</span><span class="o">=</span>DEFAULT<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-1-2"><span class="nv">OCI_COMPARTMENT_ID</span><span class="o">=</span>ocid1.compartment.oc1..xxxx<span class="w"> </span><span class="se">\</span>
