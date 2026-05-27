@@ -14,7 +14,7 @@ from sqlalchemy import text
 from server.config import cfg
 from server.database import engine, get_db, init_tables, seed_data, sync_engine
 from server.observability.correlation import runtime_snapshot
-from server.observability.otel_setup import init_otel, get_tracer
+from server.observability.otel_setup import init_otel, get_tracer, instrument_fastapi_app
 from server.observability.logging_sdk import push_log
 from server.observability.metrics import init_metrics, runtime_metrics
 from server.observability.oci_monitoring import start_monitoring, stop_monitoring, increment_requests, increment_errors
@@ -42,6 +42,8 @@ from server.modules.dashboard import router as dashboard_router
 from server.modules.integrations import router as integrations_router
 from server.modules.services import router as services_router
 from server.modules.observability_dashboard import router as observability_dashboard_router
+from server.modules.synthetic_users import router as synthetic_users_router
+from server.modules.workflow_gateway import router as workflow_gateway_router
 
 # New modules (Phase 2 + 11 + platform status)
 from server.modules.payments.webhooks import router as payments_webhooks_router
@@ -89,7 +91,7 @@ async def lifespan(app: FastAPI):
 
     start_monitoring()  # OCI Monitoring custom metrics (if OCI_COMPARTMENT_ID is set)
 
-    push_log("INFO", "OCTO-CRM-APM started", **{
+    push_log("INFO", "OCTO Drone Shop started", **{
         "app.name": cfg.app_name,
         "app.runtime": cfg.app_runtime,
         "app.apm_configured": cfg.apm_configured,
@@ -97,19 +99,18 @@ async def lifespan(app: FastAPI):
     })
     yield
     stop_monitoring()
-    push_log("INFO", "OCTO-CRM-APM shutting down")
+    push_log("INFO", "OCTO Drone Shop shutting down")
 
 
 app = FastAPI(
-    title="OCTO-CRM-APM",
-    description="Cloud-native e-commerce with full observability (OCI APM, RUM, Logging, Splunk)",
+    title=cfg.brand_name,
+    description="Demo drone shop with fake data for showcasing OCI observability, APM, RUM, Logging, and Log Analytics.",
     version="1.0.0",
     lifespan=lifespan,
 )
 
-# Instrument FastAPI
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-FastAPIInstrumentor.instrument_app(app)
+# Instrument FastAPI with OCTO-safe header capture and request hooks.
+instrument_fastapi_app(app)
 
 # ── Middleware (outermost first) ──────────────────────────────
 # CORS — never silently fall back to wildcard. An empty list disables CORS
@@ -176,6 +177,8 @@ app.include_router(dashboard_router)
 app.include_router(integrations_router)
 app.include_router(services_router)
 app.include_router(observability_dashboard_router)
+app.include_router(synthetic_users_router)
+app.include_router(workflow_gateway_router)
 
 # Phase 2 — payment gateway webhook ingestion
 app.include_router(payments_webhooks_router)
@@ -233,10 +236,24 @@ async def ready():
             "ready": db_ok,
             "database": "connected" if db_ok else "disconnected",
             "db_type": cfg.database_target_label,
+            "atp_connection_name": cfg.oracle_dsn or None,
             "apm_configured": cfg.apm_configured,
             "rum_configured": cfg.rum_configured,
+            "logging_configured": cfg.logging_configured,
+            "java_apm_enabled": cfg.java_apm_enabled,
+            "java_apm_service_url": cfg.java_apm_service_url or None,
+            "payment_gateway_simulation_enabled": cfg.payment_gateway_simulation_enabled,
             "workflow_gateway_configured": cfg.workflow_gateway_configured,
             "selectai_configured": cfg.selectai_configured,
+            "genai_configured": cfg.genai_configured,
+            "genai_endpoint_host": cfg.genai_endpoint_host or None,
+            "genai_model_id": cfg.oci_genai_model_id or None,
+            "llmetry_enabled": cfg.llmetry_enabled,
+            "llmetry_store_enabled": cfg.llmetry_store_enabled,
+            "llmetry_project_name": cfg.langfuse_project_name,
+            "langfuse_configured": cfg.langfuse_configured,
+            "langfuse_host": cfg._public_url_or_empty(cfg.langfuse_host) or None,
+            "langfuse_project_name": cfg.langfuse_project_name,
             "runtime": runtime_snapshot(),
         }
 
@@ -302,8 +319,10 @@ def _render_page(request: Request, page: str, title: str, **ctx):
          "workflow_gateway_configured": cfg.workflow_gateway_configured,
          "selectai_profile_name": cfg.selectai_profile_name,
          "selectai_configured": cfg.selectai_configured,
+         "java_apm_enabled": cfg.java_apm_enabled,
+         "payment_gateway_simulation_enabled": cfg.payment_gateway_simulation_enabled,
          "idcs_configured": cfg.idcs_configured,
-         "genai_configured": bool(cfg.oci_genai_endpoint and cfg.oci_genai_model_id),
+         "genai_configured": cfg.genai_configured,
          "app_name": cfg.app_name, **ctx},
     )
 

@@ -1,0 +1,19 @@
+# Install prod deps first
+-r requirements.txt
+
+# Editable installs — local OTel-instrumented packages consumed by shop modules
+-e ./services/cache/client
+-e ./services/async-worker
+
+# Test runners + HTTP mocking + async helpers
+# pytest>=9.0.3 closes CVE-2025-71176.
+pytest>=9.0.3,<10.0
+pytest-asyncio>=1.3.0,<2.0
+pytest-mock>=3.14,<4.0
+pytest-cov>=7.1.0,<8.0
+pytest-xdist>=3.6,<4.0
+respx>=0.21,<1.0
+fakeredis[lua]>=2.35.1,<3.0
+
+# Playwright — E2E browser regression
+playwright>=1.59.0,<2.0

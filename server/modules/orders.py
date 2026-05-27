@@ -11,8 +11,11 @@ from sqlalchemy import text
 from server.auth_security import require_authenticated_or_internal_service, require_authenticated_user
 from server.database import get_db
 from server.modules.integrations import sync_customers_from_crm, sync_order_to_crm
+from server.observability import business_metrics
+from server.observability.correlation import apply_span_attributes
 from server.observability.logging_sdk import push_log
 from server.observability.otel_setup import get_tracer
+from server.observability.purchase_journey import purchase_context_from_request, purchase_span_attributes
 from server.observability.security_spans import security_span
 from server.store_service import (
     compute_subtotal,
@@ -38,9 +41,18 @@ async def get_cart(request: Request, session_id: str = ""):
     """Get cart items for the active storefront session."""
     tracer = get_tracer()
     sid = session_id or request.cookies.get("session_id", "")
+    journey_context = purchase_context_from_request(
+        request,
+        {"session_id": sid},
+        default_action="shop.cart.load",
+        default_step="cart",
+    )
+    journey_attrs = purchase_span_attributes(journey_context)
 
     with tracer.start_as_current_span("orders.cart.get") as span:
-        span.set_attribute("cart.session_id", sid or "anonymous")
+        apply_span_attributes(span, {**journey_attrs, "cart.session_id": sid or "anonymous"})
+        if journey_attrs:
+            span.add_event("shop.cart.loaded", journey_attrs)
         if not sid:
             return {"items": [], "total": 0, "session_id": ""}
 
@@ -60,6 +72,16 @@ async def add_to_cart(payload: dict, request: Request):
     tracer = get_tracer()
     with tracer.start_as_current_span("orders.cart.add") as span:
         sid = payload.get("session_id") or request.cookies.get("session_id") or str(uuid.uuid4())
+        journey_context = purchase_context_from_request(
+            request,
+            {**payload, "session_id": sid},
+            default_action="shop.cart.add",
+            default_step="cart",
+        )
+        journey_attrs = purchase_span_attributes(journey_context)
+        apply_span_attributes(span, journey_attrs)
+        if journey_attrs:
+            span.add_event("shop.cart.action", journey_attrs)
         source_ip = request.client.host if request.client else "unknown"
         try:
             product_id = int(payload.get("product_id"))
@@ -87,9 +109,15 @@ async def add_to_cart(payload: dict, request: Request):
             )
             return {"error": "Invalid quantity", "session_id": sid}
 
-        span.set_attribute("cart.session_id", sid)
-        span.set_attribute("cart.product_id", product_id)
-        span.set_attribute("cart.quantity", quantity)
+        apply_span_attributes(
+            span,
+            {
+                **journey_attrs,
+                "cart.session_id": sid,
+                "cart.product_id": product_id,
+                "cart.quantity": quantity,
+            },
+        )
         if quantity > 20:
             security_span(
                 "rate_limit",
@@ -105,7 +133,7 @@ async def add_to_cart(payload: dict, request: Request):
         async with get_db() as db:
             product_lookup = await db.execute(
                 text(
-                    "SELECT id, stock, is_active FROM products "
+                    "SELECT id, stock, is_active, category FROM products "
                     "WHERE id = :product_id FETCH FIRST 1 ROWS ONLY"
                 ),
                 {"product_id": product_id},
@@ -148,7 +176,28 @@ async def add_to_cart(payload: dict, request: Request):
                     {"sid": sid, "product_id": product_id, "quantity": quantity},
                 )
 
-        push_log("INFO", "Cart updated", **{"cart.session_id": sid, "cart.product_id": product_id})
+        business_metrics.record_cart_addition(category=str(product.get("category") or ""))
+        span.add_event(
+            "shop.cart.item_added",
+            {
+                **journey_attrs,
+                "cart.session_id": sid,
+                "cart.product_id": product_id,
+                "cart.quantity": quantity,
+                "product.category": str(product.get("category") or ""),
+            },
+        )
+        push_log(
+            "INFO",
+            "Cart updated",
+            **{
+                **journey_attrs,
+                "cart.session_id": sid,
+                "cart.product_id": product_id,
+                "cart.quantity": quantity,
+                "product.category": str(product.get("category") or ""),
+            },
+        )
         return {"status": "added", "session_id": sid}
 
 
@@ -175,16 +224,23 @@ async def list_orders(request: Request, limit: int = Query(default=100, ge=1, le
         async with get_db() as db:
             result = await db.execute(
                 text(
-                    "SELECT o.id, o.customer_id, c.name AS customer_name, c.email AS customer_email, "
-                    "o.total, o.status, o.shipping_address, o.created_at, "
+                    "SELECT o.id, o.customer_id, o.user_id, c.name AS customer_name, c.email AS customer_email, "  # noqa: S608
+                    "o.total, o.status, o.payment_method, o.payment_status, o.payment_required, "
+                    "o.payment_provider, o.payment_provider_reference, o.payment_gateway_request_id, o.payment_paid_at, "
+                    "o.shipping_address, o.created_at, "
                     "COALESCE((SELECT SUM(oi.quantity * oi.unit_price) FROM order_items oi "
                     "WHERE oi.order_id = o.id), 0) AS subtotal, "
                     "COALESCE((SELECT s.shipping_cost FROM shipments s WHERE s.order_id = o.id "
                     "ORDER BY s.created_at DESC FETCH FIRST 1 ROWS ONLY), 0) AS shipping_cost "
                     "FROM orders o LEFT JOIN customers c ON c.id = o.customer_id "
+                    "WHERE (:can_view_all = 1 OR o.user_id = :user_id) "
                     "ORDER BY o.created_at DESC "
                     f"FETCH FIRST {limit} ROWS ONLY"
-                )
+                ),
+                {
+                    "can_view_all": 1 if user.get("role") in {"admin", "manager", "service"} else 0,
+                    "user_id": int(user["sub"]),
+                },
             )
             orders = [dict(row) for row in result.mappings().all()]
 
@@ -224,14 +280,18 @@ async def get_order(order_id: int, request: Request):
         async with get_db() as db:
             result = await db.execute(
                 text(
-                    "SELECT o.id, o.customer_id, c.name AS customer_name, c.email AS customer_email, "
-                    "o.total, o.status, o.shipping_address, o.notes, o.created_at "
+                    "SELECT o.id, o.customer_id, o.user_id, c.name AS customer_name, c.email AS customer_email, "
+                    "o.total, o.status, o.payment_method, o.payment_status, o.payment_required, "
+                    "o.payment_provider, o.payment_provider_reference, o.payment_gateway_request_id, o.payment_paid_at, "
+                    "o.shipping_address, o.notes, o.created_at "
                     "FROM orders o LEFT JOIN customers c ON c.id = o.customer_id WHERE o.id = :id"
                 ),
                 {"id": order_id},
             )
             order = result.mappings().first()
             if not order:
+                return {"error": "Order not found", "order_id": order_id}
+            if user.get("role") not in {"admin", "manager", "service"} and int(order.get("user_id") or 0) not in {0, int(user["sub"])}:
                 return {"error": "Order not found", "order_id": order_id}
 
             items = await db.execute(
@@ -277,6 +337,7 @@ async def create_order(payload: dict, request: Request):
                 items = await resolve_direct_items(db, payload.get("items", []))
 
             if not items:
+                business_metrics.record_checkout(success=False)
                 return {"error": "Cart is empty", "session_id": session_id}
 
             customer = await ensure_customer(
@@ -297,6 +358,7 @@ async def create_order(payload: dict, request: Request):
                 session_id=session_id,
                 source="orders_api",
                 trace_id=_trace_id(),
+                user_id=int(user["sub"]),
             )
 
         crm_sync = await sync_order_to_crm(
@@ -309,6 +371,9 @@ async def create_order(payload: dict, request: Request):
         span.set_attribute("orders.total", order_result["total"])
         span.set_attribute("orders.item_count", order_result["item_count"])
         span.set_attribute("integration.crm_order_synced", bool(crm_sync.get("synced")))
+        business_metrics.record_checkout(success=True)
+        if not order_result.get("idempotent_replay"):
+            business_metrics.record_order_created(order_result["total"], source="orders_api")
         push_log(
             "INFO",
             "Order persisted in backend",

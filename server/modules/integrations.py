@@ -35,6 +35,7 @@ from server.config import cfg
 from server.crm_catalog_sync import apply_catalog_sync
 from server.database import get_db
 from server.middleware.circuit_breaker import crm_breaker
+from server.observability import business_metrics
 from server.observability.otel_setup import get_tracer
 from server.observability.logging_sdk import push_log
 
@@ -51,7 +52,12 @@ CRM_SYNC_STATE = {
 
 
 def _crm_url() -> str:
-    return CRM_BASE_URL or os.getenv("CRM_SERVICE_URL", "")
+    return (
+        cfg.enterprise_crm_url
+        or CRM_BASE_URL
+        or os.getenv("SERVICE_CRM_URL", "")
+        or os.getenv("CRM_SERVICE_URL", "")
+    ).rstrip("/")
 
 
 def _sanitize_public_text(value: object) -> str:
@@ -63,6 +69,19 @@ def _public_crm_metadata() -> dict:
         "crm_url": cfg.crm_public_url or None,
         "crm_host": cfg.crm_public_hostname or None,
     }
+
+
+def _public_app_url(raw_url: str, fallback_hostname: str = "") -> str:
+    candidate = (raw_url or "").strip().rstrip("/")
+    host = fallback_hostname.strip()
+    if candidate:
+        match = re.match(r"^https?://([^/:]+)", candidate, re.IGNORECASE)
+        host = match.group(1) if match else host
+    if not host:
+        return candidate
+    if host in {"localhost", "127.0.0.1"} or host.startswith("127."):
+        return candidate or f"http://{host}"
+    return f"https://{host}"
 
 
 def _sync_state_payload() -> dict:
@@ -257,6 +276,7 @@ async def sync_customers_from_crm(*, force: bool = False, limit: int = 200, sour
 
     # Circuit breaker — reject fast if CRM is known-down
     if not crm_breaker.allow_request():
+        business_metrics.record_crm_sync(result="circuit_open")
         return {
             "configured": True,
             "synced": False,
@@ -282,6 +302,7 @@ async def sync_customers_from_crm(*, force: bool = False, limit: int = 200, sour
             CRM_SYNC_STATE["last_count"] = upsert["synced"]
             CRM_SYNC_STATE["last_error"] = ""
             span.set_attribute("integration.crm.customers_synced", upsert["synced"])
+            business_metrics.record_crm_sync(result="success")
             push_log(
                 "INFO",
                 "CRM customer sync completed",
@@ -306,6 +327,7 @@ async def sync_customers_from_crm(*, force: bool = False, limit: int = 200, sour
             CRM_SYNC_STATE["last_error"] = safe_error
             span.set_attribute("integration.error", safe_error)
             span.set_attribute("integration.circuit_breaker.state", crm_breaker.state.value)
+            business_metrics.record_crm_sync(result="failure")
             return {
                 "configured": True,
                 "synced": False,
@@ -327,7 +349,19 @@ async def list_synced_customers(limit: int = 100) -> list[dict]:
         return [dict(row) for row in result.mappings().all()][: max(1, min(limit, 500))]
 
 
-async def sync_order_to_crm(*, order_id: int, customer_email: str, total: float, source: str = "shop") -> dict:
+async def sync_order_to_crm(
+    *,
+    order_id: int,
+    customer_email: str,
+    total: float,
+    source: str = "shop",
+    payment_status: str = "pending",
+    payment_required: bool = True,
+    payment_method: str = "",
+    payment_provider: str = "",
+    payment_provider_reference: str = "",
+    payment_gateway_request_id: str = "",
+) -> dict:
     tracer = get_tracer()
     crm = _crm_url()
     if not crm:
@@ -335,6 +369,7 @@ async def sync_order_to_crm(*, order_id: int, customer_email: str, total: float,
 
     # Circuit breaker — reject fast if CRM is known-down
     if not crm_breaker.allow_request():
+        business_metrics.record_crm_sync(result="circuit_open")
         return {
             "synced": False,
             "order_id": order_id,
@@ -349,11 +384,15 @@ async def sync_order_to_crm(*, order_id: int, customer_email: str, total: float,
         span.set_attribute("integration.order_id", order_id)
         span.set_attribute("integration.order_total", total)
         span.set_attribute("integration.order_source", source)
+        span.set_attribute("integration.payment_status", payment_status)
+        span.set_attribute("integration.payment_required", bool(payment_required))
+        span.set_attribute("integration.payment_provider", payment_provider or "unknown")
         span.set_attribute("integration.circuit_breaker.state", crm_breaker.state.value)
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 customer = await _ensure_crm_customer(client, crm, customer_email)
                 if not customer:
+                    business_metrics.record_crm_sync(result="failure")
                     return {
                         "synced": False,
                         "order_id": order_id,
@@ -362,6 +401,7 @@ async def sync_order_to_crm(*, order_id: int, customer_email: str, total: float,
 
                 customer_id = int(customer.get("id") or customer.get("customer_id") or 0)
                 if customer_id <= 0:
+                    business_metrics.record_crm_sync(result="failure")
                     return {
                         "synced": False,
                         "order_id": order_id,
@@ -385,11 +425,20 @@ async def sync_order_to_crm(*, order_id: int, customer_email: str, total: float,
                         "idempotency_token": idempotency_token,
                         "source_system": "octo-drone-shop",
                         "source_order_id": str(order_id),
+                        "payment_status": payment_status,
+                        "payment_required": bool(payment_required),
+                        "payment_method": payment_method,
+                        "payment_provider": payment_provider,
+                        "payment_provider_reference": payment_provider_reference,
+                        "payment_gateway_request_id": payment_gateway_request_id,
                     },
                     headers=headers or None,
                 )
             crm_breaker.record_success()
             span.set_attribute("integration.crm.status_code", resp.status_code)
+            business_metrics.record_crm_sync(
+                result="success" if resp.status_code in (200, 201) else "failure"
+            )
             push_log(
                 "INFO",
                 "Order synced to CRM",
@@ -397,6 +446,9 @@ async def sync_order_to_crm(*, order_id: int, customer_email: str, total: float,
                     "integration.type": "sync_order",
                     "integration.order_id": order_id,
                     "integration.crm_status": resp.status_code,
+                    "integration.payment_status": payment_status,
+                    "integration.payment_required": bool(payment_required),
+                    "payment.provider": payment_provider,
                 },
             )
             return {
@@ -410,6 +462,7 @@ async def sync_order_to_crm(*, order_id: int, customer_email: str, total: float,
             safe_error = _sanitize_public_text(exc)
             span.set_attribute("integration.error", safe_error)
             span.set_attribute("integration.circuit_breaker.state", crm_breaker.state.value)
+            business_metrics.record_crm_sync(result="failure")
             return {
                 "synced": False,
                 "order_id": order_id,
@@ -665,7 +718,7 @@ async def crm_ticket_products(ticket_id: int, request: Request):
                 "ticket_id": ticket_id,
                 "ticket": ticket,
                 "recommended_products": products,
-                "source": "octo-crm-apm",
+                "source": cfg.otel_service_name,
             }
 
         except Exception as e:
@@ -762,14 +815,34 @@ async def crm_health():
 async def integration_status():
     """Show all configured integrations and their status."""
     crm = _crm_url()
+    shop_url = _public_app_url(cfg.shop_public_url)
+    crm_url = _public_app_url(cfg.crm_public_url, cfg.crm_public_hostname)
     return {
+        "database": {
+            "type": cfg.database_target_label,
+            "connection_name": cfg.oracle_dsn or None,
+        },
+        "app_servers": [
+            {
+                "name": "drone-shop-portal",
+                "display_name": "Drone Shop App Server",
+                "url": shop_url or None,
+                "configured": bool(shop_url),
+            },
+            {
+                "name": "enterprise-crm-portal",
+                "display_name": "Admin App Server",
+                "url": crm_url or None,
+                "configured": bool(crm_url),
+            },
+        ],
         "integrations": [
             {
                 "name": "enterprise-crm-portal",
                 "type": "cross-service",
                 "configured": bool(crm),
                 "host": cfg.crm_public_hostname or None,
-                "url": cfg.crm_public_url or None,
+                "url": crm_url or None,
                 "circuit_breaker": crm_breaker.status(),
                 "endpoints": [
                     "/api/integrations/crm/customer-enrichment",

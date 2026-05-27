@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from opentelemetry import trace
 from sqlalchemy import text
 
+from server.assistant_service import assistant_history_payload, run_assistant_query
 from server.auth_security import require_role
 from server.config import cfg
 from server.database import AuditLog, Base, get_db, seed_data, sync_engine
@@ -19,8 +20,8 @@ from server.observability.otel_setup import get_tracer
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 _ALLOWED_USER_ROLES = {"user", "admin", "manager", "analyst", "support"}
-_ALLOWED_ORDER_STATUSES = {"pending", "queued", "processing", "completed", "shipped", "cancelled"}
-_ALLOWED_PAYMENT_STATUSES = {"pending", "paid", "failed", "refunded"}
+_ALLOWED_ORDER_STATUSES = {"pending", "queued", "payment_pending", "processing", "paid", "failed", "completed", "shipped", "cancelled", "refunded"}
+_ALLOWED_PAYMENT_STATUSES = {"pending", "paid", "failed", "refunded", "completed", "payment_required"}
 _ALLOWED_INVOICE_STATUSES = {"draft", "issued", "paid", "overdue", "void"}
 
 
@@ -114,7 +115,7 @@ def _datetime_value(payload: dict, key: str) -> datetime | None:
 
 async def _require_existing_row(db, table: str, row_id: int, field_name: str = "id") -> dict:
     result = await db.execute(
-        text(f"SELECT * FROM {table} WHERE {field_name} = :value FETCH FIRST 1 ROWS ONLY"),
+        text(f"SELECT * FROM {table} WHERE {field_name} = :value FETCH FIRST 1 ROWS ONLY"),  # noqa: S608
         {"value": row_id},
     )
     row = result.mappings().first()
@@ -224,8 +225,10 @@ async def list_orders(request: Request):
         async with get_db() as db:
             result = await db.execute(
                 text(
-                    "SELECT o.id, o.customer_id, c.name AS customer_name, c.email AS customer_email, "
-                    "o.total, o.status, o.payment_method, o.payment_status, o.shipping_address, o.notes, o.created_at "
+                    "SELECT o.id, o.customer_id, o.user_id, c.name AS customer_name, c.email AS customer_email, "
+                    "o.total, o.status, o.payment_method, o.payment_status, o.payment_required, "
+                    "o.payment_provider, o.payment_provider_reference, o.payment_paid_at, "
+                    "o.shipping_address, o.notes, o.created_at "
                     "FROM orders o LEFT JOIN customers c ON c.id = o.customer_id "
                     "ORDER BY o.created_at DESC FETCH FIRST 200 ROWS ONLY"
                 )
@@ -282,6 +285,28 @@ async def get_config(request: Request):
         span.set_attribute("admin.requested_by", admin_user["username"])
         span.set_attribute("admin.config_requested", True)
         return cfg.safe_runtime_summary()
+
+
+@router.get("/assistant/history/{session_id}")
+async def admin_assistant_history(session_id: str, request: Request):
+    """Return stored assistant messages for admin review."""
+    admin_user = _require_admin(request)
+    tracer = get_tracer()
+    with tracer.start_as_current_span("admin.assistant.history") as span:
+        span.set_attribute("admin.requested_by", admin_user["username"])
+        span.set_attribute("assistant.session_id", session_id[:64])
+        return await assistant_history_payload(session_id)
+
+
+@router.post("/assistant/query")
+async def admin_assistant_query(request: Request, payload: dict):
+    """Run the governed drone advisor from the admin surface."""
+    admin_user = _require_admin(request)
+    tracer = get_tracer()
+    with tracer.start_as_current_span("admin.assistant.request") as span:
+        span.set_attribute("admin.requested_by", admin_user["username"])
+        span.set_attribute("assistant.message_length", len(str(payload.get("message", ""))))
+        return await run_assistant_query(payload, surface="admin", actor=admin_user)
 
 
 @router.post("/seed")
@@ -732,6 +757,7 @@ async def create_order(request: Request, payload: dict):
         "status": _enum_value(payload, "status", _ALLOWED_ORDER_STATUSES, default="pending"),
         "payment_method": _string_value(payload, "payment_method", max_len=50) or "credit_card",
         "payment_status": _enum_value(payload, "payment_status", _ALLOWED_PAYMENT_STATUSES, default="pending"),
+        "payment_required": 0 if str(payload.get("payment_status") or "").lower() in {"paid", "completed"} else 1,
         "shipping_address": _string_value(payload, "shipping_address", required=True, max_len=4000),
         "notes": _string_value(payload, "notes", max_len=4000),
     }
@@ -743,14 +769,14 @@ async def create_order(request: Request, payload: dict):
             await _require_existing_row(db, "customers", customer_id)
             await db.execute(
                 text(
-                    "INSERT INTO orders (customer_id, total, status, payment_method, payment_status, shipping_address, notes) "
-                    "VALUES (:customer_id, :total, :status, :payment_method, :payment_status, :shipping_address, :notes)"
+                    "INSERT INTO orders (customer_id, total, status, payment_method, payment_status, payment_required, shipping_address, notes) "
+                    "VALUES (:customer_id, :total, :status, :payment_method, :payment_status, :payment_required, :shipping_address, :notes)"
                 ),
                 order,
             )
             created = await db.execute(
                 text(
-                    "SELECT id, customer_id, total, status, payment_method, payment_status, shipping_address, notes, created_at "
+                    "SELECT id, customer_id, total, status, payment_method, payment_status, payment_required, shipping_address, notes, created_at "
                     "FROM orders WHERE customer_id = :customer_id ORDER BY created_at DESC FETCH FIRST 1 ROWS ONLY"
                 ),
                 {"customer_id": customer_id},
@@ -781,6 +807,7 @@ async def update_order(order_id: int, request: Request, payload: dict):
         "status": _enum_value(payload, "status", _ALLOWED_ORDER_STATUSES, default="pending"),
         "payment_method": _string_value(payload, "payment_method", max_len=50) or "credit_card",
         "payment_status": _enum_value(payload, "payment_status", _ALLOWED_PAYMENT_STATUSES, default="pending"),
+        "payment_required": 0 if str(payload.get("payment_status") or "").lower() in {"paid", "completed"} else 1,
         "shipping_address": _string_value(payload, "shipping_address", required=True, max_len=4000),
         "notes": _string_value(payload, "notes", max_len=4000),
     }
@@ -794,14 +821,14 @@ async def update_order(order_id: int, request: Request, payload: dict):
             await db.execute(
                 text(
                     "UPDATE orders SET customer_id = :customer_id, total = :total, status = :status, "
-                    "payment_method = :payment_method, payment_status = :payment_status, "
+                    "payment_method = :payment_method, payment_status = :payment_status, payment_required = :payment_required, "
                     "shipping_address = :shipping_address, notes = :notes WHERE id = :id"
                 ),
                 order,
             )
             updated = await db.execute(
                 text(
-                    "SELECT id, customer_id, total, status, payment_method, payment_status, shipping_address, notes, created_at "
+                    "SELECT id, customer_id, total, status, payment_method, payment_status, payment_required, shipping_address, notes, created_at "
                     "FROM orders WHERE id = :id"
                 ),
                 {"id": order_id},

@@ -41,18 +41,85 @@ CREATE TABLE IF NOT EXISTS customers (
 CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
     customer_id INTEGER REFERENCES customers(id),
+    user_id INTEGER REFERENCES users(id),
     total FLOAT NOT NULL,
     status VARCHAR(50) DEFAULT 'pending',
     payment_method VARCHAR(50) DEFAULT 'credit_card',
     payment_status VARCHAR(50) DEFAULT 'pending',
+    payment_required INTEGER DEFAULT 1,
+    payment_paid_at TIMESTAMP,
     payment_provider VARCHAR(50),
     payment_provider_reference VARCHAR(128),
+    payment_gateway_request_id VARCHAR(128),
+    checkout_idempotency_key VARCHAR(128),
     notes TEXT,
     shipping_address TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS ix_orders_payment_provider_reference
     ON orders (payment_provider_reference);
+CREATE INDEX IF NOT EXISTS ix_orders_payment_gateway_request_id
+    ON orders (payment_gateway_request_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_checkout_key
+    ON orders (checkout_idempotency_key);
+
+CREATE TABLE IF NOT EXISTS payment_transactions (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER REFERENCES orders(id) NOT NULL,
+    provider VARCHAR(60) NOT NULL,
+    provider_reference VARCHAR(128) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    wallet_type VARCHAR(40),
+    status VARCHAR(50) NOT NULL,
+    amount_minor_units INTEGER NOT NULL,
+    currency VARCHAR(10) DEFAULT 'usd',
+    card_brand VARCHAR(40),
+    card_last4 VARCHAR(4),
+    card_exp_month INTEGER,
+    card_exp_year INTEGER,
+    card_fingerprint VARCHAR(64),
+    wallet_token_hash VARCHAR(64),
+    billing_postal_code VARCHAR(24),
+    antifraud_score INTEGER DEFAULT 0,
+    antifraud_reasons TEXT,
+    gateway_latency_ms INTEGER DEFAULT 0,
+    decision_source VARCHAR(80),
+    error_code VARCHAR(80),
+    trace_id VARCHAR(64),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS ix_payment_transactions_order_id
+    ON payment_transactions (order_id);
+CREATE INDEX IF NOT EXISTS ix_payment_transactions_provider_reference
+    ON payment_transactions (provider_reference);
+
+CREATE TABLE IF NOT EXISTS payment_gateway_events (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER REFERENCES orders(id) NOT NULL,
+    gateway_name VARCHAR(80) NOT NULL,
+    gateway_provider VARCHAR(100) NOT NULL,
+    gateway_request_id VARCHAR(128) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    wallet_type VARCHAR(40),
+    card_brand VARCHAR(40),
+    card_last4 VARCHAR(4),
+    payment_network VARCHAR(40),
+    step_name VARCHAR(100) NOT NULL,
+    step_phase VARCHAR(80) NOT NULL,
+    step_status VARCHAR(40) NOT NULL,
+    step_index INTEGER DEFAULT 0,
+    latency_ms NUMERIC DEFAULT 0,
+    trace_id VARCHAR(64),
+    span_id VARCHAR(32),
+    metadata_json TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS ix_payment_gateway_events_order_id
+    ON payment_gateway_events (order_id);
+CREATE INDEX IF NOT EXISTS ix_payment_gateway_events_gateway_request_id
+    ON payment_gateway_events (gateway_request_id);
+CREATE INDEX IF NOT EXISTS ix_payment_gateway_events_trace_id
+    ON payment_gateway_events (trace_id);
 
 CREATE TABLE IF NOT EXISTS shops (
     id SERIAL PRIMARY KEY,
@@ -219,6 +286,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     resource VARCHAR(200),
     details TEXT,
     ip_address VARCHAR(50),
+    user_agent VARCHAR(500),
     trace_id VARCHAR(64),
     created_at TIMESTAMP DEFAULT NOW()
 );
@@ -227,8 +295,8 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 INSERT INTO users (username, email, password_hash, role) VALUES
     ('admin', 'admin@mushop.local', '$2b$12$LJ3X5wKv7IfAzGMkVbHDneFQ3KQJXhHjqW/Tq3hXqp6NpXq8vU5Lm', 'admin'),
-    ('shopper', 'shopper@mushop.local', '$2b$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'user'),
-    ('manager', 'manager@mushop.local', '$2b$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'manager')
+    ('shopper', 'shopper@mushop.local', '$2b$12$J11Bx1w9DCz1iy/niMaYV.9aVkWmgH0bwdOFtm4mB6wNr3yR0GC8m', 'user'),
+    ('manager', 'manager@mushop.local', '$2b$12$wk1/3sDuKbmd4YRplGtlm.6mQ82Lu00nQ2LIWsUO3apU.ACGiYXX.', 'manager')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO products (name, sku, description, price, stock, category, image_url) VALUES
