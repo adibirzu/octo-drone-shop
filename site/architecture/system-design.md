@@ -48,6 +48,28 @@ flowchart TD
     DroneShop -.->|custom metrics| Monitoring
 ```
 
+## Current Cap Profile Topology
+
+`octodemo.cloud` currently belongs to the cap profile. Operate it with the
+explicit cap context/profile:
+
+```bash
+kubectl --context emdemo ...
+oci --profile cap ...
+```
+
+The local `DEFAULT` profile is intentionally reserved for future tests with
+different domains.
+
+| Host | Namespace | Workload | Service | Ingress |
+|---|---|---|---|---|
+| `shop.octodemo.cloud` | `mushop-portal` | `deployment/mushop-portal` | `service/mushop-portal:80` | `ingress/octodemo-shop` |
+| `crm.octodemo.cloud` | `enterprise-crm` | `deployment/enterprise-crm-portal` | `service/enterprise-crm-portal:80` | `ingress/octodemo-crm` |
+
+Both hosts route through the shared cap nginx ingress load balancer. The shop
+uses the existing `mushop-portal` namespace because that namespace owns the cap
+shop secrets and wallet. CRM uses its canonical `enterprise-crm` namespace.
+
 ## Cross-Service Integration
 
 The Drone Shop and Enterprise CRM Portal communicate via HTTP with automatic W3C `traceparent` header injection. Every cross-service call creates a distributed trace visible in OCI APM Topology.

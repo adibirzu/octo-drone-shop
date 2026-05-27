@@ -17,6 +17,11 @@ export OCI_LB_SUBNET_OCID="ocid1.subnet.oc1.<region>...."
 export OCIR_REPO="<region>.ocir.io/<namespace>"
 ```
 
+!!! note "cap profile and octodemo.cloud"
+    `octodemo.cloud` currently belongs to the cap profile and the `emdemo`
+    Kubernetes context. Use `kubectl --context emdemo` and `oci --profile cap`
+    for this domain. Keep `DEFAULT` for future tests with different domains.
+
 ## 2. Build and Push
 
 !!! warning "ARM Machines"
@@ -103,6 +108,16 @@ AUTONOMOUS_DATABASE_ID="<atp-ocid>" ./deploy/oci/ensure_db_observability.sh
 curl https://shop.${DNS_DOMAIN}/ready | python3 -m json.tool
 curl https://shop.${DNS_DOMAIN}/api/observability/360 | python3 -m json.tool
 ```
+
+For the current cap deployment:
+
+```bash
+./scripts/demo/cap_smoke.sh
+```
+
+`shop.octodemo.cloud` should route to `deployment/mushop-portal` in namespace
+`mushop-portal`; `crm.octodemo.cloud` should route to
+`deployment/enterprise-crm-portal` in namespace `enterprise-crm`.
 
 ## 7. Recommended enhancement sequence
 

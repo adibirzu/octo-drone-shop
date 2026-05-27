@@ -11,6 +11,28 @@ observability showcase rather than just an instrumented application set.
 - create usable drilldowns between APM, Log Analytics, DB Management, and OPSI
 - make the whole flow reproducible from the published docs
 
+## Current cap baseline
+
+As of 2026-05-04, `octodemo.cloud` is restored on the cap profile:
+
+- cap kubectl context: `emdemo`
+- cap OCI profile: `cap`
+- shop host: `shop.octodemo.cloud`
+- CRM host: `crm.octodemo.cloud`
+- shared ATP alias: `ocidemoatp_low`
+
+Use `DEFAULT` only for later tests with different domains.
+
+The cap deployment is healthy when these checks return 200:
+
+```bash
+./scripts/demo/cap_smoke.sh
+```
+
+CRM currently has APM traces and RUM enabled, with unsupported OTLP metric
+export disabled. Until the next CRM image is rebuilt, cap carries a temporary
+`crm-metrics-hotfix` ConfigMap mount for that change.
+
 ## Golden workflows
 
 The platform should always be able to showcase these four workflows:
@@ -68,6 +90,76 @@ The platform should always be able to showcase these four workflows:
 - drive the golden workflows with k6 and smoke scripts
 - capture the verification checkpoints in the docs
 - keep the README, install guide, and published site aligned
+
+## Next steps after cap recovery
+
+1. Promote durable images:
+   - rebuild/push CRM with the metrics exporter fix as an immutable
+     `linux/amd64` tag
+   - rebuild/push shop with the ATP `orders` payment-provider migration as an
+     immutable `linux/amd64` tag
+   - roll `deployment/enterprise-crm-portal` in `enterprise-crm` using
+     container `app`
+   - roll `deployment/mushop-portal` in `mushop-portal` using container
+     `mushop`
+   - remove the live `crm-metrics-hotfix` mount after CRM is rebuilt
+
+2. Normalize cap deployment:
+   - decide whether shop stays in `mushop-portal` for cap compatibility or
+     moves to `octo-drone-shop`
+   - encode that choice in deployment scripts and docs
+   - keep `octodemo.cloud` separate from future `DEFAULT` profile test domains
+
+3. Run automated smoke checks:
+   - use `./scripts/demo/cap_smoke.sh` before demos and after cap deploys
+   - have future CI call the same script with explicit `SHOP_URL`, `CRM_URL`,
+     and `KUBE_CONTEXT`
+
+4. Prove the observability story:
+   - checkout trace visible in APM
+   - CRM order-sync trace visible in APM
+   - trace id searchable in logs
+   - SQL visible in DB Management or OPSI by service module
+
+5. Document rollback:
+   - previous image digests
+   - rollout undo command for both deployments
+   - ConfigMap hotfix removal command after CRM image promotion
+
+Promotion and rollback reference:
+
+```bash
+kubectl --context emdemo set image deploy/enterprise-crm-portal \
+  -n enterprise-crm \
+  app=${OCIR_REGION}.ocir.io/${OCIR_TENANCY}/enterprise-crm-portal:<tag>
+kubectl --context emdemo rollout status deploy/enterprise-crm-portal \
+  -n enterprise-crm
+
+kubectl --context emdemo set image deploy/mushop-portal \
+  -n mushop-portal \
+  mushop=${OCIR_REGION}.ocir.io/${OCIR_TENANCY}/octo-drone-shop:<tag>
+kubectl --context emdemo rollout status deploy/mushop-portal \
+  -n mushop-portal
+
+kubectl --context emdemo rollout undo deploy/enterprise-crm-portal \
+  -n enterprise-crm
+kubectl --context emdemo rollout undo deploy/mushop-portal \
+  -n mushop-portal
+```
+
+Hotfix removal reference after the fixed CRM image is active:
+
+```bash
+kubectl --context emdemo patch deploy enterprise-crm-portal \
+  -n enterprise-crm \
+  --type=strategic \
+  -p '{"spec":{"template":{"spec":{"containers":[{"name":"app","volumeMounts":[{"name":"metrics-hotfix","$patch":"delete"}]}],"volumes":[{"name":"metrics-hotfix","$patch":"delete"}]}}}}'
+
+kubectl --context emdemo rollout status deploy/enterprise-crm-portal \
+  -n enterprise-crm
+kubectl --context emdemo delete configmap crm-metrics-hotfix \
+  -n enterprise-crm
+```
 
 ## Deliverables
 

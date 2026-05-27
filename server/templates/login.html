@@ -2,16 +2,68 @@
 {% block head %}
 <style>
     .login-shell {
-        max-width: 460px;
+        max-width: 860px;
         margin: 56px auto;
     }
     .login-card {
         display: grid;
-        gap: 16px;
+        gap: 18px;
     }
     .login-card p {
         color: var(--muted);
         line-height: 1.6;
+    }
+    .login-lead {
+        max-width: 720px;
+    }
+    .credential-panel {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+    }
+    .credential-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .credential-heading h3 {
+        font-size: 0.95rem;
+    }
+    .credential-list {
+        display: grid;
+        gap: 8px;
+    }
+    .credential-row {
+        display: grid;
+        grid-template-columns: minmax(120px, 0.85fr) minmax(140px, 1fr) minmax(180px, 1.2fr) auto;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        background: rgba(7, 17, 28, 0.54);
+    }
+    .credential-row strong,
+    .credential-row code {
+        color: var(--ink);
+    }
+    .credential-row span {
+        color: var(--muted);
+        line-height: 1.4;
+    }
+    .credential-row code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.88rem;
+        overflow-wrap: anywhere;
+    }
+    .credential-fill {
+        min-width: 86px;
+        padding: 10px 14px;
     }
     .login-form {
         display: grid;
@@ -26,6 +78,23 @@
         color: var(--muted);
         line-height: 1.5;
     }
+    .login-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    @media (max-width: 760px) {
+        .login-shell {
+            margin: 28px auto;
+        }
+        .credential-row {
+            grid-template-columns: 1fr;
+            align-items: stretch;
+        }
+        .credential-fill {
+            width: 100%;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -33,12 +102,11 @@
 <div class="login-shell">
     <section class="card login-card">
         <div class="eyebrow">Operator Access</div>
-        <h2>Sign in to governed administrative views.</h2>
-        <p>
-            Successful sign-in stores a signed bearer token in local storage so the portal can call protected admin APIs.
-            Use an administrator account for the Admin surface.
+        <h2>Sign in to Drone Shop.</h2>
+        <p class="login-lead">
+            Successful sign-in stores a signed bearer token in local storage so storefront orders, payments, and company records can be linked to the buyer.
+            Use one of the order-test users below for checkout and order history validation.
         </p>
-        <p>Seeded demo access: <code>admin / OctoAdmin!2026</code> for admin views, <code>shopper / OctoUser!2026</code> for standard-user checks.</p>
         {% if idcs_configured %}
         <a class="btn" href="/api/auth/sso/login" id="ssoLoginBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#c74634;color:#fff;">
             <span aria-hidden="true">⇄</span>
@@ -46,14 +114,46 @@
         </a>
         <div style="text-align:center;color:var(--muted);font-size:0.85em;">— or use a local account —</div>
         {% endif %}
+        <div class="credential-panel" aria-labelledby="orderTestUsersTitle">
+            <div class="credential-heading">
+                <h3 id="orderTestUsersTitle">Order Test Users</h3>
+                <span class="chip">Password: <strong>OrderDemo2026!</strong></span>
+            </div>
+            <div class="credential-list">
+                <div class="credential-row" data-testid="demo-credential">
+                    <strong>shopper</strong>
+                    <code>OrderDemo2026!</code>
+                    <span>Place checkout orders and review orders tied to this user.</span>
+                    <button type="button" class="btn btn-outline credential-fill" data-username="shopper" data-password="OrderDemo2026!">Use</button>
+                </div>
+                <div class="credential-row" data-testid="demo-credential">
+                    <strong>manager</strong>
+                    <code>OrderDemo2026!</code>
+                    <span>Review the full order queue after placing test orders.</span>
+                    <button type="button" class="btn btn-outline credential-fill" data-username="manager" data-password="OrderDemo2026!">Use</button>
+                </div>
+                <div class="credential-row" data-testid="demo-credential">
+                    <strong>analyst</strong>
+                    <code>OrderDemo2026!</code>
+                    <span>Validate buyer-scoped order visibility without admin access.</span>
+                    <button type="button" class="btn btn-outline credential-fill" data-username="analyst" data-password="OrderDemo2026!">Use</button>
+                </div>
+                <div class="credential-row" data-testid="demo-credential">
+                    <strong>support</strong>
+                    <code>OrderDemo2026!</code>
+                    <span>Create an order, then correlate it with support workflows.</span>
+                    <button type="button" class="btn btn-outline credential-fill" data-username="support" data-password="OrderDemo2026!">Use</button>
+                </div>
+            </div>
+        </div>
         <form id="loginForm" class="login-form">
-            <input type="text" id="username" placeholder="Username" autocomplete="username" required>
-            <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
-            <button type="submit" class="btn">Sign In</button>
+            <input type="text" id="username" placeholder="Username" autocomplete="username" data-testid="login-username" required>
+            <input type="password" id="password" placeholder="Password" autocomplete="current-password" data-testid="login-password" required>
+            <button type="submit" class="btn" data-testid="login-submit">Sign In</button>
         </form>
         <div class="login-result" id="result">No active sign-in yet.</div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <a class="btn btn-outline" href="/admin-page">Open Admin</a>
+        <div class="login-actions">
+            <a class="btn btn-outline" href="/shop" data-testid="open-shop-after-login">Open Shop</a>
             <button type="button" class="btn btn-outline" id="clearTokenBtn">Clear Stored Token</button>
             {% if idcs_configured %}
             <a class="btn btn-outline" href="/api/auth/sso/logout">SSO Sign Out</a>
@@ -77,6 +177,14 @@ if (_ssoErr) {
     setMessage(`SSO sign-in failed: ${_ssoErr.replaceAll('_', ' ')}`);
 }
 
+document.querySelectorAll('.credential-fill').forEach((button) => {
+    button.addEventListener('click', () => {
+        document.getElementById('username').value = button.dataset.username || '';
+        document.getElementById('password').value = button.dataset.password || '';
+        setMessage(`${button.dataset.username} credentials loaded.`);
+    });
+});
+
 document.getElementById('loginForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const username = document.getElementById('username').value.trim();
@@ -96,7 +204,7 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
 
         localStorage.setItem('octo-auth-token', payload.token);
         localStorage.setItem('octo-auth-user', JSON.stringify(payload.user));
-        setMessage(`Signed in as ${payload.user.username} (${payload.user.role}). Admin views can now call protected APIs.`);
+        setMessage(`Signed in as ${payload.user.username} (${payload.user.role}). Shop orders and protected demo views are available.`);
     } catch (error) {
         setMessage(`Login failed: ${error.message}`);
     }

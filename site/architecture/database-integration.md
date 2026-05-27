@@ -57,6 +57,28 @@ Both services use **identical schemas** for core tables:
 | `page_views` | Analytics | Analytics | Independent |
 | `audit_logs` | All requests | All requests | Append-only |
 
+### Payment column compatibility
+
+Older ATP instances may have `orders.payment_method` and
+`orders.payment_status` but not the newer provider fields required by the
+current shop dashboard and payment webhook code:
+
+```sql
+payment_provider           VARCHAR2(50)
+payment_provider_reference VARCHAR2(128)
+```
+
+The shop startup migration adds these columns if they are missing. Validate the
+cap database before a demo with:
+
+```bash
+curl --noproxy '*' -fsS https://shop.octodemo.cloud/api/dashboard/summary
+```
+
+A missing `payment_provider_reference` column causes the dashboard summary API
+to return 500 because the ORM selects the full `orders` model for recent
+orders.
+
 ## Service-Exclusive Tables
 
 === "Drone Shop Only"

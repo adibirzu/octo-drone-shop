@@ -1,5 +1,17 @@
 # Deployment
 
+The current unified deployment surface lives in
+[`adibirzu/octo-apm-demo`](https://github.com/adibirzu/octo-apm-demo).
+Use that repository for new OKE, private Compute, Resource Manager, or
+single-VM deployments. This page remains as the service-level OKE
+rollout reference for Drone Shop.
+
+For the production-demo path without Kubernetes, use the
+[Private Compute Deployment](https://adibirzu.github.io/octo-apm-demo/getting-started/compute-deployment/)
+stack. It deploys Shop and CRM on private Podman Compute instances with
+public OCI LB/WAF, private ATP, APM, OCI Logging, Log Analytics, DB
+Management, Operations Insights, and Stack Monitoring Standard.
+
 ## Automated Deploy Script
 
 ```bash
@@ -50,3 +62,105 @@ kubectl rollout status deployment/octo-drone-shop -n octo-drone-shop
 - **Readiness**: `/ready` every 12s (18s initial delay)
 - **Image pull**: OCIR with `ocir-pull-secret`
 - **ATP wallet**: Mounted as read-only volume
+
+## Cap Profile Runbook (`octodemo.cloud`)
+
+`octodemo.cloud` currently runs on the cap profile. Use explicit context and
+profile flags:
+
+```bash
+kubectl --context emdemo ...
+oci --profile cap ...
+```
+
+Do not use `DEFAULT` for `octodemo.cloud`; it is reserved for later tests with
+different domains.
+
+Current live objects:
+
+| Host | Namespace | Deployment | Service | Ingress |
+|---|---|---|---|---|
+| `shop.octodemo.cloud` | `mushop-portal` | `mushop-portal` | `mushop-portal` | `octodemo-shop` |
+| `crm.octodemo.cloud` | `enterprise-crm` | `enterprise-crm-portal` | `enterprise-crm-portal` | `octodemo-crm` |
+
+Smoke check:
+
+```bash
+./scripts/demo/cap_smoke.sh
+```
+
+If either public root returns nginx `404 Not Found`, check ingress presence
+first:
+
+```bash
+kubectl --context emdemo get ingress -A | grep octodemo
+```
+
+If `/api/dashboard/summary` returns 500 and logs mention
+`payment_provider_reference`, run the current shop image or migration against
+the shared ATP; the live schema must include `orders.payment_provider` and
+`orders.payment_provider_reference`.
+
+### Temporary CRM Metrics Hotfix
+
+The live cap CRM deployment currently mounts `configmap/crm-metrics-hotfix`
+over `/app/server/observability/metrics.py`. This disables unsupported OTLP
+metric export to OCI APM while keeping:
+
+- OCI APM traces
+- OCI APM RUM
+- Prometheus `/metrics`
+
+Remove the mount after rebuilding and promoting a CRM image that includes the
+same code change:
+
+```bash
+kubectl --context emdemo get deploy enterprise-crm-portal -n enterprise-crm \
+  -o jsonpath='{range .spec.template.spec.containers[0].volumeMounts[*]}{.name}{" "}{.mountPath}{"\n"}{end}'
+```
+
+The current hotfix mount is named `metrics-hotfix` and points at
+`configmap/crm-metrics-hotfix`. After the fixed image is active, remove the
+mount and delete the ConfigMap:
+
+```bash
+kubectl --context emdemo patch deploy enterprise-crm-portal \
+  -n enterprise-crm \
+  --type=strategic \
+  -p '{"spec":{"template":{"spec":{"containers":[{"name":"app","volumeMounts":[{"name":"metrics-hotfix","$patch":"delete"}]}],"volumes":[{"name":"metrics-hotfix","$patch":"delete"}]}}}}'
+
+kubectl --context emdemo rollout status deploy/enterprise-crm-portal \
+  -n enterprise-crm
+kubectl --context emdemo delete configmap crm-metrics-hotfix \
+  -n enterprise-crm
+```
+
+### Image Promotion and Rollback
+
+Record the current image before each cap rollout:
+
+```bash
+kubectl --context emdemo get deploy mushop-portal -n mushop-portal \
+  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+kubectl --context emdemo get deploy enterprise-crm-portal -n enterprise-crm \
+  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+```
+
+Promote immutable tags instead of relying only on `latest`:
+
+```bash
+kubectl --context emdemo set image deploy/mushop-portal \
+  -n mushop-portal \
+  mushop=${OCIR_REGION}.ocir.io/${OCIR_TENANCY}/octo-drone-shop:<tag>
+
+kubectl --context emdemo set image deploy/enterprise-crm-portal \
+  -n enterprise-crm \
+  app=${OCIR_REGION}.ocir.io/${OCIR_TENANCY}/enterprise-crm-portal:<tag>
+```
+
+Rollback uses the Kubernetes rollout history:
+
+```bash
+kubectl --context emdemo rollout undo deploy/mushop-portal -n mushop-portal
+kubectl --context emdemo rollout undo deploy/enterprise-crm-portal -n enterprise-crm
+```

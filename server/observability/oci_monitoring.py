@@ -9,7 +9,7 @@ Architecture
 This module runs a background thread that samples key gauges/counters
 every ``PUBLISH_INTERVAL_SECONDS`` (default 60s) and posts them via
 ``oci.monitoring.MonitoringClient.post_metric_data``. The metric
-namespace defaults to ``octo_drone_shop`` and is configurable.
+namespace defaults to ``octo_apm_demo`` and is configurable.
 
 The module is optional — if OCI credentials or the compartment OCID are
 missing, it logs a single info message and does nothing.
@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import threading
 import time
 from datetime import datetime, timezone
@@ -52,7 +53,29 @@ _low_stock_count = 0
 _lock = threading.Lock()
 
 PUBLISH_INTERVAL = int(os.getenv("OCI_MONITORING_INTERVAL_SECONDS", "60"))
-METRIC_NAMESPACE = os.getenv("OCI_MONITORING_NAMESPACE", "octo_drone_shop")
+METRIC_NAMESPACE = os.getenv("OCI_MONITORING_NAMESPACE", "octo_apm_demo")
+
+
+def _resolve_monitoring_region() -> str:
+    """Resolve the OCI Monitoring ingestion region for custom metrics.
+
+    OKE can run in a different region than the APM/Monitoring home region, so
+    do not derive this from OCIR or the cluster region. Prefer a dedicated
+    Monitoring override, then infer from the APM endpoint, then fall back to
+    general OCI region env vars and finally Phoenix for the shared emdemo
+    deployment.
+    """
+    explicit = (os.getenv("OCI_MONITORING_REGION") or "").strip().lower()
+    if explicit:
+        return explicit
+    endpoint = (cfg.oci_apm_endpoint or "").strip().lower()
+    match = re.search(r"\.([a-z]+-[a-z]+-\d+)\.oci", endpoint)
+    if match:
+        return match.group(1)
+    explicit = (os.getenv("OCI_REGION") or os.getenv("OCI_REGION_ID") or "").strip().lower()
+    if explicit:
+        return explicit
+    return "us-phoenix-1"
 
 
 def increment_requests():
@@ -142,7 +165,7 @@ def _build_metric_data(snapshot: dict[str, float], start_time: float) -> list[di
         from server.modules.integrations import CRM_SYNC_STATE
         last_ts = float(CRM_SYNC_STATE.get("last_sync_ts") or 0)
         crm_sync_age = time.time() - last_ts if last_ts > 0 else 0.0
-    except Exception:
+    except Exception:  # noqa: S110
         pass
 
     return [
@@ -175,11 +198,7 @@ def _publisher_loop(compartment_id: str, start_time: float):
         # Without this every post_metric_data returns 404 "Incorrect Telemetry
         # endpoint is being used for posting metrics". See KB-456.
         auth_mode = cfg.oci_auth_mode.lower()
-        region = (
-            os.getenv("OCI_REGION")
-            or os.getenv("OCI_REGION_ID")
-            or "eu-frankfurt-1"
-        ).strip().lower()
+        region = _resolve_monitoring_region()
         ingestion_endpoint = f"https://telemetry-ingestion.{region}.oraclecloud.com"
 
         if auth_mode == "instance_principal":
@@ -220,7 +239,7 @@ def _publisher_loop(compartment_id: str, start_time: float):
                             _text("SELECT COUNT(*) FROM products WHERE is_active = 1 AND stock < 10")
                         ).scalar()
                         set_low_stock_count(int(row or 0))
-            except Exception:
+            except Exception:  # noqa: S110
                 pass
 
             snapshot = _collect_and_reset()
@@ -293,3 +312,86 @@ def start_monitoring():
 def stop_monitoring():
     global _running
     _running = False
+
+
+# ---------------------------------------------------------------------------
+# Plan 07-05 / D-17 — bounded stress-run counter
+# ---------------------------------------------------------------------------
+#
+# `octo_apm_demo/stress_run_count` is the one custom counter that carries the
+# `run_id` dimension end-to-end. Cardinality is bounded by the concurrency=1
+# guard in the stress-runner pod plus the operator-window duty cycle, so a
+# `run_id` per-point dimension is safe here (RESEARCH §Anti-Pattern §2 — keep
+# run_id ONLY on this bounded counter; do not propagate to the gauges).
+#
+# The helper publishes a single PostMetricDataDetails point synchronously so
+# the lifecycle audit (start / stop / expired / error) is durable even if the
+# background publisher loop is between intervals.
+
+def increment_stress_run(run_id: str, status: str) -> None:
+    """Increment octo_apm_demo/stress_run_count by 1, tagged with run_id+status.
+
+    Safe to call from any FastAPI handler — failures are logged at WARNING and
+    swallowed so the audit emission never blocks the admin endpoint.
+    """
+    compartment_id = cfg.oci_compartment_id
+    if not compartment_id:
+        logger.info(
+            "OCI Monitoring increment_stress_run skipped — OCI_COMPARTMENT_ID not set"
+        )
+        return
+    try:
+        import oci
+        from oci.monitoring import MonitoringClient
+        from oci.monitoring.models import (
+            Datapoint,
+            MetricDataDetails,
+            PostMetricDataDetails,
+        )
+
+        region = _resolve_monitoring_region()
+        ingestion_endpoint = f"https://telemetry-ingestion.{region}.oraclecloud.com"
+        auth_mode = cfg.oci_auth_mode.lower()
+        if auth_mode == "instance_principal":
+            signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+            client = MonitoringClient(
+                config={}, signer=signer, service_endpoint=ingestion_endpoint
+            )
+        elif auth_mode == "resource_principal":
+            signer = oci.auth.signers.get_resource_principals_signer()
+            client = MonitoringClient(
+                config={}, signer=signer, service_endpoint=ingestion_endpoint
+            )
+        else:
+            config = oci.config.from_file()
+            client = MonitoringClient(config, service_endpoint=ingestion_endpoint)
+
+        now = datetime.now(timezone.utc)
+        point = _point("stress_run_count", 1.0, "count")
+        # Override dimensions to carry the bounded run_id + status pair so the
+        # counter is pivotable in Monitoring without polluting the long-lived
+        # gauges (which keep `serviceName/environment/runtime/instanceId`).
+        point["dimensions"] = {
+            "serviceName": cfg.otel_service_name,
+            "environment": cfg.app_env,
+            "run_id": str(run_id),
+            "status": str(status),
+        }
+        md = MetricDataDetails(
+            namespace=point["namespace"],
+            name=point["name"],
+            compartment_id=compartment_id,
+            dimensions=point["dimensions"],
+            metadata=point["metadata"],
+            datapoints=[Datapoint(timestamp=now, value=1.0)],
+        )
+        response = client.post_metric_data(
+            PostMetricDataDetails(metric_data=[md])
+        )
+        failed = getattr(response.data, "failed_metrics_count", 0) or 0
+        if failed:
+            logger.warning(
+                "OCI Monitoring increment_stress_run partial failure: 1 metric rejected"
+            )
+    except Exception as exc:
+        logger.warning("OCI Monitoring increment_stress_run failed: %s", exc)
