@@ -2824,10 +2824,11 @@
 </span><span id="__span-0-12"><span class="nb">export</span><span class="w"> </span><span class="nv">OCIR_REPO</span><span class="o">=</span><span class="s2">&quot;&lt;region&gt;.ocir.io/&lt;namespace&gt;&quot;</span>
 </span></code></pre></div>
 <div class="admonition note">
-<p class="admonition-title">cap profile and octodemo.cloud</p>
-<p><code>octodemo.cloud</code> currently belongs to the cap profile and the <code>emdemo</code>
-Kubernetes context. Use <code>kubectl --context emdemo</code> and <code>oci --profile cap</code>
-for this domain. Keep <code>DEFAULT</code> for future tests with different domains.</p>
+<p class="admonition-title">cap profile and example.test</p>
+<p><code>example.test</code> currently belongs to the cap profile and the
+<code>&lt;kube-context&gt;</code> Kubernetes context. Use <code>kubectl --context &lt;kube-context&gt;</code>
+and <code>oci --profile cap</code> for this domain. Keep <code>DEFAULT</code> for future tests
+with different domains.</p>
 </div>
 <h2 id="2-build-and-push">2. Build and Push<a class="headerlink" href="#2-build-and-push" title="Permanent link">&para;</a></h2>
 <div class="admonition warning">
@@ -2902,8 +2903,8 @@ for this domain. Keep <code>DEFAULT</code> for future tests with different domai
 <p>For the current cap deployment:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1">./scripts/demo/cap_smoke.sh
 </span></code></pre></div>
-<p><code>shop.octodemo.cloud</code> should route to <code>deployment/mushop-portal</code> in namespace
-<code>mushop-portal</code>; <code>crm.octodemo.cloud</code> should route to
+<p><code>shop.example.test</code> should route to <code>deployment/mushop-portal</code> in namespace
+<code>mushop-portal</code>; <code>crm.example.test</code> should route to
 <code>deployment/enterprise-crm-portal</code> in namespace <code>enterprise-crm</code>.</p>
 <h2 id="7-recommended-enhancement-sequence">7. Recommended enhancement sequence<a class="headerlink" href="#7-recommended-enhancement-sequence" title="Permanent link">&para;</a></h2>
 <p>After the application is reachable, enable the OCI showcase in this order:</p>

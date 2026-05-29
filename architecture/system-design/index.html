@@ -1302,9 +1302,9 @@
     DroneShop -.-&gt;|structured logs| Logging
     DroneShop -.-&gt;|custom metrics| Monitoring</code></pre>
 <h2 id="current-cap-profile-topology">Current Cap Profile Topology<a class="headerlink" href="#current-cap-profile-topology" title="Permanent link">¶</a></h2>
-<p><code>octodemo.cloud</code> currently belongs to the cap profile. Operate it with the
+<p><code>example.test</code> currently belongs to the cap profile. Operate it with the
 explicit cap context/profile:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1">kubectl<span class="w"> </span>--context<span class="w"> </span>emdemo<span class="w"> </span>...
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1">kubectl<span class="w"> </span>--context<span class="w"> </span>&lt;kube-context&gt;<span class="w"> </span>...
 </span><span id="__span-0-2">oci<span class="w"> </span>--profile<span class="w"> </span>cap<span class="w"> </span>...
 </span></code></pre></div>
 <p>The local <code>DEFAULT</code> profile is intentionally reserved for future tests with
@@ -1321,14 +1321,14 @@ different domains.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>shop.octodemo.cloud</code></td>
+<td><code>shop.example.test</code></td>
 <td><code>mushop-portal</code></td>
 <td><code>deployment/mushop-portal</code></td>
 <td><code>service/mushop-portal:80</code></td>
 <td><code>ingress/octodemo-shop</code></td>
 </tr>
 <tr>
-<td><code>crm.octodemo.cloud</code></td>
+<td><code>crm.example.test</code></td>
 <td><code>enterprise-crm</code></td>
 <td><code>deployment/enterprise-crm-portal</code></td>
 <td><code>service/enterprise-crm-portal:80</code></td>
