@@ -63,25 +63,25 @@ kubectl rollout status deployment/octo-drone-shop -n octo-drone-shop
 - **Image pull**: OCIR with `ocir-pull-secret`
 - **ATP wallet**: Mounted as read-only volume
 
-## Cap Profile Runbook (`octodemo.cloud`)
+## Cap Profile Runbook (`example.test`)
 
-`octodemo.cloud` currently runs on the cap profile. Use explicit context and
+`example.test` currently runs on the cap profile. Use explicit context and
 profile flags:
 
 ```bash
-kubectl --context emdemo ...
+kubectl --context <kube-context> ...
 oci --profile cap ...
 ```
 
-Do not use `DEFAULT` for `octodemo.cloud`; it is reserved for later tests with
+Do not use `DEFAULT` for `example.test`; it is reserved for later tests with
 different domains.
 
 Current live objects:
 
 | Host | Namespace | Deployment | Service | Ingress |
 |---|---|---|---|---|
-| `shop.octodemo.cloud` | `mushop-portal` | `mushop-portal` | `mushop-portal` | `octodemo-shop` |
-| `crm.octodemo.cloud` | `enterprise-crm` | `enterprise-crm-portal` | `enterprise-crm-portal` | `octodemo-crm` |
+| `shop.example.test` | `mushop-portal` | `mushop-portal` | `mushop-portal` | `octodemo-shop` |
+| `crm.example.test` | `enterprise-crm` | `enterprise-crm-portal` | `enterprise-crm-portal` | `octodemo-crm` |
 
 Smoke check:
 
@@ -93,7 +93,7 @@ If either public root returns nginx `404 Not Found`, check ingress presence
 first:
 
 ```bash
-kubectl --context emdemo get ingress -A | grep octodemo
+kubectl --context <kube-context> get ingress -A | grep example
 ```
 
 If `/api/dashboard/summary` returns 500 and logs mention
@@ -115,7 +115,7 @@ Remove the mount after rebuilding and promoting a CRM image that includes the
 same code change:
 
 ```bash
-kubectl --context emdemo get deploy enterprise-crm-portal -n enterprise-crm \
+kubectl --context <kube-context> get deploy enterprise-crm-portal -n enterprise-crm \
   -o jsonpath='{range .spec.template.spec.containers[0].volumeMounts[*]}{.name}{" "}{.mountPath}{"\n"}{end}'
 ```
 
@@ -124,14 +124,14 @@ The current hotfix mount is named `metrics-hotfix` and points at
 mount and delete the ConfigMap:
 
 ```bash
-kubectl --context emdemo patch deploy enterprise-crm-portal \
+kubectl --context <kube-context> patch deploy enterprise-crm-portal \
   -n enterprise-crm \
   --type=strategic \
   -p '{"spec":{"template":{"spec":{"containers":[{"name":"app","volumeMounts":[{"name":"metrics-hotfix","$patch":"delete"}]}],"volumes":[{"name":"metrics-hotfix","$patch":"delete"}]}}}}'
 
-kubectl --context emdemo rollout status deploy/enterprise-crm-portal \
+kubectl --context <kube-context> rollout status deploy/enterprise-crm-portal \
   -n enterprise-crm
-kubectl --context emdemo delete configmap crm-metrics-hotfix \
+kubectl --context <kube-context> delete configmap crm-metrics-hotfix \
   -n enterprise-crm
 ```
 
@@ -140,27 +140,27 @@ kubectl --context emdemo delete configmap crm-metrics-hotfix \
 Record the current image before each cap rollout:
 
 ```bash
-kubectl --context emdemo get deploy mushop-portal -n mushop-portal \
+kubectl --context <kube-context> get deploy mushop-portal -n mushop-portal \
   -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
-kubectl --context emdemo get deploy enterprise-crm-portal -n enterprise-crm \
+kubectl --context <kube-context> get deploy enterprise-crm-portal -n enterprise-crm \
   -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
 ```
 
 Promote immutable tags instead of relying only on `latest`:
 
 ```bash
-kubectl --context emdemo set image deploy/mushop-portal \
+kubectl --context <kube-context> set image deploy/mushop-portal \
   -n mushop-portal \
-  mushop=${OCIR_REGION}.ocir.io/${OCIR_TENANCY}/octo-drone-shop:<tag>
+  mushop=<region>.ocir.io/<tenancy-namespace>/octo-drone-shop:<tag>
 
-kubectl --context emdemo set image deploy/enterprise-crm-portal \
+kubectl --context <kube-context> set image deploy/enterprise-crm-portal \
   -n enterprise-crm \
-  app=${OCIR_REGION}.ocir.io/${OCIR_TENANCY}/enterprise-crm-portal:<tag>
+  app=<region>.ocir.io/<tenancy-namespace>/enterprise-crm-portal:<tag>
 ```
 
 Rollback uses the Kubernetes rollout history:
 
 ```bash
-kubectl --context emdemo rollout undo deploy/mushop-portal -n mushop-portal
-kubectl --context emdemo rollout undo deploy/enterprise-crm-portal -n enterprise-crm
+kubectl --context <kube-context> rollout undo deploy/mushop-portal -n mushop-portal
+kubectl --context <kube-context> rollout undo deploy/enterprise-crm-portal -n enterprise-crm
 ```

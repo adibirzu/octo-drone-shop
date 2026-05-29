@@ -50,11 +50,11 @@ flowchart TD
 
 ## Current Cap Profile Topology
 
-`octodemo.cloud` currently belongs to the cap profile. Operate it with the
+`example.test` currently belongs to the cap profile. Operate it with the
 explicit cap context/profile:
 
 ```bash
-kubectl --context emdemo ...
+kubectl --context <kube-context> ...
 oci --profile cap ...
 ```
 
@@ -63,8 +63,8 @@ different domains.
 
 | Host | Namespace | Workload | Service | Ingress |
 |---|---|---|---|---|
-| `shop.octodemo.cloud` | `mushop-portal` | `deployment/mushop-portal` | `service/mushop-portal:80` | `ingress/octodemo-shop` |
-| `crm.octodemo.cloud` | `enterprise-crm` | `deployment/enterprise-crm-portal` | `service/enterprise-crm-portal:80` | `ingress/octodemo-crm` |
+| `shop.example.test` | `mushop-portal` | `deployment/mushop-portal` | `service/mushop-portal:80` | `ingress/octodemo-shop` |
+| `crm.example.test` | `enterprise-crm` | `deployment/enterprise-crm-portal` | `service/enterprise-crm-portal:80` | `ingress/octodemo-crm` |
 
 Both hosts route through the shared cap nginx ingress load balancer. The shop
 uses the existing `mushop-portal` namespace because that namespace owns the cap

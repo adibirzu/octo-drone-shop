@@ -72,7 +72,7 @@ The shop startup migration adds these columns if they are missing. Validate the
 cap database before a demo with:
 
 ```bash
-curl --noproxy '*' -fsS https://shop.octodemo.cloud/api/dashboard/summary
+curl --noproxy '*' -fsS https://shop.example.test/api/dashboard/summary
 ```
 
 A missing `payment_provider_reference` column causes the dashboard summary API

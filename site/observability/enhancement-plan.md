@@ -13,12 +13,12 @@ observability showcase rather than just an instrumented application set.
 
 ## Current cap baseline
 
-As of 2026-05-04, `octodemo.cloud` is restored on the cap profile:
+As of 2026-05-04, `example.test` is restored on the cap profile:
 
-- cap kubectl context: `emdemo`
+- cap kubectl context: `<kube-context>`
 - cap OCI profile: `cap`
-- shop host: `shop.octodemo.cloud`
-- CRM host: `crm.octodemo.cloud`
+- shop host: `shop.example.test`
+- CRM host: `crm.example.test`
 - shared ATP alias: `ocidemoatp_low`
 
 Use `DEFAULT` only for later tests with different domains.
@@ -108,7 +108,7 @@ The platform should always be able to showcase these four workflows:
    - decide whether shop stays in `mushop-portal` for cap compatibility or
      moves to `octo-drone-shop`
    - encode that choice in deployment scripts and docs
-   - keep `octodemo.cloud` separate from future `DEFAULT` profile test domains
+   - keep `example.test` separate from future `DEFAULT` profile test domains
 
 3. Run automated smoke checks:
    - use `./scripts/demo/cap_smoke.sh` before demos and after cap deploys
@@ -129,35 +129,35 @@ The platform should always be able to showcase these four workflows:
 Promotion and rollback reference:
 
 ```bash
-kubectl --context emdemo set image deploy/enterprise-crm-portal \
+kubectl --context <kube-context> set image deploy/enterprise-crm-portal \
   -n enterprise-crm \
-  app=${OCIR_REGION}.ocir.io/${OCIR_TENANCY}/enterprise-crm-portal:<tag>
-kubectl --context emdemo rollout status deploy/enterprise-crm-portal \
+  app=<region>.ocir.io/<tenancy-namespace>/enterprise-crm-portal:<tag>
+kubectl --context <kube-context> rollout status deploy/enterprise-crm-portal \
   -n enterprise-crm
 
-kubectl --context emdemo set image deploy/mushop-portal \
+kubectl --context <kube-context> set image deploy/mushop-portal \
   -n mushop-portal \
-  mushop=${OCIR_REGION}.ocir.io/${OCIR_TENANCY}/octo-drone-shop:<tag>
-kubectl --context emdemo rollout status deploy/mushop-portal \
+  mushop=<region>.ocir.io/<tenancy-namespace>/octo-drone-shop:<tag>
+kubectl --context <kube-context> rollout status deploy/mushop-portal \
   -n mushop-portal
 
-kubectl --context emdemo rollout undo deploy/enterprise-crm-portal \
+kubectl --context <kube-context> rollout undo deploy/enterprise-crm-portal \
   -n enterprise-crm
-kubectl --context emdemo rollout undo deploy/mushop-portal \
+kubectl --context <kube-context> rollout undo deploy/mushop-portal \
   -n mushop-portal
 ```
 
 Hotfix removal reference after the fixed CRM image is active:
 
 ```bash
-kubectl --context emdemo patch deploy enterprise-crm-portal \
+kubectl --context <kube-context> patch deploy enterprise-crm-portal \
   -n enterprise-crm \
   --type=strategic \
   -p '{"spec":{"template":{"spec":{"containers":[{"name":"app","volumeMounts":[{"name":"metrics-hotfix","$patch":"delete"}]}],"volumes":[{"name":"metrics-hotfix","$patch":"delete"}]}}}}'
 
-kubectl --context emdemo rollout status deploy/enterprise-crm-portal \
+kubectl --context <kube-context> rollout status deploy/enterprise-crm-portal \
   -n enterprise-crm
-kubectl --context emdemo delete configmap crm-metrics-hotfix \
+kubectl --context <kube-context> delete configmap crm-metrics-hotfix \
   -n enterprise-crm
 ```
 
