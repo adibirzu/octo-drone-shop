@@ -45,7 +45,7 @@ Both services integrate with the full OCI observability stack through modular ad
 - **Canonical deployment repo**: [`adibirzu/octo-apm-demo`](https://github.com/adibirzu/octo-apm-demo)
 - **Canonical docs site**: <https://adibirzu.github.io/octo-apm-demo>
 - **Default shared deployment hostnames**: `https://shop.cyber-sec.ro` and `https://crm.cyber-sec.ro`
-- **Validated private Compute hostnames**: `http://shop.1.octodemo.cloud` and `http://crm.1.octodemo.cloud`
+- **Validated private Compute hostnames**: `http://shop.1.example.test` and `http://crm.1.example.test`
 - **Template hostnames for other tenancies**: `https://shop.<your-domain>` and `https://crm.<your-domain>`
 - **Shared database**: Oracle ATP
 - **Catalog source of truth**: CRM
