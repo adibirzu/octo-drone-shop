@@ -3,6 +3,7 @@
 import logging
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from sqlalchemy import Column, Integer, String, Float, Text, DateTime, ForeignKey, Identity, UniqueConstraint, create_engine, text, inspect
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -341,6 +342,20 @@ _engine_kwargs = {
     "pool_pre_ping": True,
 }
 
+def build_oracle_connect_args(cfg_obj):
+    """Construct Oracle connection options without assuming a mounted wallet."""
+    args = {"dsn": cfg_obj.oracle_dsn}
+    wallet_dir = cfg_obj.oracle_wallet_dir
+    if cfg_obj.oracle_wallet_available:
+        import oracledb
+        oracledb.defaults.config_dir = wallet_dir
+        args.update(config_dir=wallet_dir, wallet_location=wallet_dir,
+                    wallet_password=cfg_obj.oracle_wallet_password)
+    elif wallet_dir and (Path(wallet_dir) / "tnsnames.ora").is_file():
+        args["config_dir"] = wallet_dir
+    return args
+
+
 if cfg.use_postgres:
     logger.info("Using PostgreSQL backend: %s", cfg.masked_database_url())
     engine = create_async_engine(cfg.database_url, **_engine_kwargs)
@@ -354,22 +369,12 @@ else:
             "Set DATABASE_URL for PostgreSQL or install oracledb."
         ) from exc
 
-    oracledb.defaults.config_dir = cfg.oracle_wallet_dir or ""
     oracledb.defaults.fetch_lobs = False
-
-    _connect_args = {}
-    if cfg.oracle_wallet_dir:
-        _connect_args["config_dir"] = cfg.oracle_wallet_dir
-        _connect_args["wallet_location"] = cfg.oracle_wallet_dir
-        _connect_args["wallet_password"] = cfg.oracle_wallet_password
-
+    _connect_args = build_oracle_connect_args(cfg)
     engine = create_async_engine(
-        cfg.database_url,
-        connect_args={"dsn": cfg.oracle_dsn, **_connect_args},
-        **_engine_kwargs,
+        cfg.database_url, connect_args=_connect_args, **_engine_kwargs,
     )
-    _sync_url = f"oracle+oracledb://{cfg.oracle_user}:{cfg.oracle_password}@"
-    sync_engine = create_engine(_sync_url, connect_args={"dsn": cfg.oracle_dsn, **_connect_args})
+    sync_engine = create_engine(cfg.sync_database_url, connect_args=_connect_args)
 
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

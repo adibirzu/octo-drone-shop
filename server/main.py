@@ -225,14 +225,14 @@ async def ready():
         _db_start = __import__("time").monotonic()
         try:
             async with get_db() as db:
-                await db.execute(text("SELECT 1 FROM DUAL"))
+                await db.execute(text("SELECT 1" if cfg.use_postgres else "SELECT 1 FROM DUAL"))
                 db_ok = True
         except Exception as e:
             span.set_attribute("health.db_error", str(e))
         from server.observability.oci_monitoring import set_db_latency
         set_db_latency(round((__import__("time").monotonic() - _db_start) * 1000, 2))
 
-        return {
+        payload = {
             "ready": db_ok,
             "database": "connected" if db_ok else "disconnected",
             "db_type": cfg.database_target_label,
@@ -256,6 +256,7 @@ async def ready():
             "langfuse_project_name": cfg.langfuse_project_name,
             "runtime": runtime_snapshot(),
         }
+        return payload if db_ok else JSONResponse(status_code=503, content=payload)
 
 
 @app.get("/api/modules")

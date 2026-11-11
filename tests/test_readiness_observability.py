@@ -33,7 +33,8 @@ def test_shop_ready_reports_logging_configuration() -> None:
         for node in ast.walk(ready_functions[0])
         if isinstance(node, ast.Return)
     ]
-    ready_keys = set().union(*(_dict_literal_keys(node) for node in return_dicts))
+    assignments = [node.value for node in ast.walk(ready_functions[0]) if isinstance(node, ast.Assign)]
+    ready_keys = set().union(*(_dict_literal_keys(node) for node in return_dicts + assignments))
 
     assert "apm_configured" in ready_keys
     assert "rum_configured" in ready_keys
