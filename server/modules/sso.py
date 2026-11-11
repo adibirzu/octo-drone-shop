@@ -41,6 +41,7 @@ import base64
 import hashlib
 import hmac
 import logging
+import os
 import secrets
 import time
 from typing import Any
@@ -234,6 +235,97 @@ async def _upsert_sso_user(claims: dict[str, Any]) -> dict[str, Any]:
 # ── Routes ─────────────────────────────────────────────────────────────
 
 
+def _resolve_redirect_uri(request: Request, fallback_uri: str) -> str:
+    """Resolve callback redirect URI dynamically from validated X-Forwarded-Host."""
+    raw_host = (
+        request.headers.get("x-forwarded-host")
+        or request.headers.get("host")
+        or ""
+    ).split(",")[0].strip()
+    if not raw_host:
+        return fallback_uri
+    host_only = raw_host.split(":")[0].lower()
+
+    allowed_domains_env = os.getenv("ALLOWED_SSO_DOMAINS", "")
+    allowed_domains = [d.strip().lower() for d in allowed_domains_env.split(",") if d.strip()]
+    dns_domain = os.getenv("DNS_DOMAIN", "").strip().lower()
+    if dns_domain and dns_domain not in allowed_domains:
+        allowed_domains.append(dns_domain)
+    dns_sec = os.getenv("DNS_SECONDARY_DOMAIN", "").strip().lower()
+    if dns_sec and dns_sec not in allowed_domains:
+        allowed_domains.append(dns_sec)
+
+    matches = any(
+        host_only == d or host_only == f"shop.{d}" or host_only.endswith("." + d)
+        for d in allowed_domains
+    )
+    if matches and not host_only.endswith(".svc.cluster.local"):
+        forwarded_proto = (
+            request.headers.get("x-forwarded-proto")
+            or request.url.scheme
+            or "https"
+        ).split(",")[0].strip()
+        scheme = (
+            "https"
+            if forwarded_proto in ("https", "http")
+            and not host_only.startswith("127.")
+            and host_only != "localhost"
+            else forwarded_proto
+        )
+        return f"{scheme}://{raw_host}/api/auth/sso/callback"
+    return fallback_uri
+
+
+def _resolve_cp_broker_url(request: Request) -> str:
+    cp_env = os.environ.get("CONTROL_PLANE_URL", "").rstrip("/")
+    if cp_env and not any(h in cp_env for h in ("127.0.0.1", "localhost")):
+        return cp_env
+    raw_host = (
+        request.headers.get("x-forwarded-host")
+        or request.headers.get("host")
+        or ""
+    ).split(",")[0].strip().split(":")[0]
+    if "." in raw_host:
+        parts = raw_host.split(".")
+        cp_host = "cp." + ".".join(parts[1:])
+        scheme = (
+            request.headers.get("x-forwarded-proto")
+            or request.url.scheme
+            or "https"
+        ).split(",")[0].strip()
+        return f"{scheme}://{cp_host}"
+    dns_domain = os.environ.get("DNS_DOMAIN", "").strip()
+    return f"https://cp.{dns_domain}" if dns_domain else ""
+
+
+def _verify_google_ticket(ticket: str) -> dict | None:
+    if not ticket or "." not in ticket:
+        return None
+    try:
+        import json
+        b64_payload, b64_sig = ticket.split(".", 1)
+        for secret_candidate in (
+            os.environ.get("OCTODEMO_SSO_COOKIE_SECRET"),
+            os.environ.get("SSO_COOKIE_SECRET"),
+            os.environ.get("SESSION_SECRET"),
+        ):
+            if not secret_candidate:
+                continue
+            secret_bytes = secret_candidate.strip().encode("utf-8")
+            expected_sig = hmac.new(secret_bytes, b64_payload.encode("ascii"), hashlib.sha256).digest()
+            expected_b64_sig = base64.urlsafe_b64encode(expected_sig).decode("ascii").rstrip("=")
+            if secrets.compare_digest(b64_sig, expected_b64_sig):
+                padded = b64_payload + "=" * ((4 - len(b64_payload) % 4) % 4)
+                data = json.loads(base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8"))
+                if isinstance(data, dict):
+                    exp = data.get("exp")
+                    if not exp or time.time() <= float(exp):
+                        return data
+        return None
+    except Exception:
+        return None
+
+
 @router.get("/status")
 async def sso_status() -> dict:
     return {
@@ -244,15 +336,43 @@ async def sso_status() -> dict:
     }
 
 
+@router.get("/providers")
+async def sso_providers(request: Request):
+    """Expose available SSO login providers and their endpoints."""
+    redirect_uri = _resolve_redirect_uri(request, cfg.idcs_redirect_uri)
+    base = redirect_uri.rsplit("/api/auth/sso/callback", 1)[0]
+    return {
+        "providers": ["idcs", "google"],
+        "login_urls": {
+            "idcs": f"{base}/api/auth/sso/login?provider=idcs",
+            "google": f"{base}/api/auth/sso/login?provider=google",
+        },
+    }
+
+
 @router.get("/login")
-async def sso_login(request: Request):
+async def sso_login(
+    request: Request,
+    idp: str | None = None,
+    provider: str | None = None,
+):
     tracer = get_tracer()
     with tracer.start_as_current_span("auth.sso.login_initiate") as span:
+        idp_val = idp or provider or request.query_params.get("idp") or request.query_params.get("provider")
+        if idp_val and idp_val.strip().lower() == "google":
+            cp_broker = _resolve_cp_broker_url(request)
+            redirect_uri = _resolve_redirect_uri(request, cfg.idcs_redirect_uri)
+            from urllib.parse import quote
+            span.set_attribute("auth.method", "google_broker")
+            return RedirectResponse(f"{cp_broker}/api/auth/google/start?return_to={quote(redirect_uri, safe=':/?&=')}", status_code=303)
+
         span.set_attribute("auth.method", "idcs_oidc")
         span.set_attribute("auth.idcs.domain", cfg.idcs_domain_url)
         if not cfg.idcs_configured:
             span.set_attribute("auth.sso.error", "not_configured")
             raise HTTPException(status_code=503, detail="SSO is not configured")
+
+    redirect_uri = _resolve_redirect_uri(request, cfg.idcs_redirect_uri)
 
     state = secrets.token_urlsafe(32)
     code_verifier = secrets.token_urlsafe(64)
@@ -261,15 +381,18 @@ async def sso_login(request: Request):
     params = {
         "response_type": "code",
         "client_id": cfg.idcs_client_id,
-        "redirect_uri": cfg.idcs_redirect_uri,
+        "redirect_uri": redirect_uri,
         "scope": cfg.idcs_scope,
         "state": state,
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
     }
+    if idp_val and idp_val.strip().lower() == "google":
+        params["idp"] = "Google"
+
     authorize_url = f"{cfg.idcs_domain_url}/oauth2/v1/authorize?{urlencode(params)}"
 
-    cookie_payload = _sign_cookie(f"{state}:{code_verifier}:{int(time.time())}")
+    cookie_payload = _sign_cookie(f"{state}:{code_verifier}:{int(time.time())}:{redirect_uri}")
     redirect = RedirectResponse(url=authorize_url, status_code=302)
     redirect.set_cookie(
         _PKCE_COOKIE,
@@ -285,9 +408,48 @@ async def sso_login(request: Request):
 
 
 @router.get("/callback")
-async def sso_callback(request: Request, code: str = "", state: str = "", error: str = ""):
+async def sso_callback(
+    request: Request,
+    code: str = "",
+    state: str = "",
+    error: str = "",
+    google_ticket: str = "",
+):
     tracer = get_tracer()
     with tracer.start_as_current_span("auth.sso.callback") as span:
+        if google_ticket:
+            ticket_data = _verify_google_ticket(google_ticket)
+            if not ticket_data:
+                return RedirectResponse(url="/login?sso_error=invalid_ticket", status_code=302)
+            email = (ticket_data.get("email") or ticket_data.get("sub") or "").strip().lower()
+            name = ticket_data.get("name") or email.split("@")[0]
+            claims = {
+                "sub": ticket_data.get("sub") or email,
+                "email": email,
+                "name": name,
+                "user_email": email,
+                "full_name": name,
+            }
+            user = await _upsert_sso_user(claims)
+            bearer = issue_token(
+                user_id=int(user["id"]),
+                username=str(user["username"]),
+                role=str(user["role"]),
+                auth_method="google_sso",
+            )
+            is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+            redirect = RedirectResponse(url="/", status_code=302)
+            redirect.delete_cookie(_PKCE_COOKIE, path="/")
+            redirect.set_cookie(
+                SESSION_COOKIE_NAME,
+                bearer,
+                httponly=True,
+                secure=is_https,
+                samesite="lax",
+                path="/",
+            )
+            return redirect
+
         if error:
             span.set_attribute("auth.sso.idp_error", error)
             return RedirectResponse(url=f"/login?sso_error={error}", status_code=302)
@@ -306,7 +468,11 @@ async def sso_callback(request: Request, code: str = "", state: str = "", error:
             )
             return RedirectResponse(url="/login?sso_error=invalid_state", status_code=302)
 
-        stored_state, code_verifier, issued_at_str = cookie_value.split(":", 2)
+        parts = cookie_value.split(":")
+        stored_state = parts[0]
+        code_verifier = parts[1]
+        issued_at_str = parts[2]
+        effective_redirect_uri = ":".join(parts[3:]) if len(parts) > 3 else _resolve_redirect_uri(request, cfg.idcs_redirect_uri)
         try:
             issued_at = int(issued_at_str)
         except ValueError:
@@ -330,7 +496,7 @@ async def sso_callback(request: Request, code: str = "", state: str = "", error:
                 data={
                     "grant_type": "authorization_code",
                     "code": code,
-                    "redirect_uri": cfg.idcs_redirect_uri,
+                    "redirect_uri": effective_redirect_uri,
                     "code_verifier": code_verifier,
                 },
                 auth=(cfg.idcs_client_id, cfg.idcs_client_secret),
