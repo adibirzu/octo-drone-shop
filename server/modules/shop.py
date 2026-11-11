@@ -146,17 +146,14 @@ async def storefront():
             )
             categories = [row[0] for row in categories_result.all()]
 
-            stats_result = await db.execute(
-                text(
-                    "SELECT "
-                    "(SELECT COUNT(*) FROM products WHERE is_active = 1) AS product_count, "
-                    "(SELECT COALESCE(SUM(stock), 0) FROM products WHERE is_active = 1) AS inventory_units, "
-                    "(SELECT COALESCE(SUM(total), 0) FROM orders) AS revenue, "
-                    "(SELECT COUNT(*) FROM orders) AS order_count "
-                    "FROM DUAL"
-                )
+            product_stats = await db.execute(
+                text("SELECT COUNT(*) AS product_count, COALESCE(SUM(stock), 0) AS inventory_units "
+                     "FROM products WHERE is_active = 1")
             )
-            stats = dict(stats_result.mappings().first())
+            order_stats = await db.execute(
+                text("SELECT COALESCE(SUM(total), 0) AS revenue, COUNT(*) AS order_count FROM orders")
+            )
+            stats = {**dict(product_stats.mappings().first()), **dict(order_stats.mappings().first())}
 
         span.set_attribute("shop.catalog_count", len(products))
         span.set_attribute("shop.category_count", len(categories))
@@ -174,7 +171,7 @@ async def storefront():
                 "order_count": int(stats["order_count"] or 0),
             },
             "backend": {
-                "database": "oracle_atp",
+                "database": cfg.database_target_label,
                 "apm_configured": cfg.apm_configured,
                 "rum_configured": cfg.rum_configured,
             },

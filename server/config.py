@@ -6,6 +6,7 @@ them into tracked env files.
 """
 
 import os
+from pathlib import Path
 from urllib.parse import urlparse
 
 
@@ -69,10 +70,10 @@ class Config:
     _pg_url = _env_secret("DATABASE_URL", "")
     _pg_sync_url = _env_secret("DATABASE_SYNC_URL", "")
     # Oracle ATP
-    oracle_dsn = _env_value("ORACLE_DSN", "")
-    oracle_user = _env_value("ORACLE_USER", "ADMIN")
-    oracle_password = _env_secret("ORACLE_PASSWORD", "")
-    oracle_wallet_dir = _env_value("ORACLE_WALLET_DIR", "")
+    oracle_dsn = (os.getenv("ORACLE_DSN") or os.getenv("ATP_DSN") or os.getenv("AUTONOMOUS_DB_DSN") or os.getenv("OCI_DEMO_ATP_DSN") or "")
+    oracle_user = os.getenv("ORACLE_USER") or os.getenv("AUTONOMOUS_DB_USER") or "ADMIN"
+    oracle_password = _env_secret("ORACLE_PASSWORD") or _env_secret("AUTONOMOUS_DB_PASSWORD")
+    oracle_wallet_dir = os.getenv("ORACLE_WALLET_DIR") or os.getenv("AUTONOMOUS_DB_WALLET_LOCATION") or ""
     oracle_wallet_password = _env_secret("ORACLE_WALLET_PASSWORD", "")
 
     # ── Cross-service integration ──
@@ -320,6 +321,19 @@ class Config:
         return bool(self.oci_log_id)
 
     @property
+    def oracle_wallet_available(self) -> bool:
+        if not self.oracle_wallet_dir:
+            return False
+        wallet_dir = Path(self.oracle_wallet_dir)
+        return any((wallet_dir / name).is_file() for name in ("ewallet.pem", "cwallet.sso"))
+
+    @property
+    def oracle_tls_mode(self) -> str:
+        if self.oracle_wallet_available:
+            return "mTLS"
+        return "tls_walletless" if self.oracle_dsn else "none"
+
+    @property
     def database_target_label(self) -> str:
         return "postgresql" if self.use_postgres else "oracle_atp"
 
@@ -354,6 +368,8 @@ class Config:
             "environment": self.app_env,
             "app_runtime": self.app_runtime,
             "database_backend": self.database_target_label,
+            "oracle_tls_mode": self.oracle_tls_mode,
+            "walletless_tls": self.oracle_tls_mode == "tls_walletless",
             "database_configured": bool(self._pg_url) if self.use_postgres else bool(self.oracle_dsn and self.oracle_password),
             "apm_configured": self.apm_configured,
             "rum_configured": self.rum_configured,

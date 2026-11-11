@@ -167,7 +167,7 @@ class TestPublicUrlsNoFabrication:
         assert cfg.cors_origins_default == ""
 
     def test_workflow_public_api_base_url_allows_same_origin_proxy(self, env):
-        env.setenv("WORKFLOW_API_BASE_URL", "http://127.0.0.1:8090")
+        env.setenv("WORKFLOW_API_BASE_URL", "http://workflow.example.test:8090")
         env.setenv("WORKFLOW_PUBLIC_API_BASE_URL", "/api/workflow-gateway")
         cfg = _fresh_config(env)
         assert cfg.workflow_gateway_configured is True
@@ -177,19 +177,19 @@ class TestPublicUrlsNoFabrication:
 @pytest.mark.unit
 class TestAssistantTelemetryConfig:
     def test_langfuse_project_defaults_to_shop_hostname(self, env):
-        env.setenv("SHOP_PUBLIC_URL", "https://drones.octodemo.cloud")
+        env.setenv("SHOP_PUBLIC_URL", "https://drones.example.test")
         cfg = _fresh_config(env)
-        assert cfg.shop_public_hostname == "drones.octodemo.cloud"
-        assert cfg.langfuse_project_name == "drones.octodemo.cloud"
+        assert cfg.shop_public_hostname == "drones.example.test"
+        assert cfg.langfuse_project_name == "drones.example.test"
 
     def test_explicit_langfuse_project_name_wins(self, env):
-        env.setenv("SHOP_PUBLIC_URL", "https://drones.octodemo.cloud")
+        env.setenv("SHOP_PUBLIC_URL", "https://drones.example.test")
         env.setenv("LANGFUSE_PROJECT_NAME", "custom-drone-assistant")
         cfg = _fresh_config(env)
         assert cfg.langfuse_project_name == "custom-drone-assistant"
 
     def test_genai_configured_requires_endpoint_model_and_compartment(self, env):
-        env.setenv("OCI_COMPARTMENT_ID", "ocid1.compartment.oc1..example")
+        env.setenv("OCI_COMPARTMENT_ID", "example-compartment")
         env.setenv("OCI_GENAI_ENDPOINT", "https://inference.generativeai.uk-london-1.oci.oraclecloud.com")
         env.setenv("OCI_GENAI_MODEL_ID", "cohere.command-r-08-2024")
         cfg = _fresh_config(env)
