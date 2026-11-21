@@ -404,8 +404,11 @@ kubectl -n octo-drone-shop rollout restart deploy/octo-drone-shop
 - `/login` shows a "Sign in with OCI IAM (IDCS)" button
 - The button redirects to `${IDCS_DOMAIN_URL}/oauth2/v1/authorize?...`
 - After authentication, the callback verifies the ID token signature against
-  `${IDCS_DOMAIN_URL}/admin/v1/SigningCert/jwk` and issues an httpOnly
-  `octo_session` bearer cookie scoped to the app.
+  `${IDCS_DOMAIN_URL}/admin/v1/SigningCert/jwk`, checks `iss` against the
+  trusted issuers (the domain URL, the issuer from OIDC discovery, and
+  `https://identity.oraclecloud.com/` for OCI domains; set `IDCS_ISSUER` to pin
+  one exact value), and issues an httpOnly `octo_session` bearer cookie scoped
+  to the app.
 
 ### Troubleshooting
 

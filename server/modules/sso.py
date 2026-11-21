@@ -45,7 +45,7 @@ import os
 import secrets
 import time
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 import httpx
 import jwt
@@ -67,6 +67,9 @@ _PKCE_COOKIE = "octo_sso_pkce"
 _PKCE_TTL_SECONDS = 600  # 10 minutes — IDCS authorize → callback round-trip
 _JWKS_CACHE: dict[str, tuple[float, dict]] = {}
 _JWKS_TTL_SECONDS = 3600
+_ISSUER_CACHE: dict[str, tuple[float, frozenset[str]]] = {}
+_ISSUER_TTL_SECONDS = 3600
+_OCI_IDCS_ISSUER = "https://identity.oraclecloud.com/"
 
 
 # ── PKCE helpers ───────────────────────────────────────────────────────
@@ -106,6 +109,63 @@ def _verify_cookie(signed: str) -> str | None:
 # ── JWKS verification ──────────────────────────────────────────────────
 
 
+def _issuer_aliases(issuer: str) -> set[str]:
+    """Allow only the default HTTPS port and final slash to vary."""
+    if not issuer.startswith("https://") or any(
+        char in "?#\\" or ord(char) <= 32 or ord(char) == 127 for char in issuer
+    ):
+        return set()
+
+    try:
+        url = urlsplit(issuer)
+        port = url.port
+    except ValueError:
+        return set()
+    if not url.hostname or url.username is not None or url.netloc.endswith(":"):
+        return set()
+
+    authority = url.netloc.removesuffix(":443")
+    ports = ("", ":443") if port is None or authority != url.netloc else ("",)
+    path = url.path.removesuffix("/")
+    return {
+        f"https://{authority}{port_suffix}{path}{slash}"
+        for port_suffix in ports
+        for slash in ("", "/")
+    }
+
+
+async def _idcs_issuers() -> frozenset[str]:
+    if cfg.idcs_issuer:
+        return frozenset({cfg.idcs_issuer})
+
+    domain_url = cfg.idcs_domain_url
+    cached = _ISSUER_CACHE.get(domain_url)
+    if cached and time.monotonic() - cached[0] < _ISSUER_TTL_SECONDS:
+        return cached[1]
+
+    issuers = _issuer_aliases(domain_url) | {domain_url}
+    domain = urlsplit(domain_url)
+    if domain.scheme == "https" and (domain.hostname or "").endswith(".identity.oraclecloud.com"):
+        issuers |= _issuer_aliases(_OCI_IDCS_ISSUER)
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(f"{domain_url}/.well-known/openid-configuration")
+        response.raise_for_status()
+        metadata = response.json()
+        discovered = metadata.get("issuer") if isinstance(metadata, dict) else None
+        aliases = _issuer_aliases(discovered) if isinstance(discovered, str) else set()
+        if aliases:
+            resolved = frozenset(issuers | aliases)
+            _ISSUER_CACHE[domain_url] = (time.monotonic(), resolved)
+            return resolved
+    except (httpx.HTTPError, ValueError):
+        pass
+
+    logger.warning("IDCS discovery issuer unavailable. Using configured domain and applicable OCI issuer.")
+    return frozenset(issuers)
+
+
 async def _fetch_jwks(force: bool = False) -> dict:
     """Fetch and cache the IDCS JWKS document.
 
@@ -142,8 +202,8 @@ def _select_key(jwks: dict, kid: str | None) -> dict | None:
 async def _verify_id_token(id_token: str) -> dict[str, Any]:
     """Verify an IDCS-issued ID token via JWKS.
 
-    Validates: signature (RS256), ``iss`` (must equal IDCS domain), ``aud``
-    (must equal client_id), ``exp``, ``nbf``. Refetches JWKS once on key-id
+    Validates the RS256 signature, trusted issuer, client audience, issued-at
+    time, expiry, and optional not-before claim. Refetches JWKS once on key-id
     mismatch to handle key rotation transparently.
     """
     if not cfg.idcs_verify_jwt:
@@ -174,7 +234,7 @@ async def _verify_id_token(id_token: str) -> dict[str, Any]:
             key=public_key,
             algorithms=["RS256"],
             audience=cfg.idcs_client_id,
-            issuer=cfg.idcs_domain_url,
+            issuer=await _idcs_issuers(),
             options={"require": ["exp", "iat", "iss", "aud"]},
         )
     except jwt.PyJWTError as exc:
