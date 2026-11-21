@@ -93,6 +93,32 @@ def test_callback_accepts_canonical_oci_issuer_and_caches_discovery(idcs):
     assert metadata.call_count == 1
 
 
+@pytest.mark.parametrize("idcs", [(DOMAIN, f"{DOMAIN}/", "")], indirect=True)
+@pytest.mark.parametrize("discovery_available", [True, False], ids=["tenant-issuer", "unavailable"])
+@pytest.mark.parametrize(
+    "issuer",
+    [
+        "https://identity.oraclecloud.com",
+        "https://identity.oraclecloud.com/",
+        "https://identity.oraclecloud.com:443",
+        "https://identity.oraclecloud.com:443/",
+    ],
+)
+def test_callback_accepts_oci_issuer_aliases_without_discovery_aliases(
+    idcs, discovery_available, issuer
+):
+    callback, metadata, _ = idcs
+    if not discovery_available:
+        metadata.respond(503)
+
+    response = callback({"iss": issuer})
+
+    assert response.status_code == 302, response.text
+    assert response.headers["location"] == "/"
+    assert SESSION_COOKIE_NAME in response.cookies
+    assert metadata.call_count == 1
+
+
 @pytest.mark.parametrize(
     "idcs",
     [(DOMAIN, "https://issuer.example.test:443/tenant/", "")],

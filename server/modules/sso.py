@@ -146,7 +146,7 @@ async def _idcs_issuers() -> frozenset[str]:
     issuers = _issuer_aliases(domain_url) | {domain_url}
     domain = urlsplit(domain_url)
     if domain.scheme == "https" and (domain.hostname or "").endswith(".identity.oraclecloud.com"):
-        issuers.add(_OCI_IDCS_ISSUER)
+        issuers |= _issuer_aliases(_OCI_IDCS_ISSUER)
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
