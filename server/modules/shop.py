@@ -8,8 +8,9 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from opentelemetry import trace
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 
+from server.active_flags import ACTIVE_FLAG, active_flag_text
 from server.assistant_service import (
     assistant_history_payload,
     assistant_scope_decision as _assistant_scope_decision,
@@ -17,7 +18,7 @@ from server.assistant_service import (
 )
 from server.auth_security import SESSION_COOKIE_NAME, require_admin_or_internal_service, require_authenticated_user
 from server.config import cfg
-from server.database import get_db
+from server.database import Order, Product, get_db
 from server.modules.attack_simulation import build_attack_story, run_attack_simulation
 from server.modules.integrations import sync_customers_from_crm, sync_order_to_crm
 from server.modules.java_app_server import JavaAppServerClient
@@ -61,7 +62,7 @@ async def _optional_checkout_user(db, request: Request) -> dict[str, Any] | None
         return None
     token_payload = require_authenticated_user(request)
     result = await db.execute(
-        text("SELECT id, username, email, role FROM users WHERE id = :id AND is_active = 1"),
+        active_flag_text("SELECT id, username, email, role FROM users WHERE id = :id AND is_active = :active_flag"),
         {"id": int(token_payload["sub"])},
     )
     row = result.mappings().first()
@@ -109,10 +110,10 @@ async def featured_products():
         })
         async with get_db() as db:
             result = await db.execute(
-                text(
-                    "SELECT id, name, sku, description, price, image_url, stock, category "
-                    "FROM products WHERE is_active = 1 ORDER BY price DESC FETCH FIRST 8 ROWS ONLY"
-                )
+                select(
+                    Product.id, Product.name, Product.sku, Product.description, Product.price,
+                    Product.image_url, Product.stock, Product.category,
+                ).where(Product.is_active == ACTIVE_FLAG).order_by(Product.price.desc()).limit(8)
             )
             products = [enrich_product(dict(row)) for row in result.mappings().all()]
         span.set_attribute("shop.featured_count", len(products))
@@ -134,26 +135,27 @@ async def storefront():
         crm_sync = await sync_customers_from_crm(force=False, limit=200, source="shop_storefront")
         async with get_db() as db:
             products_result = await db.execute(
-                text(
+                active_flag_text(
                     "SELECT id, name, sku, description, price, stock, category, image_url "
-                    "FROM products WHERE is_active = 1 ORDER BY category, name"
+                    "FROM products WHERE is_active = :active_flag ORDER BY category, name"
                 )
             )
             products = [enrich_product(dict(row)) for row in products_result.mappings().all()]
 
             categories_result = await db.execute(
-                text("SELECT DISTINCT category FROM products WHERE is_active = 1 ORDER BY category")
+                active_flag_text("SELECT DISTINCT category FROM products WHERE is_active = :active_flag ORDER BY category")
             )
             categories = [row[0] for row in categories_result.all()]
 
+            active_products = Product.is_active == ACTIVE_FLAG
             stats_result = await db.execute(
-                text(
-                    "SELECT "
-                    "(SELECT COUNT(*) FROM products WHERE is_active = 1) AS product_count, "
-                    "(SELECT COALESCE(SUM(stock), 0) FROM products WHERE is_active = 1) AS inventory_units, "
-                    "(SELECT COALESCE(SUM(total), 0) FROM orders) AS revenue, "
-                    "(SELECT COUNT(*) FROM orders) AS order_count "
-                    "FROM DUAL"
+                select(
+                    select(func.count()).select_from(Product).where(active_products)
+                    .scalar_subquery().label("product_count"),
+                    select(func.coalesce(func.sum(Product.stock), 0)).where(active_products)
+                    .scalar_subquery().label("inventory_units"),
+                    select(func.coalesce(func.sum(Order.total), 0)).scalar_subquery().label("revenue"),
+                    select(func.count()).select_from(Order).scalar_subquery().label("order_count"),
                 )
             )
             stats = dict(stats_result.mappings().first())
@@ -198,9 +200,9 @@ async def apply_coupon(payload: dict):
         })
         async with get_db() as db:
             result = await db.execute(
-                text(
+                active_flag_text(
                     "SELECT code, discount_percent, discount_amount FROM coupons "
-                    "WHERE code = :code AND is_active = 1 FETCH FIRST 1 ROWS ONLY"
+                    "WHERE code = :code AND is_active = :active_flag"
                 ),
                 {"code": code},
             )
@@ -609,10 +611,10 @@ async def demo_storyboard(request: Request, payload: dict | None = None):
         async with get_db() as db:
             with tracer.start_as_current_span("demo.storyboard.open_shop"):
                 product_rows = await db.execute(
-                    text(
-                        "SELECT id, name, price FROM products WHERE is_active = 1 "
-                        "ORDER BY price DESC FETCH FIRST 2 ROWS ONLY"
-                    )
+                    select(Product.id, Product.name, Product.price)
+                    .where(Product.is_active == ACTIVE_FLAG)
+                    .order_by(Product.price.desc())
+                    .limit(2)
                 )
                 products = [dict(row) for row in product_rows.mappings().all()]
                 if not products:
@@ -784,7 +786,10 @@ async def dealer_shops():
         })
         async with get_db() as db:
             result = await db.execute(
-                text("SELECT id, name, address, coordinates, contact_email, contact_phone FROM shops WHERE is_active = 1")
+                active_flag_text(
+                    "SELECT id, name, address, coordinates, contact_email, contact_phone "
+                    "FROM shops WHERE is_active = :active_flag"
+                )
             )
             shops = [dict(row) for row in result.mappings().all()]
             span.set_attribute("shop.locations_count", len(shops))

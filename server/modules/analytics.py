@@ -6,6 +6,7 @@ import json
 import random
 from fastapi import APIRouter, Request
 from sqlalchemy import text
+from server.active_flags import active_flag_text
 from server.database import get_db
 from server.observability.logging_sdk import push_log
 from server.observability.otel_setup import get_tracer
@@ -41,7 +42,7 @@ async def analytics_overview():
                 total_revenue = r3.scalar()
 
             with tracer.start_as_current_span("db.query.product_count"):
-                r4 = await db.execute(text("SELECT COUNT(*) FROM products WHERE is_active = 1"))
+                r4 = await db.execute(active_flag_text("SELECT COUNT(*) FROM products WHERE is_active = :active_flag"))
                 total_products = r4.scalar()
 
             with tracer.start_as_current_span("db.query.campaigns"):
@@ -113,12 +114,12 @@ async def security_correlations(limit: int = 50):
                 )
             )
             product_rows = await db.execute(
-                text(
+                active_flag_text(
                     "SELECT p.id, p.name, p.sku, "
                     "COALESCE((SELECT COUNT(*) FROM security_events se WHERE se.product_id = p.id), 0) AS security_event_count, "
                     "COALESCE((SELECT COUNT(*) FROM order_items oi WHERE oi.product_id = p.id), 0) AS order_line_count, "
                     "COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.product_id = p.id), 0) AS units_ordered "
-                    "FROM products p WHERE p.is_active = 1 "
+                    "FROM products p WHERE p.is_active = :active_flag "
                     "ORDER BY security_event_count DESC, order_line_count DESC, p.name"
                 )
             )

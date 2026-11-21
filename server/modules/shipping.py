@@ -4,6 +4,7 @@ import asyncio
 import random
 from fastapi import APIRouter, Request
 from sqlalchemy import text
+from server.active_flags import active_flag_text
 from server.database import get_db
 from server.observability.otel_setup import get_tracer
 
@@ -113,7 +114,7 @@ async def list_warehouses():
     with tracer.start_as_current_span("shipping.warehouses") as span:
         async with get_db() as db:
             result = await db.execute(
-                text("SELECT * FROM warehouses WHERE is_active = 1 ORDER BY region")
+                active_flag_text("SELECT * FROM warehouses WHERE is_active = :active_flag ORDER BY region")
             )
             warehouses = [dict(r) for r in result.mappings().all()]
             span.set_attribute("db.row_count", len(warehouses))

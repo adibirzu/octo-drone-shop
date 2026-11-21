@@ -12,9 +12,11 @@ from typing import Any
 
 import bcrypt
 from fastapi import APIRouter, HTTPException, Request, status
-from sqlalchemy import text
+from sqlalchemy import select, text
 
+from server.active_flags import ACTIVE_FLAG, active_flag_text
 from server.config import cfg
+from server.database import Product
 from server.observability import business_metrics
 from server.observability.correlation import apply_span_attributes
 from server.observability.logging_sdk import push_log
@@ -120,18 +122,18 @@ async def _upsert_synthetic_user(db: Any, user: SyntheticUser, password_hash: st
     row = existing.mappings().first()
     if row:
         await db.execute(
-            text(
+            active_flag_text(
                 "UPDATE users SET username = :username, email = :email, role = 'synthetic_user', "
-                "is_active = 1 WHERE id = :id"
+                "is_active = :active_flag WHERE id = :id"
             ),
             {"id": row["id"], "username": user.username, "email": user.email},
         )
         return int(row["id"]), False
 
     await db.execute(
-        text(
+        active_flag_text(
             "INSERT INTO users (username, email, password_hash, role, is_active) "
-            "VALUES (:username, :email, :password_hash, 'synthetic_user', 1)"
+            "VALUES (:username, :email, :password_hash, 'synthetic_user', :active_flag)"
         ),
         {
             "username": user.username,
@@ -164,10 +166,10 @@ async def _delete_old_synthetic_users(db: Any, *, domain: str, retention_days: i
 async def _active_products(db: Any, limit: int = 8) -> list[dict[str, Any]]:
     safe_limit = _clamp_int(limit, default=8, minimum=1, maximum=25)
     result = await db.execute(
-        text(
-            "SELECT id, name, price FROM products WHERE is_active = 1 "  # noqa: S608
-            f"ORDER BY id FETCH FIRST {safe_limit} ROWS ONLY"
-        ),
+        select(Product.id, Product.name, Product.price)
+        .where(Product.is_active == ACTIVE_FLAG)
+        .order_by(Product.id)
+        .limit(safe_limit)
     )
     return [dict(row) for row in result.mappings().all()]
 

@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from opentelemetry import trace
 from sqlalchemy import text
 
+from server.active_flags import active_flag_text
 from server.assistant_service import assistant_history_payload, run_assistant_query
 from server.auth_security import require_role
 from server.config import cfg
@@ -354,9 +355,9 @@ async def create_user(request: Request, payload: dict):
 
         async with get_db() as db:
             await db.execute(
-                text(
+                active_flag_text(
                     "INSERT INTO users (username, email, password_hash, role, is_active) "
-                    "VALUES (:username, :email, :password, :role, 1)"
+                    "VALUES (:username, :email, :password, :role, :active_flag)"
                 ),
                 {"username": username, "email": email, "password": hashed, "role": role},
             )
@@ -390,9 +391,9 @@ async def create_partner(request: Request, payload: dict):
 
         async with get_db() as db:
             await db.execute(
-                text(
+                active_flag_text(
                     "INSERT INTO shops (name, address, coordinates, contact_email, contact_phone, is_active) "
-                    "VALUES (:name, :address, '0,0', :email, :phone, 1)"
+                    "VALUES (:name, :address, '0,0', :email, :phone, :active_flag)"
                 ),
                 {"name": name, "address": address, "email": contact_email, "phone": contact_phone},
             )
@@ -430,9 +431,10 @@ async def create_shop(request: Request, payload: dict):
         span.set_attribute("admin.shop_name", shop["name"])
         async with get_db() as db:
             await db.execute(
-                text(
+                active_flag_text(
                     "INSERT INTO shops (name, address, coordinates, contact_email, contact_phone, is_active) "
-                    "VALUES (:name, :address, :coordinates, :contact_email, :contact_phone, :is_active)"
+                    "VALUES (:name, :address, :coordinates, :contact_email, :contact_phone, :active_flag)",
+                    bool(shop["is_active"]),
                 ),
                 shop,
             )
@@ -479,10 +481,11 @@ async def update_shop(shop_id: int, request: Request, payload: dict):
         async with get_db() as db:
             await _require_existing_row(db, "shops", shop_id)
             await db.execute(
-                text(
+                active_flag_text(
                     "UPDATE shops SET name = :name, address = :address, coordinates = :coordinates, "
-                    "contact_email = :contact_email, contact_phone = :contact_phone, is_active = :is_active "
-                    "WHERE id = :id"
+                    "contact_email = :contact_email, contact_phone = :contact_phone, is_active = :active_flag "
+                    "WHERE id = :id",
+                    bool(shop["is_active"]),
                 ),
                 shop,
             )
@@ -540,9 +543,10 @@ async def create_product(request: Request, payload: dict):
                 raise HTTPException(status_code=409, detail="Product SKU already exists")
 
             await db.execute(
-                text(
+                active_flag_text(
                     "INSERT INTO products (name, sku, description, price, stock, category, image_url, is_active) "
-                    "VALUES (:name, :sku, :description, :price, :stock, :category, :image_url, :is_active)"
+                    "VALUES (:name, :sku, :description, :price, :stock, :category, :image_url, :active_flag)",
+                    bool(product["is_active"]),
                 ),
                 product,
             )
@@ -605,10 +609,11 @@ async def update_product(product_id: int, request: Request, payload: dict):
                 raise HTTPException(status_code=409, detail="Product SKU already exists")
 
             await db.execute(
-                text(
+                active_flag_text(
                     "UPDATE products SET name = :name, sku = :sku, description = :description, price = :price, "
-                    "stock = :stock, category = :category, image_url = :image_url, is_active = :is_active "
-                    "WHERE id = :id"
+                    "stock = :stock, category = :category, image_url = :image_url, is_active = :active_flag "
+                    "WHERE id = :id",
+                    bool(product["is_active"]),
                 ),
                 product,
             )

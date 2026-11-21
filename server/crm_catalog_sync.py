@@ -5,9 +5,10 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
-from sqlalchemy import text
+from sqlalchemy import func, select
 
-from server.database import AuditLog
+from server.active_flags import active_flag_text
+from server.database import AuditLog, Product
 
 _SKU_PATTERN = re.compile(r"^[A-Z0-9._-]{2,50}$")
 _ALLOWED_ACTIONS = {"upsert", "deactivate"}
@@ -90,23 +91,23 @@ async def apply_catalog_sync(
     processed: list[dict] = []
 
     for product in prepared_products:
-        target_is_active = 0 if normalized_action == "deactivate" else product["is_active"]
-        existing = await db.execute(
-            text("SELECT id FROM products WHERE upper(sku) = upper(:sku) FETCH FIRST 1 ROWS ONLY"),
-            {"sku": product["sku"]},
+        target_is_active = normalized_action != "deactivate" and bool(product["is_active"])
+        find_product = (
+            select(Product.id).where(func.upper(Product.sku) == func.upper(product["sku"])).limit(1)
         )
+        existing = await db.execute(find_product)
         row = existing.mappings().first()
 
-        payload = {**product, "is_active": target_is_active}
         if row:
             await db.execute(
-                text(
+                active_flag_text(
                     "UPDATE products SET "
                     "name = :name, sku = :sku, description = :description, price = :price, "
-                    "stock = :stock, category = :category, image_url = :image_url, is_active = :is_active "
-                    "WHERE id = :id"
+                    "stock = :stock, category = :category, image_url = :image_url, is_active = :active_flag "
+                    "WHERE id = :id",
+                    target_is_active,
                 ),
-                {**payload, "id": row["id"]},
+                {**product, "id": row["id"]},
             )
             product_id = int(row["id"])
             if normalized_action == "deactivate":
@@ -117,16 +118,14 @@ async def apply_catalog_sync(
                 operation = "updated"
         else:
             await db.execute(
-                text(
+                active_flag_text(
                     "INSERT INTO products (name, sku, description, price, stock, category, image_url, is_active) "
-                    "VALUES (:name, :sku, :description, :price, :stock, :category, :image_url, :is_active)"
+                    "VALUES (:name, :sku, :description, :price, :stock, :category, :image_url, :active_flag)",
+                    target_is_active,
                 ),
-                payload,
+                product,
             )
-            created_row = await db.execute(
-                text("SELECT id FROM products WHERE upper(sku) = upper(:sku) FETCH FIRST 1 ROWS ONLY"),
-                {"sku": product["sku"]},
-            )
+            created_row = await db.execute(find_product)
             product_id = int(created_row.mappings().first()["id"])
             if normalized_action == "deactivate":
                 deactivated += 1

@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 from sqlalchemy import text
 
+from server.active_flags import active_flag_text
 from server.database import get_db
 from server.observability.otel_setup import get_tracer
 from server.observability.logging_sdk import push_log
@@ -17,9 +18,9 @@ async def get_services_catalog():
     with tracer.start_as_current_span("services.catalog") as span:
         async with get_db() as db:
             result = await db.execute(
-                text(
+                active_flag_text(
                     "SELECT id, name, sku, description, price, category, image_url "
-                    "FROM services WHERE is_active = 1 ORDER BY price DESC"
+                    "FROM services WHERE is_active = :active_flag ORDER BY price DESC"
                 )
             )
             services = [dict(row) for row in result.mappings().all()]

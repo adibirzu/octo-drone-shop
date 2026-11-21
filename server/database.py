@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from sqlalchemy.sql import func
 
+from server.active_flags import INACTIVE_FLAG, ActiveFlag, detect_postgres_integer_flags
 from server.config import cfg
 from server.storefront import ADDITIONAL_PRODUCTS
 
@@ -345,6 +346,8 @@ if cfg.use_postgres:
     logger.info("Using PostgreSQL backend: %s", cfg.masked_database_url())
     engine = create_async_engine(cfg.database_url, **_engine_kwargs)
     sync_engine = create_engine(cfg.sync_database_url)
+    detect_postgres_integer_flags(sync_engine)
+    detect_postgres_integer_flags(engine.sync_engine)
 else:
     try:
         import oracledb
@@ -403,7 +406,7 @@ class User(Base):
     email = Column(String(200), unique=True, nullable=False)
     password_hash = Column(String(300), nullable=False)
     role = Column(String(50), default="user")
-    is_active = Column(Integer, default=1)  # Use Integer for Oracle compat
+    is_active = Column(ActiveFlag("users"), default=True)
     last_login = Column(DateTime)
     created_at = Column(DateTime, server_default=func.now())
 
@@ -418,7 +421,7 @@ class Product(Base):
     stock = Column(Integer, default=0)
     category = Column(String(100))
     image_url = Column(String(500))
-    is_active = Column(Integer, default=1)
+    is_active = Column(ActiveFlag("products"), default=True)
     created_at = Column(DateTime, server_default=func.now())
 
 
@@ -550,7 +553,7 @@ class Coupon(Base):
     code = Column(String(50), unique=True, nullable=False)
     discount_percent = Column(Float, default=0.0)
     discount_amount = Column(Float, default=0.0)
-    is_active = Column(Integer, default=1)
+    is_active = Column(ActiveFlag("coupons"), default=True)
     max_uses = Column(Integer, default=100)
     used_count = Column(Integer, default=0)
     created_at = Column(DateTime, server_default=func.now())
@@ -599,7 +602,7 @@ class Warehouse(Base):
     address = Column(Text)
     capacity = Column(Integer, default=10000)
     current_stock = Column(Integer, default=0)
-    is_active = Column(Integer, default=1)
+    is_active = Column(ActiveFlag("warehouses"), default=True)
     created_at = Column(DateTime, server_default=func.now())
 
 
@@ -612,7 +615,7 @@ class Service(Base):
     price = Column(Float, nullable=False)
     category = Column(String(100))
     image_url = Column(String(500))
-    is_active = Column(Integer, default=1)
+    is_active = Column(ActiveFlag("services"), default=True)
     created_at = Column(DateTime, server_default=func.now())
 
 
@@ -1032,10 +1035,13 @@ def _reconcile_product_catalog(session) -> None:
         existing.stock = payload["stock"]
         existing.category = payload["category"]
         existing.image_url = payload.get("image_url")
-        existing.is_active = 1
+        existing.is_active = True
 
-    session.query(Product).filter(Product.sku.in_(LEGACY_MUSHOP_SKUS)).update(
-        {Product.is_active: 0},
+    session.query(Product).filter(
+        Product.sku.in_(LEGACY_MUSHOP_SKUS),
+        Product.is_active.is_distinct_from(INACTIVE_FLAG),
+    ).update(
+        {Product.is_active: INACTIVE_FLAG},
         synchronize_session=False,
     )
 
@@ -1062,7 +1068,7 @@ def _reconcile_services(session) -> None:
         existing.description = payload["description"]
         existing.price = payload["price"]
         existing.category = payload["category"]
-        existing.is_active = 1
+        existing.is_active = True
 
 
 def _reconcile_invoices(session) -> None:
@@ -1100,7 +1106,7 @@ def _reconcile_seed_users(session) -> None:
         existing.email = payload["email"]
         existing.password_hash = payload["password_hash"]
         existing.role = payload["role"]
-        existing.is_active = 1
+        existing.is_active = True
 
 
 def seed_data():
@@ -1227,11 +1233,11 @@ def seed_data():
 
             # Coupons (5) — drone shop promotions
             session.add_all([
-                Coupon(code="FIRSTFLIGHT", discount_percent=10.0, is_active=1, max_uses=1000),
-                Coupon(code="FLEETDEAL", discount_percent=15.0, is_active=1, max_uses=200),
-                Coupon(code="FREESHIP", discount_amount=49.99, is_active=1, max_uses=100),
-                Coupon(code="GOVPILOT", discount_percent=20.0, is_active=1, max_uses=50),
-                Coupon(code="SUMMER2024", discount_percent=12.0, is_active=0, max_uses=0),
+                Coupon(code="FIRSTFLIGHT", discount_percent=10.0, is_active=True, max_uses=1000),
+                Coupon(code="FLEETDEAL", discount_percent=15.0, is_active=True, max_uses=200),
+                Coupon(code="FREESHIP", discount_amount=49.99, is_active=True, max_uses=100),
+                Coupon(code="GOVPILOT", discount_percent=20.0, is_active=True, max_uses=50),
+                Coupon(code="SUMMER2024", discount_percent=12.0, is_active=False, max_uses=0),
             ])
 
             # Shipments (8) — drone shipments with realistic weights
@@ -1266,15 +1272,15 @@ def seed_data():
             # Warehouses (5) — drone fulfillment centers
             session.add_all([
                 Warehouse(name="Portland Drone Hub", region="us-west-2", address="2100 NW Industrial Way, Portland, OR 97210",
-                          capacity=5000, current_stock=2800, is_active=1),
+                          capacity=5000, current_stock=2800),
                 Warehouse(name="Frankfurt EU Fulfillment", region="eu-central-1", address="Lagerstrasse 45, 60327 Frankfurt, Germany",
-                          capacity=3500, current_stock=1900, is_active=1),
+                          capacity=3500, current_stock=1900),
                 Warehouse(name="Zurich Precision Center", region="eu-central-1", address="Industriestrasse 12, 8304 Wallisellen, Switzerland",
-                          capacity=1500, current_stock=650, is_active=1),
+                          capacity=1500, current_stock=650),
                 Warehouse(name="Virginia East Coast DC", region="us-east-1", address="800 Commerce Park Dr, Chantilly, VA 20151",
-                          capacity=4000, current_stock=2200, is_active=1),
+                          capacity=4000, current_stock=2200),
                 Warehouse(name="Toulouse Aerospace Depot", region="eu-west-3", address="31 Avenue des Drones, 31400 Toulouse, France",
-                          capacity=2000, current_stock=1100, is_active=1),
+                          capacity=2000, current_stock=1100),
             ])
 
             # Campaigns (5) — drone industry marketing

@@ -5,6 +5,7 @@ import re
 
 from fastapi import APIRouter, Request, Query
 from sqlalchemy import text
+from server.active_flags import active_flag_text
 from server.database import get_db
 from server.observability.correlation import apply_span_attributes, sql_attributes
 from server.observability.otel_setup import get_tracer
@@ -35,7 +36,7 @@ async def list_products(request: Request,
         safe_sort = sort_by if sort_by in _ALLOWED_SORT else "name"
 
         async with get_db() as db:
-            conditions = ["is_active = 1"]
+            conditions = ["is_active = :active_flag"]
             params: dict = {}
 
             if search:
@@ -54,7 +55,7 @@ async def list_products(request: Request,
 
             with tracer.start_as_current_span("db.query.products") as db_span:
                 apply_span_attributes(db_span, sql_attributes(query, connection_name="", database_target="oracle_atp"))
-                result = await db.execute(text(query), params)
+                result = await db.execute(active_flag_text(query), params)
                 products = [enrich_product(dict(r)) for r in result.mappings().all()]
                 db_span.set_attribute("db.row_count", len(products))
 
@@ -90,7 +91,7 @@ async def list_categories():
     """List distinct categories."""
     async with get_db() as db:
         result = await db.execute(
-            text("SELECT DISTINCT category FROM products WHERE is_active = 1 ORDER BY category")
+            active_flag_text("SELECT DISTINCT category FROM products WHERE is_active = :active_flag ORDER BY category")
         )
         return {"categories": [r[0] for r in result.all()]}
 
@@ -143,7 +144,7 @@ async def create_review(product_id: int, payload: dict, request: Request):
         async with get_db() as db:
             # Verify product exists
             exists = await db.execute(
-                text("SELECT id FROM products WHERE id = :pid AND is_active = 1"),
+                active_flag_text("SELECT id FROM products WHERE id = :pid AND is_active = :active_flag"),
                 {"pid": product_id},
             )
             if not exists.first():
