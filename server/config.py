@@ -162,6 +162,7 @@ class Config:
 
     # ── IDCS / OCI IAM Identity Domain (OIDC SSO) ──
     idcs_domain_url = _env_value("IDCS_DOMAIN_URL", "").rstrip("/")
+    idcs_issuer = _env_value("IDCS_ISSUER", "").strip()
     idcs_client_id = _env_value("IDCS_CLIENT_ID", "")
     idcs_client_secret = _env_secret("IDCS_CLIENT_SECRET", "")
     _idcs_redirect_uri = _env_value("IDCS_REDIRECT_URI", "")
