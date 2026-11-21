@@ -161,7 +161,7 @@ Notes:
 
 - Mount the ATP wallet into the path used by `ORACLE_WALLET_DIR`.
 - ATP configuration is mandatory; startup fails if required Oracle inputs are missing.
-- The readiness check runs `SELECT 1 FROM DUAL` and reports `db_type: oracle_atp`.
+- The readiness check runs a dialect-compiled `SELECT 1` (rendered with `FROM DUAL` on Oracle) and reports `db_type: oracle_atp`.
 
 Optional helper to ensure/create ATP:
 
