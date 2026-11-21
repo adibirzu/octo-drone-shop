@@ -21,23 +21,20 @@ import uuid
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
-from sqlalchemy import text
+from sqlalchemy import select, text
 
-# Deterministic namespace for order idempotency tokens. Combining this
-# namespace with (order_id, source) yields the same UUID on every retry,
-# which lets the CRM side deduplicate without per-request state on our
-# end. Do NOT change this value — it would break deduplication for
-# historical orders.
-_ORDER_IDEMPOTENCY_NS = uuid.UUID("5e1a6db6-8c0e-4f1c-9c9a-3b0c2a1f0f01")
-
+from server.active_flags import ACTIVE_FLAG
 from server.auth_security import require_internal_service
 from server.config import cfg
 from server.crm_catalog_sync import apply_catalog_sync
-from server.database import get_db
+from server.database import Product, get_db
 from server.middleware.circuit_breaker import crm_breaker
 from server.observability import business_metrics
 from server.observability.otel_setup import get_tracer
 from server.observability.logging_sdk import push_log
+
+# Keep this namespace stable so CRM can deduplicate retries of historical orders.
+_ORDER_IDEMPOTENCY_NS = uuid.UUID("5e1a6db6-8c0e-4f1c-9c9a-3b0c2a1f0f01")
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/integrations", tags=["integrations"])
@@ -701,15 +698,12 @@ async def crm_ticket_products(ticket_id: int, request: Request):
 
             ticket = resp.json()
 
-            # Local product recommendation based on ticket category
-            from sqlalchemy import text as sa_text
-            from server.database import get_db
-
             with tracer.start_as_current_span("db.query.recommended_products") as db_span:
                 async with get_db() as db:
                     result = await db.execute(
-                        sa_text("SELECT id, name, price, category FROM products "
-                                "WHERE is_active = 1 FETCH FIRST 3 ROWS ONLY")
+                        select(Product.id, Product.name, Product.price, Product.category)
+                        .where(Product.is_active == ACTIVE_FLAG)
+                        .limit(3)
                     )
                     products = [dict(r) for r in result.mappings().all()]
                     db_span.set_attribute("db.row_count", len(products))

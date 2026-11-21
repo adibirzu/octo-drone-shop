@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import selectinload
 
+from server.active_flags import ACTIVE_FLAG
 from server.config import cfg
 from server.database import Customer, Order, Product, Ticket, get_db
 from server.modules.integrations import CRM_SYNC_STATE, sync_customers_from_crm, sync_order_to_crm
@@ -67,7 +68,7 @@ async def _catalog_snapshot() -> dict:
         product_rows = (
             await db.execute(
                 select(Product.id, Product.name, Product.price, Product.category, Product.stock, Product.image_url)
-                .where(Product.is_active == 1)
+                .where(Product.is_active == ACTIVE_FLAG)
                 .order_by(Product.price.desc(), Product.name.asc())
                 .limit(200)
             )
@@ -131,11 +132,11 @@ async def summary(request: Request):
                 status_breakdown = {status or "unknown": int(count or 0) for status, count in status_rows}
 
             with tracer.start_as_current_span("db.query.product_stats"):
-                product_count = int((await db.scalar(select(func.count(Product.id)).where(Product.is_active == 1))) or 0)
+                product_count = int((await db.scalar(select(func.count(Product.id)).where(Product.is_active == ACTIVE_FLAG))) or 0)
                 low_stock = int(
                     (
                         await db.scalar(
-                            select(func.count(Product.id)).where(Product.is_active == 1, Product.stock <= 10)
+                            select(func.count(Product.id)).where(Product.is_active == ACTIVE_FLAG, Product.stock <= 10)
                         )
                     ) or 0
                 )
@@ -203,7 +204,7 @@ async def summary(request: Request):
                 featured_rows = (
                     await db.execute(
                         select(Product.id, Product.name, Product.price, Product.category, Product.stock, Product.description, Product.image_url)
-                        .where(Product.is_active == 1)
+                        .where(Product.is_active == ACTIVE_FLAG)
                         .order_by(Product.price.desc(), Product.name.asc())
                         .limit(6)
                     )
@@ -338,7 +339,7 @@ async def generate_demo_orders(payload: DemoOrderRequest, request: Request):
             if not customers:
                 return {"error": "Customer not found"}
 
-            product_query = select(Product).where(Product.is_active == 1)
+            product_query = select(Product).where(Product.is_active == ACTIVE_FLAG)
             if payload.product_id:
                 product_query = product_query.where(Product.id == payload.product_id)
             products = list((await db.execute(product_query)).scalars())

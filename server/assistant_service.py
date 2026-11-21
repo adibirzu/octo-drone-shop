@@ -8,11 +8,12 @@ from typing import Any
 
 from fastapi import HTTPException
 from opentelemetry import trace
-from sqlalchemy import text
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.exc import IntegrityError
 
+from server.active_flags import ACTIVE_FLAG
 from server.config import cfg
-from server.database import get_db
+from server.database import AssistantSession, Product, get_db
 from server.genai_service import chat_with_documents, genai_configured
 from server.observability import business_metrics, llmetry
 from server.observability.correlation import apply_span_attributes
@@ -148,11 +149,7 @@ async def run_assistant_query(
 
         async with get_db() as db:
             existing = await db.execute(
-                text(
-                    "SELECT session_id FROM assistant_sessions WHERE session_id = :session_id "
-                    "FETCH FIRST 1 ROWS ONLY"
-                ),
-                {"session_id": session_id},
+                select(AssistantSession.session_id).where(AssistantSession.session_id == session_id)
             )
             if not existing.first():
                 try:
@@ -171,16 +168,17 @@ async def run_assistant_query(
                 except IntegrityError:
                     await db.rollback()
 
-            query = (
-                "SELECT id, name, sku, description, price, stock, category, image_url "
-                "FROM products WHERE is_active = 1"
-            )
-            params: dict[str, Any] = {}
+            query = select(
+                Product.id, Product.name, Product.sku, Product.description, Product.price,
+                Product.stock, Product.category, Product.image_url,
+            ).where(Product.is_active == ACTIVE_FLAG)
             if product_focus:
-                query += " AND (lower(name) LIKE lower(:focus) OR lower(category) LIKE lower(:focus))"
-                params["focus"] = f"%{product_focus}%"
-            query += " ORDER BY price DESC FETCH FIRST 8 ROWS ONLY"
-            products_result = await db.execute(text(query), params)
+                focus = func.lower(f"%{product_focus}%")
+                query = query.where(or_(
+                    func.lower(Product.name).like(focus),
+                    func.lower(Product.category).like(focus),
+                ))
+            products_result = await db.execute(query.order_by(Product.price.desc()).limit(8))
             products = [enrich_product(dict(row)) for row in products_result.mappings().all()]
             documents = build_grounding_documents(products)
             guardrail_allowed, guardrail_reason = assistant_scope_decision(message, products)

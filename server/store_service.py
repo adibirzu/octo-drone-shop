@@ -9,6 +9,8 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
+from server.active_flags import active_flag_text
+
 
 _CHECKOUT_IDEMPOTENCY_KEY_RE = re.compile(r"^[A-Za-z0-9._:-]{8,128}$")
 
@@ -97,9 +99,9 @@ async def resolve_direct_items(db, items: list[dict[str, Any]]) -> list[dict[str
         product_id = item.get("product_id")
         quantity = max(int(item.get("quantity", 1) or 1), 1)
         product_row = await db.execute(
-            text(
+            active_flag_text(
                 "SELECT id, name, sku, description, price, stock, category, image_url "
-                "FROM products WHERE id = :id AND is_active = 1"
+                "FROM products WHERE id = :id AND is_active = :active_flag"
             ),
             {"id": product_id},
         )
@@ -115,9 +117,9 @@ async def apply_coupon(db, code: str, subtotal: float) -> dict[str, Any]:
         return {"code": "", "discount": 0.0, "valid": False}
 
     result = await db.execute(
-        text(
+        active_flag_text(
             "SELECT code, discount_percent, discount_amount, used_count, max_uses "
-            "FROM coupons WHERE code = :code AND is_active = 1"
+            "FROM coupons WHERE code = :code AND is_active = :active_flag"
         ),
         {"code": code},
     )

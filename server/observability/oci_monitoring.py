@@ -231,12 +231,12 @@ def _publisher_loop(compartment_id: str, start_time: float):
 
             # Check low-stock products
             try:
+                from server.active_flags import active_flag_text
                 from server.database import sync_engine as _sync_engine
                 if _sync_engine is not None:
-                    from sqlalchemy import text as _text
                     with _sync_engine.connect() as conn:
                         row = conn.execute(
-                            _text("SELECT COUNT(*) FROM products WHERE is_active = 1 AND stock < 10")
+                            active_flag_text("SELECT COUNT(*) FROM products WHERE is_active = :active_flag AND stock < 10")
                         ).scalar()
                         set_low_stock_count(int(row or 0))
             except Exception:  # noqa: S110

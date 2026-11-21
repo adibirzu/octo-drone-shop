@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import text
+from sqlalchemy import select
 
 from server.config import cfg
 from server.database import engine, get_db, init_tables, seed_data, sync_engine
@@ -225,7 +225,7 @@ async def ready():
         _db_start = __import__("time").monotonic()
         try:
             async with get_db() as db:
-                await db.execute(text("SELECT 1 FROM DUAL"))
+                await db.execute(select(1))
                 db_ok = True
         except Exception as e:
             span.set_attribute("health.db_error", str(e))
