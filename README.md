@@ -142,6 +142,7 @@ Two supported modes:
 | `OCI_APM_PRIVATE_DATAKEY` | Recommended | APM private data key for trace export |
 | `OCI_COMPARTMENT_ID` | Recommended | Target compartment for OCI Monitoring custom metrics |
 | `IDCS_DOMAIN_URL` | Optional | OCI IAM Identity Domain URL for SSO |
+| `IDCS_ISSUER` | Optional | Exact trusted ID-token issuer; defaults to the domain URL, its OIDC-discovered issuer, and the OCI IDCS issuer |
 | `IDCS_CLIENT_ID` | Optional | IDCS Confidential App client ID |
 | `IDCS_CLIENT_SECRET` | Optional | IDCS Confidential App client secret |
 | `INTERNAL_SERVICE_KEY` | Optional | CRM→Shop service-to-service simulation proxy key |
