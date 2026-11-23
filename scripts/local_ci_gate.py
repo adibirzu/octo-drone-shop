@@ -1,5 +1,11 @@
 #!/usr/bin/env python3.11
-"""Run the local CI gate for octo-drone-shop with macOS Seatbelt isolation and private receipts."""
+"""Run the local CI gate for octo-drone-shop with macOS Seatbelt isolation and private receipts.
+
+Default execution is strictly offline under (deny network*). Jobs that require outbound
+network access report unavailable and return exit 1 unless --allow-online is passed.
+With --allow-online, only online opt-in jobs use outbound-permitted (inbound/bind denied)
+Seatbelt rules while offline jobs remain under (deny network*).
+"""
 
 from __future__ import annotations
 
@@ -11,10 +17,27 @@ import platform
 import shutil
 import subprocess
 import tempfile
+from typing import TextIO
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ".gate/local-ci"
 PYTHON = "python3.11"
+
+ALLOWED_ENV_KEYS = (
+    "PATH",
+    "LANG",
+    "LC_ALL",
+    "LC_CTYPE",
+    "TERM",
+    "TMPDIR",
+    "USER",
+    "LOGNAME",
+    "SHELL",
+    "GOPATH",
+    "GOMODCACHE",
+    "GOCACHE",
+    "GOROOT",
+)
 
 
 def _venv_bin_dirs() -> list[str]:
@@ -27,6 +50,7 @@ def _venv_bin_dirs() -> list[str]:
         )
         if candidate.is_dir()
     ]
+
 
 JOBS: dict[str, list[list[str]]] = {
     "unit-tests": [
@@ -64,22 +88,52 @@ JOBS: dict[str, list[list[str]]] = {
     ],
 }
 
+ONLINE_REASONS: dict[str, str] = {
+    "dependency-audit": (
+        "pip-audit queries live advisory registries and constructs an isolated resolution "
+        "environment; pass --allow-online for outbound-permitted (inbound/bind denied) execution."
+    ),
+    "docs-build": (
+        "mkdocs-mermaid2-plugin checks its configured unpkg.com script URL over HTTPS during "
+        "strict builds; pass --allow-online for outbound-permitted (inbound/bind denied) execution."
+    ),
+}
+
 UNAVAILABLE: dict[str, str] = {}
-READONLY_NETWORK_JOBS = {"dependency-audit", "docs-build"}
 
 
-def _audit_cache_warm() -> bool:
-    cache_dir = ROOT / OUTPUT / "audit-cache"
-    return cache_dir.is_dir() and any(cache_dir.iterdir())
+def unavailable_reason(job: str, *, allow_online: bool = False) -> str | None:
+    if job in UNAVAILABLE:
+        return UNAVAILABLE[job]
+    if not allow_online and job in ONLINE_REASONS:
+        return ONLINE_REASONS[job]
+    return None
 
 
-def _job_allows_network(job: str) -> bool:
-    if job == "dependency-audit":
-        return not _audit_cache_warm()
-    return job in READONLY_NETWORK_JOBS
+def open_private_write(path: Path) -> TextIO:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(path, flags, 0o600)
+    try:
+        os.fchmod(fd, 0o600)
+    except OSError:
+        os.close(fd)
+        raise
+    return os.fdopen(fd, "w", encoding="utf-8")
 
 
-def run_commands(commands: list[list[str]], output: Path | str, *, allow_network: bool = False) -> list[dict[str, object]]:
+def write_private_text(path: Path, content: str) -> None:
+    with open_private_write(path) as stream:
+        stream.write(content)
+
+
+def run_commands(
+    commands: list[list[str]],
+    output: Path | str,
+    *,
+    allow_network: bool = False,
+) -> list[dict[str, object]]:
     """Execute argv commands, retaining each failure; reject missing isolation."""
     if platform.system() != "Darwin" or not shutil.which("sandbox-exec"):
         raise RuntimeError("macOS sandbox-exec required; refusing unisolated execution")
@@ -97,24 +151,12 @@ def run_commands(commands: list[list[str]], output: Path | str, *, allow_network
     )
     results: list[dict[str, object]] = []
     with tempfile.TemporaryDirectory(prefix="local-ci-home-") as home:
-        env = {
-            key: value
-            for key, value in os.environ.items()
-            if not key.startswith((
-                "OCI_",
-                "AWS_",
-                "AZURE_",
-                "GOOGLE_",
-                "OTEL_",
-                "OCTO_",
-                "IDCS_",
-                "ORACLE_",
-                "DATABASE_",
-                "POSTGRES_",
-                "REDIS_",
-            ))
-        }
-        path_parts = [part for part in (*_venv_bin_dirs(), *env.get("PATH", "").split(os.pathsep)) if part]
+        env = {key: os.environ[key] for key in ALLOWED_ENV_KEYS if key in os.environ}
+        path_parts = [
+            part
+            for part in (*_venv_bin_dirs(), *env.get("PATH", "").split(os.pathsep))
+            if part
+        ]
         current_path = os.pathsep.join(dict.fromkeys(path_parts))
         pythonpath_entries = [
             str(ROOT),
@@ -138,8 +180,7 @@ def run_commands(commands: list[list[str]], output: Path | str, *, allow_network
         )
         for index, command in enumerate(commands):
             log = output / f"{index:02d}.log"
-            with log.open("w") as stream:
-                os.chmod(log, 0o600)
+            with open_private_write(log) as stream:
                 try:
                     result = subprocess.run(
                         ["sandbox-exec", "-p", policy, *command],
@@ -162,6 +203,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--job", choices=JOBS, action="append")
+    parser.add_argument(
+        "--allow-online",
+        action="store_true",
+        help="Run online-dependent jobs under outbound-permitted (inbound/bind denied) Seatbelt policy",
+    )
     parser.add_argument("--receipt", type=Path, default=ROOT / OUTPUT / "receipt.json")
     args = parser.parse_args(argv)
     if args.list:
@@ -170,8 +216,8 @@ def main(argv: list[str] | None = None) -> int:
                 {
                     key: {
                         "commands": commands,
-                        "available": key not in UNAVAILABLE,
-                        "reason": UNAVAILABLE.get(key),
+                        "available": unavailable_reason(key, allow_online=args.allow_online) is None,
+                        "reason": unavailable_reason(key, allow_online=args.allow_online),
                     }
                     for key, commands in JOBS.items()
                 },
@@ -184,18 +230,20 @@ def main(argv: list[str] | None = None) -> int:
     os.chmod(output, 0o700)
     records: dict[str, dict[str, object]] = {}
     for job in args.job or JOBS:
-        if job in UNAVAILABLE:
+        reason = unavailable_reason(job, allow_online=args.allow_online)
+        if reason is not None:
             record: dict[str, object] = {
                 "status": "unavailable",
-                "reason": UNAVAILABLE[job],
+                "reason": reason,
                 "commands": [],
             }
         else:
             try:
+                allow_net = args.allow_online and job in ONLINE_REASONS
                 results = run_commands(
                     JOBS[job],
                     output / job,
-                    allow_network=_job_allows_network(job),
+                    allow_network=allow_net,
                 )
                 record = {
                     "status": "passed" if all(r["exit_code"] == 0 for r in results) else "failed",
@@ -209,13 +257,12 @@ def main(argv: list[str] | None = None) -> int:
     receipt = {
         "schema": "octo-drone-shop.local-ci/v1",
         "status": "passed" if success else "failed",
+        "mode": "online-opt-in" if args.allow_online else "offline",
         "provider_verified": False,
         "release_accepted": False,
         "jobs": records,
     }
-    args.receipt.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    args.receipt.write_text(json.dumps(receipt, indent=2) + "\n")
-    os.chmod(args.receipt, 0o600)
+    write_private_text(args.receipt, json.dumps(receipt, indent=2) + "\n")
     return 0 if success else 1
 
 

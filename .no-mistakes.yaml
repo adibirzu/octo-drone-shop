@@ -1,7 +1,7 @@
 # Pilot only. Remote initialization and publication require separate approval.
 # CI skipping is a run flag (--skip=ci), not a repository configuration key.
 commands:
-  test: python3.11 scripts/local_ci_gate.py
+  test: python3.11 scripts/local_ci_gate.py --job unit-tests --job python-sast --job secret-scan --job go-gateway --job terraform-fmt
   lint: python3.11 scripts/local_ci_gate.py --job python-sast --job secret-scan --job go-gateway --job terraform-fmt
 auto_fix:
   review: 0
