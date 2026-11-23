@@ -71,6 +71,7 @@ def test_dry_run_does_not_require_oci_sdk() -> None:
 
 
 @pytest.mark.portability
+@pytest.mark.unit
 def test_apply_without_credentials_fails_clearly(monkeypatch, capsys) -> None:
     from tools import create_la_source
 
@@ -111,3 +112,34 @@ def test_imds_probe_connection_errors_return_false(error) -> None:
     with patch.object(create_la_source.socket, "create_connection", side_effect=error) as connect:
         assert create_la_source._imds_reachable(timeout=0.25) is False
     connect.assert_called_once_with(("169.254.169.254", 80), timeout=0.25)
+
+
+@pytest.mark.unit
+def test_reachable_metadata_enables_instance_principal_fallback(monkeypatch) -> None:
+    from tools import create_la_source
+
+    signer = MagicMock()
+    client = MagicMock()
+    sdk = SimpleNamespace(
+        config=SimpleNamespace(from_file=MagicMock(side_effect=OSError("no config"))),
+        auth=SimpleNamespace(signers=SimpleNamespace(
+            InstancePrincipalsSecurityTokenSigner=MagicMock(return_value=signer)
+        )),
+        log_analytics=SimpleNamespace(LogAnalyticsClient=MagicMock(return_value=client)),
+    )
+    monkeypatch.setitem(sys.modules, "oci", sdk)
+    with patch.object(create_la_source.socket, "create_connection") as connect:
+        result = create_la_source._main([
+            "--apply", "--la-namespace", "example",
+            "--la-log-group-id", "example-log-group",
+        ])
+    assert result == 0
+    connect.assert_called_once_with(("169.254.169.254", 80), timeout=1.5)
+    sdk.auth.signers.InstancePrincipalsSecurityTokenSigner.assert_called_once_with()
+    sdk.log_analytics.LogAnalyticsClient.assert_called_once_with({}, signer=signer)
+    client.upsert_source.assert_called_once_with(
+        namespace_name="example",
+        upsert_log_analytics_source_details=create_la_source.build_payload(
+            name="octo-shop-app-json", la_log_group_id="example-log-group"
+        ),
+    )
