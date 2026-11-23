@@ -11,17 +11,17 @@ No push, PR, deployment, cloud call or metadata call is authorized or performed.
 ## 1. Requirements audit
 
 Baseline `pip-audit -r requirements.txt --strict` exited 1 with 30 reported findings
-across four packages, including repeated advisory IDs. After the changes it exits 0,
+across python-multipart, opentelemetry-api, PyJWT and cryptography, including repeated advisory IDs. After the changes it exits 0,
 "No known vulnerabilities found."
 
-| Dependency set | Before | After |
-| --- | --- | --- |
-| OTel API, SDK, OTLP HTTP exporter | 1.42.1 | 1.45.2 |
-| OTel instrumentation and Prometheus exporter | 0.63b1 | 0.66b2 |
-| OCI SDK | 2.175.0 | 2.184.1 |
-| cryptography | resolved 46.0.7 | exact 50.0.0 |
-| PyJWT[crypto] | 2.13.0 | 2.15.1 |
-| python-multipart | 0.0.29 | 0.0.31 |
+| Dependency set | Before | After | Reason |
+| --- | --- | --- | --- |
+| OTel API, SDK, OTLP HTTP exporter | 1.42.1 | 1.45.2 | API advisory; SDK/exporter coupling |
+| OTel instrumentation and Prometheus exporter | 0.63b1 | 0.66b2 | Exact semantic-convention coupling |
+| OCI SDK | 2.175.0 | 2.184.1 | Admits fixed cryptography 50 |
+| cryptography | resolved 46.0.7 | exact 50.0.0 | cryptography advisories |
+| PyJWT[crypto] | 2.13.0 | 2.15.1 | JWT advisories |
+| python-multipart | 0.0.29 | 0.0.31 | Multipart advisories |
 
 Live PyPI release metadata confirmed SDK 1.45.2 pins API 1.45.2 and semantic
 conventions 0.66b2; instrumentation uses the matching 0.66b2 family.
@@ -42,13 +42,14 @@ Private exact command/exit receipts are under `.gate/s3/dependencies/`.
 ## Test isolation
 
 Commands use Python 3.11.16 in the reused workspace .venv, ENV=test, disabled bytecode,
-and local cache-client/async-worker sources on PYTHONPATH. Provider, database, identity
+and async-worker source on PYTHONPATH, with both local packages installed editable. Provider, database, identity
 and telemetry variables inherited from the host are omitted by the runner.
 Tests additionally load a private sitecustomize that makes socket.create_connection
 raise OSError. This prevents the original main-branch --apply subprocess test from
 probing its documentation-example destination. This private test guard is not part
 of the product or a substitute for S2's mocked regression tests.
-No application startup, shared database, identity provider or OCI verification is claimed.
+The root suite does not run application lifespan. Shared database, identity-provider and OCI verification remain unverified.
+The test count must be re-baselined once S2 and its mocked regression tests land.
 
 ## 2. Bandit and Ruff security checks
 
@@ -86,3 +87,99 @@ The module versions were downloaded from checked-in go.mod/go.sum during S2 unde
 coordinator authority; this S3 run reused that cache with GOPROXY=off and GOSUMDB=off.
 No new module, dependency version or live database connection was needed.
 Private RED/GREEN logs are .gate/s3/go-red.log and .gate/s3/go-green.log.
+
+## 5. Development environment inventory and coverage
+
+[Resolved Python inventory](security/s3-resolved-20261123.cdx.json) is the unmodified
+CycloneDX 1.4 output of the installed pip-audit CLI, using:
+
+```sh
+pip-audit --path .venv/lib/python3.11/site-packages --cache-dir .gate/s3/audit-cache -f cyclonedx-json -o .gate/s3/inventory/resolved.cdx.json
+cp .gate/s3/inventory/resolved.cdx.json docs/security/s3-resolved-20261123.cdx.json
+```
+
+The audit exited 1, not 0; copying the output exited 0. The tracked SHA-256 is
+`eb31c2ac3fd6672af582c108ccb05b71bea2035b1e72abf6d4496b3cecb4c282`.
+Byte comparison against the original output passed.
+This reused inventory includes runtime, development and documentation packages; it is not a shipped-image inventory.
+The 114 components match the resolved versions of 114 installed distributions.
+A comparison against 116 unique installed distribution names found no extra component or
+version mismatch. The two unpublished editable local packages, octo-cache-client and
+octo-async-worker, are omitted by pip-audit's environment collector; they are not
+represented as audited PyPI components. This is an explicit inventory limitation.
+The source scanners and local tests cover their use separately; that is not a dependency audit.
+The SBOM contains flat component references, not a verified complete dependency graph,
+and excludes Node, Go, container and operating-system inventories.
+
+The remaining SBOM finding is GHSA-xmj3-9gf7-h52w on workspace build tool
+setuptools 84.0.0, concerning its legacy Windows wheel-installation path.
+It is not a repository runtime requirement and was also documented in C3.
+No vulnerability was ignored or suppressed, and no unrequested build-tool upgrade was made.
+The requirements audit remains independently clean with --strict.
+A clean resolved-environment audit is therefore not claimed.
+
+Coverage commands use the existing pytest-cov installation and no invented minimum.
+All commands exited 0:
+
+| Scope | Tests | Statement coverage | Branch coverage | Combined coverage.py result |
+| --- | --- | --- | --- | --- |
+| Root suite, server and tools, branch measurement enabled | 257 passed | 4719 / 7748, 60.91% | 612 / 1540, 39.74% | 57.40% |
+| Separate async-worker suite, octo_async_worker | 12 passed | 183 / 453, 40.40% | 11 / 96, 11.46% | 35.34% |
+| Go gateway packages | No test files | 0.0% | Not measured | Compilation and vet only |
+
+The root command is
+`python -m pytest -q --cov=server --cov=tools --cov-branch --cov-report=json:<private-output> --cov-report=term:skip-covered`.
+The worker command selects services/async-worker/tests and uses --cov=octo_async_worker
+with the same branch and report options.
+Go uses `go test -cover ./...` with the same workspace-local offline cache settings.
+Root coverage includes 80 files. Subprocess-only script execution is not measured by
+this coverage configuration; tools/create_la_source.py consequently reports zero coverage.
+These numbers do not establish live integrations or comprehensive security coverage.
+Private JSON coverage reports and raw logs are under .gate/s3/coverage/.
+
+## Commit and gate receipts
+
+Each numbered item has its own local commit. The full root suite ran after each commit,
+with actual command/exit receipts in .gate/s3/itemN-committed/.
+Items 1 through 4 each passed 257 tests with exit 0.
+The earlier dependency check before item 1 also passed 257 tests.
+Bandit, Ruff S and strict requirements audit were already verified after dependency changes;
+strict MkDocs and gateway vet became green in their respective items.
+The final committed-head receipt is recorded privately after item 5.
+
+The full development-tool environment is reused, not a lockfile or hermetic reconstruction.
+Only the declared runtime security sets and four documentation tools were changed.
+Runtime package verification and docs tooling ran in the workspace .venv; the existing
+host pip-audit, Bandit, Ruff, gitleaks, Go and Claude executables were reused.
+All installs were workspace-local, sequential, --no-cache-dir and preceded by disk checks.
+Free disk remained above the 10 GiB stop threshold.
+
+Code-owned gate S checks are locally green. The resolved-environment SBOM audit remains
+failed on setuptools, and the editable-package inventory gap remains explicit.
+No provider, identity-client, shared-database or release acceptance is claimed.
+
+## Review follow-up
+
+Claude reviewed the selected complete diff on stdin with safe mode, no built-in tools,
+strict empty MCP configuration, no slash commands or session persistence.
+It exited 0 and found no blocking defects. It did not execute checks.
+Accepted clarifications name advisory-driven versus coupling-driven upgrades, record
+the actual SBOM command/copy/hash, and label the development inventory and test limits.
+The HTTP-transport and OTLP-common packages in the inventory are exact requirements of
+the new OTLP HTTP exporter; they are not unexplained leftovers.
+Redis instrumentation is required by services/async-worker/pyproject.toml.
+The local package OTel lower bounds admit the upgraded family, and pip check passes.
+
+An additional offline compatibility smoke exited 0. It constructed the OTel SDK,
+OTLP HTTP exporter, Prometheus reader and HTTPX/FastAPI/SQLite instrumentation,
+emitted spans to an in-memory exporter, and signed and verified a generated RSA
+PyJWT token using cryptography 50. OCI and Oracle driver imports succeeded.
+Configured OTLP transmission, OCI client calls and real database/IdP verification remain unverified.
+Private receipt: .gate/s3/offline-compat.log.
+
+The review's publication concern does not match the checked configuration:
+mkdocs.yml sets docs_dir to site, so this report and SBOM under docs are outside
+the built site. No publication action was taken.
+The review also identified that both existing docs workflows install unpinned tools;
+a follow-up correction will make them consume the same pins as development setup.
+Strict MkDocs will be rerun at the final committed head.
