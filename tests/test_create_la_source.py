@@ -11,7 +11,10 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -68,22 +71,75 @@ def test_dry_run_does_not_require_oci_sdk() -> None:
 
 
 @pytest.mark.portability
-def test_apply_without_credentials_fails_clearly() -> None:
-    """With --apply set but no OCI config, fail with an informative error —
-    never silently."""
-    result = _run(
-        "--apply",
-        "--la-namespace",
-        "acme",
-        "--la-log-group-id",
-        "ocid1.loganalyticsloggroup.oc1..xxxx",
-        env={"OCI_CLI_AUTH": "instance_principal", "HOME": "/nonexistent"},
+@pytest.mark.unit
+def test_apply_without_credentials_fails_clearly(monkeypatch, capsys) -> None:
+    from tools import create_la_source
+
+    sdk = SimpleNamespace(
+        config=SimpleNamespace(from_file=MagicMock(side_effect=OSError("no config"))),
+        auth=SimpleNamespace(signers=SimpleNamespace(
+            InstancePrincipalsSecurityTokenSigner=MagicMock()
+        )),
+        log_analytics=SimpleNamespace(LogAnalyticsClient=MagicMock()),
     )
-    # Acceptable: non-zero with an OCI-related message, OR the oci package
-    # is not even installed (also a clear signal).
-    assert result.returncode != 0
-    combined = result.stderr + result.stdout
-    assert any(
-        needle in combined
-        for needle in ("oci", "OCI", "InstancePrincipal", "ModuleNotFoundError")
+    monkeypatch.setitem(sys.modules, "oci", sdk)
+    with patch.object(create_la_source.socket, "create_connection", side_effect=OSError):
+        result = create_la_source._main([
+            "--apply", "--la-namespace", "example",
+            "--la-log-group-id", "example-log-group",
+        ])
+    assert result == 3
+    assert "cannot resolve credentials" in capsys.readouterr().err
+    sdk.auth.signers.InstancePrincipalsSecurityTokenSigner.assert_not_called()
+    sdk.log_analytics.LogAnalyticsClient.assert_not_called()
+
+
+@pytest.mark.unit
+def test_imds_probe_targets_metadata_with_short_timeout() -> None:
+    from tools import create_la_source
+
+    with patch.object(create_la_source.socket, "create_connection") as connect:
+        assert create_la_source._imds_reachable() is True
+    connect.assert_called_once_with(("169.254.169.254", 80), timeout=1.5)
+    connect.return_value.__exit__.assert_called_once()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("error", [ConnectionRefusedError, TimeoutError, OSError])
+def test_imds_probe_connection_errors_return_false(error) -> None:
+    from tools import create_la_source
+
+    with patch.object(create_la_source.socket, "create_connection", side_effect=error) as connect:
+        assert create_la_source._imds_reachable(timeout=0.25) is False
+    connect.assert_called_once_with(("169.254.169.254", 80), timeout=0.25)
+
+
+@pytest.mark.unit
+def test_reachable_metadata_enables_instance_principal_fallback(monkeypatch) -> None:
+    from tools import create_la_source
+
+    signer = MagicMock()
+    client = MagicMock()
+    sdk = SimpleNamespace(
+        config=SimpleNamespace(from_file=MagicMock(side_effect=OSError("no config"))),
+        auth=SimpleNamespace(signers=SimpleNamespace(
+            InstancePrincipalsSecurityTokenSigner=MagicMock(return_value=signer)
+        )),
+        log_analytics=SimpleNamespace(LogAnalyticsClient=MagicMock(return_value=client)),
+    )
+    monkeypatch.setitem(sys.modules, "oci", sdk)
+    with patch.object(create_la_source.socket, "create_connection") as connect:
+        result = create_la_source._main([
+            "--apply", "--la-namespace", "example",
+            "--la-log-group-id", "example-log-group",
+        ])
+    assert result == 0
+    connect.assert_called_once_with(("169.254.169.254", 80), timeout=1.5)
+    sdk.auth.signers.InstancePrincipalsSecurityTokenSigner.assert_called_once_with()
+    sdk.log_analytics.LogAnalyticsClient.assert_called_once_with({}, signer=signer)
+    client.upsert_source.assert_called_once_with(
+        namespace_name="example",
+        upsert_log_analytics_source_details=create_la_source.build_payload(
+            name="octo-shop-app-json", la_log_group_id="example-log-group"
+        ),
     )

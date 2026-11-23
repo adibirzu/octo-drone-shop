@@ -38,7 +38,7 @@ def _imds_reachable(*, timeout: float = 1.5) -> bool:
     connection within ``timeout`` seconds. Avoids long hangs when run off
     an OCI instance."""
     try:
-        with socket.create_connection(("192.0.2.40", 80), timeout=timeout):
+        with socket.create_connection(("169.254.169.254", 80), timeout=timeout):
             return True
     except OSError:
         return False
@@ -152,7 +152,7 @@ def _main(argv: list[str] | None = None) -> int:
         # running outside an OCI instance.
         if not _imds_reachable(timeout=1.5):
             print(
-                "OCI config file not found and IMDS (192.0.2.40) is unreachable; "
+                "OCI config file not found and IMDS (169.254.169.254) is unreachable; "
                 "cannot resolve credentials. Set up ~/.oci/config or run on an OCI instance.",
                 file=sys.stderr,
             )
