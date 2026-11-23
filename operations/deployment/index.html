@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -2916,18 +2916,18 @@ Management, Operations Insights, and Stack Monitoring Standard.</p>
 </span></code></pre></div>
 <h2 id="manual-workflow">Manual Workflow<a class="headerlink" href="#manual-workflow" title="Permanent link">&para;</a></h2>
 <h3 id="1-sync-to-build-vm">1. Sync to Build VM<a class="headerlink" href="#1-sync-to-build-vm" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1">rsync<span class="w"> </span>-az<span class="w"> </span>--exclude<span class="w"> </span><span class="s1">&#39;.git&#39;</span><span class="w"> </span>--exclude<span class="w"> </span><span class="s1">&#39;__pycache__&#39;</span><span class="w"> </span><span class="se">\</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1">rsync<span class="w"> </span>-az<span class="w"> </span>--exclude<span class="w"> </span><span class="s1">'.git'</span><span class="w"> </span>--exclude<span class="w"> </span><span class="s1">'__pycache__'</span><span class="w"> </span><span class="se">\</span>
 </span><span id="__span-1-2"><span class="w">  </span>.<span class="w"> </span>remote-builder:/tmp/octo-drone-shop/
 </span></code></pre></div>
 <h3 id="2-build-native-x86_64">2. Build (Native x86_64)<a class="headerlink" href="#2-build-native-x86_64" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><span class="nv">TAG</span><span class="o">=</span><span class="k">$(</span>date<span class="w"> </span>+%Y%m%d%H%M%S<span class="k">)</span>
-</span><span id="__span-2-2">ssh<span class="w"> </span>remote-builder<span class="w"> </span><span class="s2">&quot;cd /tmp/octo-drone-shop &amp;&amp; \</span>
+</span><span id="__span-2-2">ssh<span class="w"> </span>remote-builder<span class="w"> </span><span class="s2">"cd /tmp/octo-drone-shop &amp;&amp; \</span>
 </span><span id="__span-2-3"><span class="s2">  docker build -t </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:</span><span class="si">${</span><span class="nv">TAG</span><span class="si">}</span><span class="s2"> \</span>
-</span><span id="__span-2-4"><span class="s2">               -t </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest .&quot;</span>
+</span><span id="__span-2-4"><span class="s2">               -t </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest ."</span>
 </span></code></pre></div>
 <h3 id="3-push-to-ocir">3. Push to OCIR<a class="headerlink" href="#3-push-to-ocir" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1">ssh<span class="w"> </span>remote-builder<span class="w"> </span><span class="s2">&quot;docker push </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:</span><span class="si">${</span><span class="nv">TAG</span><span class="si">}</span><span class="s2"> &amp;&amp; \</span>
-</span><span id="__span-3-2"><span class="s2">  docker push </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1">ssh<span class="w"> </span>remote-builder<span class="w"> </span><span class="s2">"docker push </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:</span><span class="si">${</span><span class="nv">TAG</span><span class="si">}</span><span class="s2"> &amp;&amp; \</span>
+</span><span id="__span-3-2"><span class="s2">  docker push </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest"</span>
 </span></code></pre></div>
 <h3 id="4-rollout-on-oke">4. Rollout on OKE<a class="headerlink" href="#4-rollout-on-oke" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1">kubectl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>image<span class="w"> </span>deployment/octo-drone-shop<span class="w"> </span><span class="se">\</span>
@@ -3003,7 +3003,7 @@ metric export to OCI APM while keeping:</p>
 <p>Remove the mount after rebuilding and promoting a CRM image that includes the
 same code change:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1">kubectl<span class="w"> </span>--context<span class="w"> </span>&lt;kube-context&gt;<span class="w"> </span>get<span class="w"> </span>deploy<span class="w"> </span>enterprise-crm-portal<span class="w"> </span>-n<span class="w"> </span>enterprise-crm<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-8-2"><span class="w">  </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{range .spec.template.spec.containers[0].volumeMounts[*]}{.name}{&quot; &quot;}{.mountPath}{&quot;\n&quot;}{end}&#39;</span>
+</span><span id="__span-8-2"><span class="w">  </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{range .spec.template.spec.containers[0].volumeMounts[*]}{.name}{" "}{.mountPath}{"\n"}{end}'</span>
 </span></code></pre></div>
 <p>The current hotfix mount is named <code>metrics-hotfix</code> and points at
 <code>configmap/crm-metrics-hotfix</code>. After the fixed image is active, remove the
@@ -3011,7 +3011,7 @@ mount and delete the ConfigMap:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1">kubectl<span class="w"> </span>--context<span class="w"> </span>&lt;kube-context&gt;<span class="w"> </span>patch<span class="w"> </span>deploy<span class="w"> </span>enterprise-crm-portal<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-9-2"><span class="w">  </span>-n<span class="w"> </span>enterprise-crm<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-9-3"><span class="w">  </span>--type<span class="o">=</span>strategic<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-9-4"><span class="w">  </span>-p<span class="w"> </span><span class="s1">&#39;{&quot;spec&quot;:{&quot;template&quot;:{&quot;spec&quot;:{&quot;containers&quot;:[{&quot;name&quot;:&quot;app&quot;,&quot;volumeMounts&quot;:[{&quot;name&quot;:&quot;metrics-hotfix&quot;,&quot;$patch&quot;:&quot;delete&quot;}]}],&quot;volumes&quot;:[{&quot;name&quot;:&quot;metrics-hotfix&quot;,&quot;$patch&quot;:&quot;delete&quot;}]}}}}&#39;</span>
+</span><span id="__span-9-4"><span class="w">  </span>-p<span class="w"> </span><span class="s1">'{"spec":{"template":{"spec":{"containers":[{"name":"app","volumeMounts":[{"name":"metrics-hotfix","$patch":"delete"}]}],"volumes":[{"name":"metrics-hotfix","$patch":"delete"}]}}}}'</span>
 </span><span id="__span-9-5">
 </span><span id="__span-9-6">kubectl<span class="w"> </span>--context<span class="w"> </span>&lt;kube-context&gt;<span class="w"> </span>rollout<span class="w"> </span>status<span class="w"> </span>deploy/enterprise-crm-portal<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-9-7"><span class="w">  </span>-n<span class="w"> </span>enterprise-crm
@@ -3021,9 +3021,9 @@ mount and delete the ConfigMap:</p>
 <h3 id="image-promotion-and-rollback">Image Promotion and Rollback<a class="headerlink" href="#image-promotion-and-rollback" title="Permanent link">&para;</a></h3>
 <p>Record the current image before each cap rollout:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1">kubectl<span class="w"> </span>--context<span class="w"> </span>&lt;kube-context&gt;<span class="w"> </span>get<span class="w"> </span>deploy<span class="w"> </span>mushop-portal<span class="w"> </span>-n<span class="w"> </span>mushop-portal<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-10-2"><span class="w">  </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.spec.template.spec.containers[0].image}{&quot;\n&quot;}&#39;</span>
+</span><span id="__span-10-2"><span class="w">  </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.spec.template.spec.containers[0].image}{"\n"}'</span>
 </span><span id="__span-10-3">kubectl<span class="w"> </span>--context<span class="w"> </span>&lt;kube-context&gt;<span class="w"> </span>get<span class="w"> </span>deploy<span class="w"> </span>enterprise-crm-portal<span class="w"> </span>-n<span class="w"> </span>enterprise-crm<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-10-4"><span class="w">  </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.spec.template.spec.containers[0].image}{&quot;\n&quot;}&#39;</span>
+</span><span id="__span-10-4"><span class="w">  </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.spec.template.spec.containers[0].image}{"\n"}'</span>
 </span></code></pre></div>
 <p>Promote immutable tags instead of relying only on <code>latest</code>:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1">kubectl<span class="w"> </span>--context<span class="w"> </span>&lt;kube-context&gt;<span class="w"> </span><span class="nb">set</span><span class="w"> </span>image<span class="w"> </span>deploy/mushop-portal<span class="w"> </span><span class="se">\</span>
@@ -3162,10 +3162,10 @@ mount and delete the ConfigMap:</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "navigation.indexes", "content.code.copy", "content.code.annotate", "content.tabs.link", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "navigation.indexes", "content.code.copy", "content.code.annotate", "content.tabs.link", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

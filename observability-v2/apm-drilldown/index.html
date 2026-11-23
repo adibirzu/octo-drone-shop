@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -2860,11 +2860,11 @@ wrapping spans — so latency budgets still reflect reality.</p>
 <p>A new tenancy needs both an APM Domain and a RUM Web Application before
 traces/RUM events can be ingested. The terraform module
 <code>deploy/terraform/modules/apm_domain</code> creates both:</p>
-<div class="language-hcl highlight"><pre><span></span><code><span id="__span-0-1"><span class="kr">module</span><span class="w"> </span><span class="nv">&quot;apm_domain&quot;</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-2"><span class="w">  </span><span class="na">source</span><span class="w">                       </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;./modules/apm_domain&quot;</span>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-0-1"><span class="kr">module</span><span class="w"> </span><span class="nv">"apm_domain"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-2"><span class="w">  </span><span class="na">source</span><span class="w">                       </span><span class="o">=</span><span class="w"> </span><span class="s2">"./modules/apm_domain"</span>
 </span><span id="__span-0-3"><span class="w">  </span><span class="na">compartment_id</span><span class="w">               </span><span class="o">=</span><span class="w"> </span><span class="nv">var.compartment_id</span>
-</span><span id="__span-0-4"><span class="w">  </span><span class="na">display_name</span><span class="w">                 </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;octo-apm&quot;</span>
-</span><span id="__span-0-5"><span class="w">  </span><span class="na">web_application_display_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;octo-drone-shop-web&quot;</span>
+</span><span id="__span-0-4"><span class="w">  </span><span class="na">display_name</span><span class="w">                 </span><span class="o">=</span><span class="w"> </span><span class="s2">"octo-apm"</span>
+</span><span id="__span-0-5"><span class="w">  </span><span class="na">web_application_display_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"octo-drone-shop-web"</span>
 </span><span id="__span-0-6"><span class="p">}</span>
 </span></code></pre></div>
 <p>Outputs include <code>apm_data_upload_endpoint</code>, <code>rum_web_application_id</code>,
@@ -3052,10 +3052,10 @@ alongside backend spans.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "navigation.indexes", "content.code.copy", "content.code.annotate", "content.tabs.link", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "navigation.indexes", "content.code.copy", "content.code.annotate", "content.tabs.link", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

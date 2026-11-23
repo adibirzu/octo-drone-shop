@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -2815,13 +2815,13 @@
 <h2 id="apply">Apply<a class="headerlink" href="#apply" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><span class="k">for</span><span class="w"> </span>p<span class="w"> </span><span class="k">in</span><span class="w"> </span>deploy/oci/log_analytics/parsers/*.json<span class="p">;</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-0-2"><span class="w">  </span>oci<span class="w"> </span>log-analytics<span class="w"> </span>parser<span class="w"> </span>upload<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-0-3"><span class="w">    </span>--namespace-name<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$OCI_LA_NAMESPACE</span><span class="s2">&quot;</span><span class="w"> </span>--from-json<span class="w"> </span><span class="s2">&quot;file://</span><span class="nv">$p</span><span class="s2">&quot;</span>
+</span><span id="__span-0-3"><span class="w">    </span>--namespace-name<span class="w"> </span><span class="s2">"</span><span class="nv">$OCI_LA_NAMESPACE</span><span class="s2">"</span><span class="w"> </span>--from-json<span class="w"> </span><span class="s2">"file://</span><span class="nv">$p</span><span class="s2">"</span>
 </span><span id="__span-0-4"><span class="k">done</span>
 </span><span id="__span-0-5"><span class="k">for</span><span class="w"> </span>q<span class="w"> </span><span class="k">in</span><span class="w"> </span>deploy/oci/log_analytics/searches/*.sql<span class="p">;</span><span class="w"> </span><span class="k">do</span>
-</span><span id="__span-0-6"><span class="w">  </span><span class="nv">name</span><span class="o">=</span><span class="k">$(</span>basename<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$q</span><span class="s2">&quot;</span><span class="w"> </span>.sql<span class="k">)</span>
+</span><span id="__span-0-6"><span class="w">  </span><span class="nv">name</span><span class="o">=</span><span class="k">$(</span>basename<span class="w"> </span><span class="s2">"</span><span class="nv">$q</span><span class="s2">"</span><span class="w"> </span>.sql<span class="k">)</span>
 </span><span id="__span-0-7"><span class="w">  </span>oci<span class="w"> </span>log-analytics<span class="w"> </span>saved-search<span class="w"> </span>upload<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-0-8"><span class="w">    </span>--namespace-name<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$OCI_LA_NAMESPACE</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-0-9"><span class="w">    </span>--display-name<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$name</span><span class="s2">&quot;</span><span class="w"> </span>--query-string<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$q</span><span class="s2">&quot;</span><span class="k">)</span><span class="s2">&quot;</span>
+</span><span id="__span-0-8"><span class="w">    </span>--namespace-name<span class="w"> </span><span class="s2">"</span><span class="nv">$OCI_LA_NAMESPACE</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-9"><span class="w">    </span>--display-name<span class="w"> </span><span class="s2">"</span><span class="nv">$name</span><span class="s2">"</span><span class="w"> </span>--query-string<span class="w"> </span><span class="s2">"</span><span class="k">$(</span>cat<span class="w"> </span><span class="s2">"</span><span class="nv">$q</span><span class="s2">"</span><span class="k">)</span><span class="s2">"</span>
 </span><span id="__span-0-10"><span class="k">done</span>
 </span></code></pre></div>
 
@@ -2948,10 +2948,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "navigation.indexes", "content.code.copy", "content.code.annotate", "content.tabs.link", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "navigation.indexes", "content.code.copy", "content.code.annotate", "content.tabs.link", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>

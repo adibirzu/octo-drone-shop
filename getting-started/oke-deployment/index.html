@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -2814,14 +2814,14 @@
 </span><span id="__span-0-2"><span class="nb">set</span><span class="w"> </span>-a
 </span><span id="__span-0-3"><span class="nb">source</span><span class="w"> </span>deploy/credentials.env
 </span><span id="__span-0-4"><span class="nb">set</span><span class="w"> </span>+a
-</span><span id="__span-0-5"><span class="nb">export</span><span class="w"> </span><span class="nv">DNS_DOMAIN</span><span class="o">=</span><span class="s2">&quot;&lt;your-domain&gt;&quot;</span>
-</span><span id="__span-0-6"><span class="nb">export</span><span class="w"> </span><span class="nv">AUTH_TOKEN_SECRET</span><span class="o">=</span><span class="s2">&quot;</span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">32</span><span class="k">)</span><span class="s2">&quot;</span>
-</span><span id="__span-0-7"><span class="nb">export</span><span class="w"> </span><span class="nv">ORACLE_DSN</span><span class="o">=</span><span class="s2">&quot;myatp_low&quot;</span>
-</span><span id="__span-0-8"><span class="nb">export</span><span class="w"> </span><span class="nv">ORACLE_PASSWORD</span><span class="o">=</span><span class="s2">&quot;&lt;your-atp-password&gt;&quot;</span>
-</span><span id="__span-0-9"><span class="nb">export</span><span class="w"> </span><span class="nv">OCI_APM_ENDPOINT</span><span class="o">=</span><span class="s2">&quot;https://&lt;apm-data-upload-endpoint&gt;&quot;</span>
-</span><span id="__span-0-10"><span class="nb">export</span><span class="w"> </span><span class="nv">OCI_APM_PRIVATE_DATAKEY</span><span class="o">=</span><span class="s2">&quot;&lt;private-data-key&gt;&quot;</span>
-</span><span id="__span-0-11"><span class="nb">export</span><span class="w"> </span><span class="nv">OCI_LB_SUBNET_OCID</span><span class="o">=</span><span class="s2">&quot;ocid1.subnet.oc1.&lt;region&gt;....&quot;</span>
-</span><span id="__span-0-12"><span class="nb">export</span><span class="w"> </span><span class="nv">OCIR_REPO</span><span class="o">=</span><span class="s2">&quot;&lt;region&gt;.ocir.io/&lt;namespace&gt;&quot;</span>
+</span><span id="__span-0-5"><span class="nb">export</span><span class="w"> </span><span class="nv">DNS_DOMAIN</span><span class="o">=</span><span class="s2">"&lt;your-domain&gt;"</span>
+</span><span id="__span-0-6"><span class="nb">export</span><span class="w"> </span><span class="nv">AUTH_TOKEN_SECRET</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">32</span><span class="k">)</span><span class="s2">"</span>
+</span><span id="__span-0-7"><span class="nb">export</span><span class="w"> </span><span class="nv">ORACLE_DSN</span><span class="o">=</span><span class="s2">"myatp_low"</span>
+</span><span id="__span-0-8"><span class="nb">export</span><span class="w"> </span><span class="nv">ORACLE_PASSWORD</span><span class="o">=</span><span class="s2">"&lt;your-atp-password&gt;"</span>
+</span><span id="__span-0-9"><span class="nb">export</span><span class="w"> </span><span class="nv">OCI_APM_ENDPOINT</span><span class="o">=</span><span class="s2">"https://&lt;apm-data-upload-endpoint&gt;"</span>
+</span><span id="__span-0-10"><span class="nb">export</span><span class="w"> </span><span class="nv">OCI_APM_PRIVATE_DATAKEY</span><span class="o">=</span><span class="s2">"&lt;private-data-key&gt;"</span>
+</span><span id="__span-0-11"><span class="nb">export</span><span class="w"> </span><span class="nv">OCI_LB_SUBNET_OCID</span><span class="o">=</span><span class="s2">"ocid1.subnet.oc1.&lt;region&gt;...."</span>
+</span><span id="__span-0-12"><span class="nb">export</span><span class="w"> </span><span class="nv">OCIR_REPO</span><span class="o">=</span><span class="s2">"&lt;region&gt;.ocir.io/&lt;namespace&gt;"</span>
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">cap profile and example.test</p>
@@ -2836,35 +2836,35 @@ with different domains.</p>
 <p>Never build locally on Apple Silicon. Use an x86_64 build VM.</p>
 </div>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><span class="c1"># Sync to build VM</span>
-</span><span id="__span-1-2">rsync<span class="w"> </span>-az<span class="w"> </span>--exclude<span class="w"> </span><span class="s1">&#39;.git&#39;</span><span class="w"> </span>--exclude<span class="w"> </span><span class="s1">&#39;__pycache__&#39;</span><span class="w"> </span>.<span class="w"> </span>remote-builder:/tmp/octo-drone-shop/
+</span><span id="__span-1-2">rsync<span class="w"> </span>-az<span class="w"> </span>--exclude<span class="w"> </span><span class="s1">'.git'</span><span class="w"> </span>--exclude<span class="w"> </span><span class="s1">'__pycache__'</span><span class="w"> </span>.<span class="w"> </span>remote-builder:/tmp/octo-drone-shop/
 </span><span id="__span-1-3">
 </span><span id="__span-1-4"><span class="c1"># Build + push on VM</span>
-</span><span id="__span-1-5">ssh<span class="w"> </span>remote-builder<span class="w"> </span><span class="s2">&quot;cd /tmp/octo-drone-shop &amp;&amp; \</span>
+</span><span id="__span-1-5">ssh<span class="w"> </span>remote-builder<span class="w"> </span><span class="s2">"cd /tmp/octo-drone-shop &amp;&amp; \</span>
 </span><span id="__span-1-6"><span class="s2">  docker build -t </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest . &amp;&amp; \</span>
-</span><span id="__span-1-7"><span class="s2">  docker push </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest&quot;</span>
+</span><span id="__span-1-7"><span class="s2">  docker push </span><span class="si">${</span><span class="nv">OCIR_REPO</span><span class="si">}</span><span class="s2">/octo-drone-shop:latest"</span>
 </span></code></pre></div>
 <p>Or use the deploy script:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1">./deploy/deploy.sh
 </span></code></pre></div>
 <h2 id="3-create-k8s-secrets">3. Create K8s Secrets<a class="headerlink" href="#3-create-k8s-secrets" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><span class="nv">NAMESPACE</span><span class="o">=</span><span class="s2">&quot;octo-drone-shop&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><span class="nv">NAMESPACE</span><span class="o">=</span><span class="s2">"octo-drone-shop"</span>
 </span><span id="__span-3-2">kubectl<span class="w"> </span>create<span class="w"> </span>namespace<span class="w"> </span><span class="nv">$NAMESPACE</span>
 </span><span id="__span-3-3">
 </span><span id="__span-3-4"><span class="c1"># Required</span>
 </span><span id="__span-3-5">kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>octo-auth<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-6"><span class="w">  </span>--from-literal<span class="o">=</span>token-secret<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">AUTH_TOKEN_SECRET</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-3-6"><span class="w">  </span>--from-literal<span class="o">=</span>token-secret<span class="o">=</span><span class="s2">"</span><span class="si">${</span><span class="nv">AUTH_TOKEN_SECRET</span><span class="si">}</span><span class="s2">"</span>
 </span><span id="__span-3-7">
 </span><span id="__span-3-8">kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>octo-atp<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-9"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">dsn</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ORACLE_DSN</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-10"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">username</span><span class="o">=</span><span class="s2">&quot;ADMIN&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-11"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">password</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ORACLE_PASSWORD</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-12"><span class="w">  </span>--from-literal<span class="o">=</span>wallet-password<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ORACLE_WALLET_PASSWORD</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-3-9"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">dsn</span><span class="o">=</span><span class="s2">"</span><span class="si">${</span><span class="nv">ORACLE_DSN</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-10"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">username</span><span class="o">=</span><span class="s2">"ADMIN"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-11"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">password</span><span class="o">=</span><span class="s2">"</span><span class="si">${</span><span class="nv">ORACLE_PASSWORD</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-12"><span class="w">  </span>--from-literal<span class="o">=</span>wallet-password<span class="o">=</span><span class="s2">"</span><span class="si">${</span><span class="nv">ORACLE_WALLET_PASSWORD</span><span class="si">}</span><span class="s2">"</span>
 </span><span id="__span-3-13">
 </span><span id="__span-3-14">kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>octo-apm<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-15"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">endpoint</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">OCI_APM_ENDPOINT</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-16"><span class="w">  </span>--from-literal<span class="o">=</span>private-key<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">OCI_APM_PRIVATE_DATAKEY</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-17"><span class="w">  </span>--from-literal<span class="o">=</span>public-key<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">OCI_APM_PUBLIC_DATAKEY</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-18"><span class="w">  </span>--from-literal<span class="o">=</span>rum-endpoint<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">OCI_APM_RUM_ENDPOINT</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-3-15"><span class="w">  </span>--from-literal<span class="o">=</span><span class="nv">endpoint</span><span class="o">=</span><span class="s2">"</span><span class="si">${</span><span class="nv">OCI_APM_ENDPOINT</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-16"><span class="w">  </span>--from-literal<span class="o">=</span>private-key<span class="o">=</span><span class="s2">"</span><span class="si">${</span><span class="nv">OCI_APM_PRIVATE_DATAKEY</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-17"><span class="w">  </span>--from-literal<span class="o">=</span>public-key<span class="o">=</span><span class="s2">"</span><span class="si">${</span><span class="nv">OCI_APM_PUBLIC_DATAKEY</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-18"><span class="w">  </span>--from-literal<span class="o">=</span>rum-endpoint<span class="o">=</span><span class="s2">"</span><span class="si">${</span><span class="nv">OCI_APM_RUM_ENDPOINT</span><span class="si">}</span><span class="s2">"</span>
 </span><span id="__span-3-19">
 </span><span id="__span-3-20"><span class="c1"># ATP wallet</span>
 </span><span id="__span-3-21">kubectl<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span><span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>octo-atp-wallet<span class="w"> </span><span class="se">\</span>
@@ -2875,14 +2875,14 @@ with different domains.</p>
 </span><span id="__span-4-2">kubectl<span class="w"> </span>rollout<span class="w"> </span>status<span class="w"> </span>deployment/octo-drone-shop<span class="w"> </span>-n<span class="w"> </span><span class="nv">$NAMESPACE</span>
 </span></code></pre></div>
 <h2 id="5-provision-oci-services">5. Provision OCI Services<a class="headerlink" href="#5-provision-oci-services" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><span class="nb">export</span><span class="w"> </span><span class="nv">COMPARTMENT_ID</span><span class="o">=</span><span class="s2">&quot;&lt;compartment-ocid&gt;&quot;</span>
-</span><span id="__span-5-2"><span class="nb">export</span><span class="w"> </span><span class="nv">SHOP_PUBLIC_URL</span><span class="o">=</span><span class="s2">&quot;https://shop.</span><span class="si">${</span><span class="nv">DNS_DOMAIN</span><span class="si">}</span><span class="s2">&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><span class="nb">export</span><span class="w"> </span><span class="nv">COMPARTMENT_ID</span><span class="o">=</span><span class="s2">"&lt;compartment-ocid&gt;"</span>
+</span><span id="__span-5-2"><span class="nb">export</span><span class="w"> </span><span class="nv">SHOP_PUBLIC_URL</span><span class="o">=</span><span class="s2">"https://shop.</span><span class="si">${</span><span class="nv">DNS_DOMAIN</span><span class="si">}</span><span class="s2">"</span>
 </span><span id="__span-5-3">
 </span><span id="__span-5-4"><span class="c1"># Monitoring (alarms + health checks)</span>
 </span><span id="__span-5-5">./deploy/oci/ensure_monitoring.sh
 </span><span id="__span-5-6">
 </span><span id="__span-5-7"><span class="c1"># WAF protection rules</span>
-</span><span id="__span-5-8"><span class="nv">LOAD_BALANCER_OCID</span><span class="o">=</span><span class="s2">&quot;&lt;lb-ocid&gt;&quot;</span><span class="w"> </span>./deploy/oci/ensure_waf.sh
+</span><span id="__span-5-8"><span class="nv">LOAD_BALANCER_OCID</span><span class="o">=</span><span class="s2">"&lt;lb-ocid&gt;"</span><span class="w"> </span>./deploy/oci/ensure_waf.sh
 </span><span id="__span-5-9">
 </span><span id="__span-5-10"><span class="c1"># Cloud Guard</span>
 </span><span id="__span-5-11">./deploy/oci/ensure_cloud_guard.sh
@@ -2894,7 +2894,7 @@ with different domains.</p>
 </span><span id="__span-5-17">./deploy/oci/ensure_vault.sh
 </span><span id="__span-5-18">
 </span><span id="__span-5-19"><span class="c1"># DB Observability</span>
-</span><span id="__span-5-20"><span class="nv">AUTONOMOUS_DATABASE_ID</span><span class="o">=</span><span class="s2">&quot;&lt;atp-ocid&gt;&quot;</span><span class="w"> </span>./deploy/oci/ensure_db_observability.sh
+</span><span id="__span-5-20"><span class="nv">AUTONOMOUS_DATABASE_ID</span><span class="o">=</span><span class="s2">"&lt;atp-ocid&gt;"</span><span class="w"> </span>./deploy/oci/ensure_db_observability.sh
 </span></code></pre></div>
 <h2 id="6-verify">6. Verify<a class="headerlink" href="#6-verify" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1">curl<span class="w"> </span>https://shop.<span class="si">${</span><span class="nv">DNS_DOMAIN</span><span class="si">}</span>/ready<span class="w"> </span><span class="p">|</span><span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>json.tool
@@ -3041,10 +3041,10 @@ drive the post-deploy rollout and validation checkpoints.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "navigation.indexes", "content.code.copy", "content.code.annotate", "content.tabs.link", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "navigation.indexes", "content.code.copy", "content.code.annotate", "content.tabs.link", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>
