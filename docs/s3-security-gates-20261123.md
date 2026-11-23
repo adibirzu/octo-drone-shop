@@ -6,7 +6,8 @@ Branch: `adibirzu/s3-shop-security-gates`.
 Base: fresh `origin/main`, `9ba480fd4cb5f4f8f5174196c3cf8b756f05582e`.
 The S2 branch remains separate at `b9ba898`; S2 was not cherry-picked.
 Evidence is **code-backed** and **locally verified**, not provider verified or release accepted.
-No push, PR, deployment, cloud call or metadata call is authorized or performed.
+No push, PR, deployment, cloud call or instance-metadata call was performed.
+External requests were limited to package-index/advisory access and the requested Claude reviews.
 
 ## 1. Requirements audit
 
@@ -64,7 +65,7 @@ A clean configured scanner result is not proof that the demo is production-safe.
 
 The reused environment initially had no MkDocs module; its strict-build command exited 1.
 The older host tool also failed importing Material/Pymdownx.
-requirements-dev.txt now pins MkDocs 1.6.1, Material 9.8.2,
+requirements-dev.txt includes the shared requirements-docs.txt, which pins MkDocs 1.6.1, Material 9.8.2,
 mkdocs-mermaid2-plugin 1.2.3 and pymdown-extensions 13.1.2.
 The local strict build now exits 0 with the existing mkdocs.yml.
 The full Shop suite passes 257 tests and pip check exits 0.
@@ -145,7 +146,8 @@ Items 1 through 4 each passed 257 tests with exit 0.
 The earlier dependency check before item 1 also passed 257 tests.
 Bandit, Ruff S and strict requirements audit were already verified after dependency changes;
 strict MkDocs and gateway vet became green in their respective items.
-The final committed-head receipt is recorded privately after item 5.
+Final committed-head receipts apply to the sixth review-fix commit and are recorded
+under .gate/s3/final/, after all five numbered item commits.
 
 The full development-tool environment is reused, not a lockfile or hermetic reconstruction.
 Only the declared runtime security sets and four documentation tools were changed.
@@ -180,6 +182,32 @@ Private receipt: .gate/s3/offline-compat.log.
 The review's publication concern does not match the checked configuration:
 mkdocs.yml sets docs_dir to site, so this report and SBOM under docs are outside
 the built site. No publication action was taken.
-The review also identified that both existing docs workflows install unpinned tools;
-a follow-up correction will make them consume the same pins as development setup.
-Strict MkDocs will be rerun at the final committed head.
+The review also identified that both existing docs workflows installed unpinned tools.
+A focused configuration check exited 1 before the correction because their install
+specifications did not match the development docs pins.
+Both workflows now install requirements-docs.txt; requirements-dev.txt includes that
+same file. Changes to the shared pins trigger each existing docs pipeline.
+The same focused check now exits 0. No deployment step, permission or concurrency
+configuration was changed, and neither deployment workflow was executed.
+The latest working-tree strict MkDocs build exited 0, recorded in
+.gate/s3/review-fixes/docs.json. The final committed-head rerun is recorded
+under .gate/s3/final/docs.json; the final root suite receipt is .gate/s3/final/full.json.
+This extra review-fix commit follows the five numbered item commits.
+
+The follow-up Claude review exited 0 and found no actionable correctness or security
+findings. It statically checked the final workflow, requirements, Go, SBOM and report
+diff, and did not independently verify execution receipts.
+Its final wording suggestions clarified instance-metadata versus package metadata
+and the sixth-commit receipt scope.
+
+| Item | Commit |
+| --- | --- |
+| Runtime security dependencies | 3c639a2 |
+| Clean Bandit/Ruff evidence | 6ceeec8 |
+| Pinned local docs tooling | 563611d |
+| Gateway vet correction | 1c7b681 |
+| Resolved inventory and coverage | 96cc204 |
+| Shared CI docs pins and review corrections | Commit containing this final report |
+
+The final commit hash and full final command exits are recorded in the private
+.gate/s3/final-receipts.md and the coordinator completion report.
