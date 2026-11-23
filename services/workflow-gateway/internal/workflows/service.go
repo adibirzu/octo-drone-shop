@@ -3,6 +3,7 @@ package workflows
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -172,7 +173,7 @@ func (s *Service) RunQuery(ctx context.Context, name string, scheduleMode string
 		attribute.Int("db.row_count", result.RowCount),
 	)
 	if result.Status == "error" && !spec.ExpectedFailure {
-		return result, fmt.Errorf(result.ErrorMessage)
+		return result, errors.New(result.ErrorMessage)
 	}
 	return result, nil
 }
@@ -193,7 +194,7 @@ func (s *Service) RunSelectAI(ctx context.Context, prompt string, action string)
 		attribute.Float64("db.client.execution_time_ms", result.DurationMS),
 	)
 	if result.Status == "error" {
-		return result, fmt.Errorf(result.ErrorMessage)
+		return result, errors.New(result.ErrorMessage)
 	}
 	return result, nil
 }

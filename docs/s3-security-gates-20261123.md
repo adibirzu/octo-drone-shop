@@ -70,3 +70,19 @@ The full Shop suite passes 257 tests and pip check exits 0.
 No content, navigation warning level or strict setting was weakened.
 Build output stays private under .gate/s3/docs/site.
 These pins reproduce the docs-tool selection, not every transitive dependency.
+
+## 4. Workflow gateway vet
+
+Before the change, the actual `go test ./...` command exited 1 because vet rejected
+dynamic fmt.Errorf format strings at the two workflow error-return sites.
+Both now use errors.New to preserve the returned database message literally,
+including any percent signs. No query, database configuration or scheduling behavior changed.
+After the change, `go test ./...` exits 0 with vet enabled. All gateway packages
+currently report no test files, so this proves compilation and vet, not runtime
+database or gateway behavior. No new abstraction or external test dependency was added.
+
+Go 1.27.1 uses workspace-local GOMODCACHE, GOCACHE and GOPATH under .gate.
+The module versions were downloaded from checked-in go.mod/go.sum during S2 under
+coordinator authority; this S3 run reused that cache with GOPROXY=off and GOSUMDB=off.
+No new module, dependency version or live database connection was needed.
+Private RED/GREEN logs are .gate/s3/go-red.log and .gate/s3/go-green.log.
