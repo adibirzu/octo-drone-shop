@@ -41,5 +41,7 @@ test-results/
 .rlm/
 build/
 .claude/
+.gate/
+.cache/
 firebase-debug.log
 deploy/credentials.env
