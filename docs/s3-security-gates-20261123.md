@@ -49,3 +49,12 @@ raise OSError. This prevents the original main-branch --apply subprocess test fr
 probing its documentation-example destination. This private test guard is not part
 of the product or a substitute for S2's mocked regression tests.
 No application startup, shared database, identity provider or OCI verification is claimed.
+
+## 2. Bandit and Ruff security checks
+
+Both baseline and post-dependency scans are clean:
+`bandit -q -r server -x server/__pycache__ -ll -iii` and
+`ruff check --select S server` exit 0.
+No code issue, demo exception or new suppression was found or added.
+This item records verified scanner results only; it does not modify application code.
+A clean configured scanner result is not proof that the demo is production-safe.
