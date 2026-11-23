@@ -58,3 +58,15 @@ Both baseline and post-dependency scans are clean:
 No code issue, demo exception or new suppression was found or added.
 This item records verified scanner results only; it does not modify application code.
 A clean configured scanner result is not proof that the demo is production-safe.
+
+## 3. Strict documentation build
+
+The reused environment initially had no MkDocs module; its strict-build command exited 1.
+The older host tool also failed importing Material/Pymdownx.
+requirements-dev.txt now pins MkDocs 1.6.1, Material 9.8.2,
+mkdocs-mermaid2-plugin 1.2.3 and pymdown-extensions 13.1.2.
+The local strict build now exits 0 with the existing mkdocs.yml.
+The full Shop suite passes 257 tests and pip check exits 0.
+No content, navigation warning level or strict setting was weakened.
+Build output stays private under .gate/s3/docs/site.
+These pins reproduce the docs-tool selection, not every transitive dependency.
