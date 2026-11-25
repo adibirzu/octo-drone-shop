@@ -14,7 +14,9 @@ import json
 import os
 from pathlib import Path
 import platform
+import pwd
 import shutil
+import stat
 import subprocess
 import tempfile
 from typing import TextIO
@@ -45,6 +47,7 @@ def _venv_bin_dirs() -> list[str]:
         str(candidate)
         for candidate in (
             ROOT / ".gate/venv/bin",
+            ROOT / ".gate/bin",
             ROOT / ".venv/bin",
             ROOT / ".venv311/bin",
         )
@@ -60,6 +63,13 @@ JOBS: dict[str, list[list[str]]] = {
     "python-sast": [
         ["bandit", "-q", "-r", "server", "-x", "server/__pycache__", "-ll", "-iii"],
         ["ruff", "check", "--no-cache", "--select", "S", "server"],
+        [
+            "semgrep", "scan", "--error", "--quiet", "--metrics=off", "--disable-version-check",
+            "--config", ".gate/semgrep-rules/owasp-top-ten.yml",
+            "--config", ".gate/semgrep-rules/python.yml",
+            "--config", ".gate/semgrep-rules/fastapi.yml",
+            ".",
+        ],
     ],
     "dependency-audit": [
         [
@@ -69,15 +79,14 @@ JOBS: dict[str, list[list[str]]] = {
             "--strict",
             "--progress-spinner",
             "off",
-            "--cache-dir",
-            f"{OUTPUT}/audit-cache",
         ],
+        ["npm", "audit", "--omit=dev", "--audit-level=high", "--package-lock-only", "--ignore-scripts"],
     ],
     "docs-build": [
         [PYTHON, "-m", "mkdocs", "build", "--strict", "-d", f"{OUTPUT}/site"],
     ],
     "secret-scan": [
-        ["gitleaks", "detect", "--source", ".", "--redact", "--no-banner"],
+        [PYTHON, "scripts/local_ci_gate.py", "--added-line-scan"],
     ],
     "go-gateway": [
         ["go", "-C", "services/workflow-gateway", "vet", "./..."],
@@ -85,17 +94,22 @@ JOBS: dict[str, list[list[str]]] = {
     ],
     "terraform-fmt": [
         ["terraform", "-chdir=deploy/terraform", "fmt", "-check", "-recursive"],
+        ["tflint", "--init"],
+        ["tflint", "--chdir=deploy/terraform", "--recursive"],
+    ],
+    "container-scan": [
+        [
+            "trivy", "config", "--skip-check-update", "--skip-version-check", "--severity", "HIGH,CRITICAL",
+            "--exit-code", "1", "--skip-dirs", ".gate", "--skip-dirs", ".git",
+            "--skip-dirs", "node_modules", "--skip-dirs", ".venv", "--skip-dirs", ".venv311", ".",
+        ],
     ],
 }
 
 ONLINE_REASONS: dict[str, str] = {
     "dependency-audit": (
-        "pip-audit queries live advisory registries and constructs an isolated resolution "
+        "pip-audit and npm audit query live advisory registries and require an isolated "
         "environment; pass --allow-online for outbound-permitted (inbound/bind denied) execution."
-    ),
-    "docs-build": (
-        "mkdocs-mermaid2-plugin checks its configured unpkg.com script URL over HTTPS during "
-        "strict builds; pass --allow-online for outbound-permitted (inbound/bind denied) execution."
     ),
 }
 
@@ -108,6 +122,13 @@ def unavailable_reason(job: str, *, allow_online: bool = False) -> str | None:
     if not allow_online and job in ONLINE_REASONS:
         return ONLINE_REASONS[job]
     return None
+
+
+def ensure_private_directory(path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True, mode=0o700)
+    mode = path.lstat().st_mode
+    if not stat.S_ISDIR(mode) or mode & 0o077:
+        raise RuntimeError("Local CI output directory must be private")
 
 
 def open_private_write(path: Path) -> TextIO:
@@ -128,6 +149,69 @@ def write_private_text(path: Path, content: str) -> None:
         stream.write(content)
 
 
+def network_sandbox_profile(home: Path) -> str:
+    profile = "(version 1) (allow default) (deny network-inbound) (deny network-bind)"
+    directories = (
+        ".ssh", ".oci", ".aws", ".kube", ".azure", ".docker", ".config/gh",
+        ".config/gcloud", ".config/pip", ".local/share/keyrings", ".npm", "Library/Keychains",
+        "Library/Application Support/pip",
+    )
+    for path in directories:
+        profile += f" (deny file-read* (subpath {json.dumps(str(home / path))}))"
+    files = (
+        home / ".netrc", home / ".npmrc", home / ".pypirc", home / ".pip/pip.conf",
+        ROOT / ".gate/venv/pip.conf", ROOT / ".venv/pip.conf", ROOT / ".venv311/pip.conf",
+        Path("/private/etc/pip.conf"), Path("/Library/Application Support/pip/pip.conf"),
+        Path("/opt/homebrew/etc/npmrc"), Path("/usr/local/etc/npmrc"),
+    )
+    for path in files:
+        profile += f" (deny file-read* (literal {json.dumps(str(path))}))"
+    profile += (
+        f" (deny file-read* (require-all (subpath {json.dumps(str(ROOT.resolve()))}) "
+        '(regex #".*/([.]env([.]|$)|[.]npmrc$)")))'
+    )
+    return profile
+
+
+def added_line_scan() -> int:
+    locations: set[tuple[str, int]] = set()
+    for options in (
+        ["--log-opts=origin/main..HEAD --diff-merges=first-parent"],
+        ["--staged"],
+        ["--pre-commit"],
+    ):
+        try:
+            result = subprocess.run(
+                [
+                    "gitleaks", "git", "--redact=100", "--no-banner", "--exit-code", "42",
+                    "--report-format", "json", "--report-path", "-", *options, ".",
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                check=False,
+                timeout=90,
+            )
+            findings = json.loads(result.stdout)
+            if result.returncode not in (0, 42) or not isinstance(findings, list):
+                raise ValueError
+            if bool(findings) != (result.returncode == 42):
+                raise ValueError
+            for finding in findings:
+                path = finding["File"]
+                line = finding["StartLine"]
+                if not isinstance(path, str) or not path or type(line) is not int or line < 1:
+                    raise ValueError
+                locations.add((path, line))
+        except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired):
+            print("added-line scan unavailable")
+            return 1
+    for path, line in sorted(locations):
+        display_path = json.dumps(path, ensure_ascii=True)[1:-1]
+        print(f"{display_path}:{line}")
+    print(f"added-line findings: {len(locations)}")
+    return int(bool(locations))
+
+
 def run_commands(
     commands: list[list[str]],
     output: Path | str,
@@ -138,14 +222,12 @@ def run_commands(
     if platform.system() != "Darwin" or not shutil.which("sandbox-exec"):
         raise RuntimeError("macOS sandbox-exec required; refusing unisolated execution")
     output = Path(output)
-    output.mkdir(parents=True, exist_ok=True, mode=0o700)
-    os.chmod(output, 0o700)
+    ensure_private_directory(output)
     host_home = Path.home()
     gomodcache = os.environ.get("GOMODCACHE", str(host_home / "go/pkg/mod"))
     gocache = os.environ.get("GOCACHE", str(host_home / "Library/Caches/go-build"))
-    pip_cache_dir = os.environ.get("PIP_CACHE_DIR", str(host_home / "Library/Caches/pip"))
     policy = (
-        "(version 1) (allow default) (deny network-inbound) (deny network-bind)"
+        network_sandbox_profile(Path(pwd.getpwuid(os.getuid()).pw_dir).resolve())
         if allow_network
         else "(version 1) (allow default) (deny network*)"
     )
@@ -170,14 +252,35 @@ def run_commands(
             OCI_AUTH_MODE="config",
             OCI_CONFIG_FILE="/dev/null",
             PYTHONDONTWRITEBYTECODE="1",
+            PYTHONNOUSERSITE="1",
             PYTHONPATH=os.pathsep.join(pythonpath_entries),
             GOMODCACHE=gomodcache,
             GOCACHE=gocache,
             GOTOOLCHAIN="local",
             GOPROXY="off",
             GOSUMDB="off",
-            PIP_CACHE_DIR=pip_cache_dir,
         )
+        if allow_network:
+            clean_home = Path(home)
+            config_paths = {
+                "PIP_CONFIG_FILE": clean_home / "pip.conf",
+                "NPM_CONFIG_USERCONFIG": clean_home / "npm-user.conf",
+                "NPM_CONFIG_GLOBALCONFIG": clean_home / "npm-global.conf",
+            }
+            for key, path in config_paths.items():
+                write_private_text(path, "")
+                env[key] = str(path)
+            env.pop("PYTHONPATH")
+            env.update(
+                PYTHONSAFEPATH="1",
+                TMPDIR=str(clean_home / "tmp"),
+                XDG_CONFIG_HOME=str(clean_home / "config"),
+                XDG_CACHE_HOME=str(clean_home / "cache"),
+                XDG_CONFIG_DIRS=str(clean_home / "config"),
+                GIT_CONFIG_NOSYSTEM="1",
+                GIT_CONFIG_GLOBAL="/dev/null",
+            )
+            Path(env["TMPDIR"]).mkdir(mode=0o700)
         for index, command in enumerate(commands):
             log = output / f"{index:02d}.log"
             with open_private_write(log) as stream:
@@ -188,8 +291,9 @@ def run_commands(
                         env=env,
                         stdout=stream,
                         stderr=subprocess.STDOUT,
-                        timeout=300,
+                        timeout=600 if allow_network else 300,
                         check=False,
+                        umask=0o077,
                     )
                     code = result.returncode
                 except (OSError, subprocess.TimeoutExpired) as error:
@@ -202,6 +306,7 @@ def run_commands(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--list", action="store_true")
+    parser.add_argument("--added-line-scan", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--job", choices=JOBS, action="append")
     parser.add_argument(
         "--allow-online",
@@ -210,6 +315,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--receipt", type=Path, default=ROOT / OUTPUT / "receipt.json")
     args = parser.parse_args(argv)
+    if args.added_line_scan:
+        return added_line_scan()
     if args.list:
         print(
             json.dumps(
@@ -226,8 +333,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
     output = ROOT / OUTPUT
-    output.mkdir(parents=True, exist_ok=True, mode=0o700)
-    os.chmod(output, 0o700)
+    ensure_private_directory(output)
     records: dict[str, dict[str, object]] = {}
     for job in args.job or JOBS:
         reason = unavailable_reason(job, allow_online=args.allow_online)

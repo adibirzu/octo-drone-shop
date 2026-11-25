@@ -1,5 +1,4 @@
 # Shared local and CI documentation toolchain.
 mkdocs==1.6.1
 mkdocs-material==9.8.2
-mkdocs-mermaid2-plugin==1.2.3
 pymdown-extensions==13.1.2

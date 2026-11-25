@@ -1,8 +1,9 @@
-# Pilot only. Remote initialization and publication require separate approval.
+# The offline commands cover the local build and static checks.
+# Run the aggregate runner with --allow-online for dependency advisory checks.
 # CI skipping is a run flag (--skip=ci), not a repository configuration key.
 commands:
-  test: python3.11 scripts/local_ci_gate.py --job unit-tests --job python-sast --job secret-scan --job go-gateway --job terraform-fmt
-  lint: python3.11 scripts/local_ci_gate.py --job python-sast --job secret-scan --job go-gateway --job terraform-fmt
+  test: python3.11 scripts/local_ci_gate.py --job unit-tests --job python-sast --job secret-scan --job go-gateway --job terraform-fmt --job docs-build --job container-scan
+  lint: python3.11 scripts/local_ci_gate.py --job python-sast --job secret-scan --job go-gateway --job terraform-fmt --job docs-build --job container-scan
 auto_fix:
   review: 0
   test: 0

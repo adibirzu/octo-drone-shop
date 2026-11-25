@@ -21,10 +21,11 @@ OFFLINE_JOBS = {
     "secret-scan",
     "go-gateway",
     "terraform-fmt",
+    "docs-build",
+    "container-scan",
 }
 ONLINE_OPT_IN_JOBS = {
     "dependency-audit",
-    "docs-build",
 }
 
 
@@ -79,7 +80,11 @@ def test_lists_offline_and_online_availability_and_rejects_shell_wrappers():
     assert any(cmd[:2] == ["ruff", "check"] and "S" in cmd and "server" in cmd for cmd in jobs["python-sast"]["commands"])
     assert any(cmd[:4] == ["pip-audit", "-r", "requirements.txt", "--strict"] for cmd in jobs["dependency-audit"]["commands"])
     assert any("mkdocs" in cmd and "build" in cmd and "--strict" in cmd for cmd in jobs["docs-build"]["commands"])
-    assert any(cmd[:4] == ["gitleaks", "detect", "--source", "."] and "--redact" in cmd for cmd in jobs["secret-scan"]["commands"])
+    assert any(cmd[0] == "semgrep" and "--error" in cmd for cmd in jobs["python-sast"]["commands"])
+    assert any(cmd[:2] == ["npm", "audit"] and "--omit=dev" in cmd and "--audit-level=high" in cmd for cmd in jobs["dependency-audit"]["commands"])
+    assert any("--added-line-scan" in cmd for cmd in jobs["secret-scan"]["commands"])
+    assert any(cmd[0] == "tflint" and "--recursive" in cmd for cmd in jobs["terraform-fmt"]["commands"])
+    assert any(cmd[:2] == ["trivy", "config"] and "--skip-check-update" in cmd for cmd in jobs["container-scan"]["commands"])
     assert any(cmd[:4] == ["go", "-C", "services/workflow-gateway", "vet"] for cmd in jobs["go-gateway"]["commands"])
     assert any(cmd[:4] == ["go", "-C", "services/workflow-gateway", "build"] for cmd in jobs["go-gateway"]["commands"])
     assert any(cmd[:3] == ["terraform", "-chdir=deploy/terraform", "fmt"] and "-check" in cmd for cmd in jobs["terraform-fmt"]["commands"])
@@ -95,8 +100,9 @@ def test_default_offline_marks_online_jobs_unavailable_even_with_nonempty_cache(
 ):
     module = load_gate_module()
     fake_output = tmp_path / "gate-out"
+    fake_output.mkdir(mode=0o700)
     partial_cache = fake_output / "audit-cache"
-    partial_cache.mkdir(parents=True)
+    partial_cache.mkdir()
     (partial_cache / "partial-entry.json").write_text("{}")
     monkeypatch.setattr(module, "ROOT", tmp_path)
     monkeypatch.setattr(module, "OUTPUT", "gate-out")
@@ -110,7 +116,7 @@ def test_default_offline_marks_online_jobs_unavailable_even_with_nonempty_cache(
     monkeypatch.setattr(module, "run_commands", fail_if_called)
 
     receipt = tmp_path / "receipt.json"
-    code = module.main(["--job", "dependency-audit", "--job", "docs-build", "--receipt", str(receipt)])
+    code = module.main(["--job", "dependency-audit", "--receipt", str(receipt)])
     assert code == 1
     assert executed_jobs == []
 
@@ -119,7 +125,7 @@ def test_default_offline_marks_online_jobs_unavailable_even_with_nonempty_cache(
     assert record["status"] == "failed"
     assert record["provider_verified"] is False
     assert record["release_accepted"] is False
-    for job_name in ("dependency-audit", "docs-build"):
+    for job_name in ONLINE_OPT_IN_JOBS:
         assert record["jobs"][job_name]["status"] == "unavailable"
         assert record["jobs"][job_name]["commands"] == []
         assert "--allow-online" in record["jobs"][job_name]["reason"]
@@ -130,8 +136,9 @@ def test_allow_online_selects_outbound_policy_only_for_online_jobs_across_repeat
 ):
     module = load_gate_module()
     fake_output = tmp_path / "gate-out"
+    fake_output.mkdir(mode=0o700)
     partial_cache = fake_output / "audit-cache"
-    partial_cache.mkdir(parents=True)
+    partial_cache.mkdir()
     (partial_cache / "cached.txt").write_text("partial")
     monkeypatch.setattr(module, "ROOT", tmp_path)
     monkeypatch.setattr(module, "OUTPUT", "gate-out")
@@ -165,7 +172,7 @@ def test_executor_continues_after_failure_and_blocks_network(tmp_path: Path):
         [sys.executable, "-c", "raise SystemExit(7)"],
         [sys.executable, "-c", f"from pathlib import Path; Path({str(marker)!r}).touch()"],
         [sys.executable, "-c", "import socket; s=socket.socket(); s.bind(('', 0))"],
-        [sys.executable, "-c", "import socket; s=socket.socket(); s.connect(('1.1.1.1', 443))"],
+        [sys.executable, "-c", "import socket; s=socket.socket(); s.connect(('localhost', 443))"],
     ]
     result = module.run_commands(commands, tmp_path)
     assert [row["exit_code"] for row in result] == [7, 0, 1, 1]
@@ -256,11 +263,11 @@ def test_config_uses_strictly_offline_local_gate_and_disables_automatic_repairs(
     assert set(config["commands"]) == {"test", "lint"}
     assert config["commands"]["test"] == (
         "python3.11 scripts/local_ci_gate.py --job unit-tests --job python-sast "
-        "--job secret-scan --job go-gateway --job terraform-fmt"
+        "--job secret-scan --job go-gateway --job terraform-fmt --job docs-build --job container-scan"
     )
     assert config["commands"]["lint"] == (
         "python3.11 scripts/local_ci_gate.py --job python-sast --job secret-scan "
-        "--job go-gateway --job terraform-fmt"
+        "--job go-gateway --job terraform-fmt --job docs-build --job container-scan"
     )
     assert "--allow-online" not in config["commands"]["test"]
     assert "--allow-online" not in config["commands"]["lint"]
@@ -275,3 +282,93 @@ def test_gitignore_excludes_private_gate_and_cache_dirs():
             check=False,
         )
         assert check.returncode == 0, f"Expected {candidate} to be gitignored"
+
+
+def test_audit_reads_only_clean_package_configs(tmp_path, monkeypatch):
+    module = load_gate_module()
+    observed = []
+
+    def inspect(argv, **kwargs):
+        env = kwargs["env"]
+        paths = [
+            Path(env[key])
+            for key in ("PIP_CONFIG_FILE", "NPM_CONFIG_USERCONFIG", "NPM_CONFIG_GLOBALCONFIG")
+        ]
+        assert len(set(paths)) == len(paths)
+        assert all(path.read_bytes() == b"" and stat.S_IMODE(path.stat().st_mode) == 0o600 for path in paths)
+        assert all(path.is_relative_to(env["HOME"]) for path in paths)
+        assert "deny file-read*" in argv[2]
+        assert all(name in argv[2] for name in (".ssh", ".oci", ".aws", ".kube", "Keychains", ".npmrc", "env"))
+        observed.append(argv[2])
+        return subprocess.CompletedProcess(argv, 0)
+
+    monkeypatch.setattr(module.subprocess, "run", inspect)
+    assert module.run_commands([["audit"]], tmp_path, allow_network=True)[0]["exit_code"] == 0
+    assert len(observed) == 1
+
+
+def test_added_line_scan_reports_only_locations_and_count(tmp_path, monkeypatch, capsys):
+    module = load_gate_module()
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run([
+        "git", "-c", "core.hooksPath=/dev/null", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+        "commit", "-q", "--allow-empty", "-m", "fixture",
+    ], cwd=tmp_path, check=True)
+    subprocess.run(["git", "update-ref", "refs/remotes/origin/main", "HEAD"], cwd=tmp_path, check=True)
+    candidate = tmp_path / "sample.txt"
+    marker = "gh" + "p_" + "A1b2C3d4E5f67890G1h2I3j4K5l6M7n8O9p0"
+    candidate.write_text("safe\n" + marker + "\n")
+    subprocess.run(["git", "add", "sample.txt"], cwd=tmp_path, check=True)
+
+    assert module.added_line_scan() == 1
+    output = capsys.readouterr()
+    assert output.out.splitlines() == ["sample.txt:2", "added-line findings: 1"]
+    assert output.err == ""
+
+
+def test_seatbelt_denies_workspace_and_home_credential_reads(tmp_path, monkeypatch):
+    module = load_gate_module()
+    workspace = tmp_path / "workspace+symbols"
+    synthetic_home = tmp_path / "host-home"
+    credentials = (
+        workspace / ".env",
+        workspace / "nested/.env.local",
+        workspace / ".npmrc",
+        synthetic_home / ".ssh/key",
+        synthetic_home / ".netrc",
+    )
+    allowed = workspace / "ordinary.txt"
+    for candidate in (*credentials, allowed):
+        candidate.parent.mkdir(parents=True, exist_ok=True)
+        candidate.touch()
+    monkeypatch.setattr(module, "ROOT", workspace)
+    policy = module.network_sandbox_profile(synthetic_home.resolve())
+    preflight = subprocess.run(
+        ["/usr/bin/sandbox-exec", "-p", policy, "/usr/bin/true"],
+        capture_output=True,
+        check=False,
+    )
+    if preflight.returncode == 71 and b"sandbox_apply: Operation not permitted" in preflight.stderr:
+        pytest.skip("An outer sandbox forbids applying the outbound-enabled Seatbelt profile")
+    assert preflight.returncode == 0, preflight.stderr
+    for candidate in (*credentials, allowed):
+        result = subprocess.run(
+            ["/usr/bin/sandbox-exec", "-p", policy, "/bin/cat", str(candidate)],
+            capture_output=True,
+            check=False,
+        )
+        assert (result.returncode != 0) == (candidate in credentials)
+        if candidate in credentials:
+            assert b"Operation not permitted" in result.stderr
+
+
+def test_executor_refuses_existing_public_output_directory(tmp_path, monkeypatch):
+    module = load_gate_module()
+    public = tmp_path / "public"
+    public.mkdir()
+    public.chmod(0o755)
+    monkeypatch.setattr(module.subprocess, "run", lambda *args, **kwargs: pytest.fail("executed command"))
+    with pytest.raises(RuntimeError, match="private"):
+        module.run_commands([["nope"]], public)
+    assert stat.S_IMODE(public.stat().st_mode) == 0o755
