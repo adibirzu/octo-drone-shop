@@ -256,20 +256,16 @@ def test_missing_executable_timeout_and_atomic_private_writes(
     assert symlink_target.read_text() == "preserve"
 
 
-def test_config_uses_strictly_offline_local_gate_and_disables_automatic_repairs():
+def test_config_runs_every_job_including_the_isolated_audit_and_disables_automatic_repairs():
     config = yaml.safe_load((ROOT / ".no-mistakes.yaml").read_text())
     assert set(config) == {"commands", "auto_fix"}
     assert "allow_repo_commands" not in config
     assert set(config["commands"]) == {"test", "lint"}
-    assert config["commands"]["test"] == (
-        "python3.11 scripts/local_ci_gate.py --job unit-tests --job python-sast "
-        "--job secret-scan --job go-gateway --job terraform-fmt --job docs-build --job container-scan"
-    )
+    assert config["commands"]["test"] == "python3.11 scripts/local_ci_gate.py --allow-online"
     assert config["commands"]["lint"] == (
         "python3.11 scripts/local_ci_gate.py --job python-sast --job secret-scan "
         "--job go-gateway --job terraform-fmt --job docs-build --job container-scan"
     )
-    assert "--allow-online" not in config["commands"]["test"]
     assert "--allow-online" not in config["commands"]["lint"]
     assert config["auto_fix"] == {"review": 0, "test": 0, "lint": 0}
 
@@ -307,19 +303,23 @@ def test_audit_reads_only_clean_package_configs(tmp_path, monkeypatch):
     assert len(observed) == 1
 
 
-def test_added_line_scan_reports_only_locations_and_count(tmp_path, monkeypatch, capsys):
+@pytest.mark.parametrize("staged", [True, False])
+def test_added_line_scan_reports_only_locations_and_count(tmp_path, monkeypatch, capsys, staged):
     module = load_gate_module()
     monkeypatch.setattr(module, "ROOT", tmp_path)
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    candidate = tmp_path / "sample.txt"
+    candidate.write_text("safe\n")
+    subprocess.run(["git", "add", "sample.txt"], cwd=tmp_path, check=True)
     subprocess.run([
         "git", "-c", "core.hooksPath=/dev/null", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
-        "commit", "-q", "--allow-empty", "-m", "fixture",
+        "commit", "-q", "-m", "fixture",
     ], cwd=tmp_path, check=True)
     subprocess.run(["git", "update-ref", "refs/remotes/origin/main", "HEAD"], cwd=tmp_path, check=True)
-    candidate = tmp_path / "sample.txt"
     marker = "gh" + "p_" + "A1b2C3d4E5f67890G1h2I3j4K5l6M7n8O9p0"
     candidate.write_text("safe\n" + marker + "\n")
-    subprocess.run(["git", "add", "sample.txt"], cwd=tmp_path, check=True)
+    if staged:
+        subprocess.run(["git", "add", "sample.txt"], cwd=tmp_path, check=True)
 
     assert module.added_line_scan() == 1
     output = capsys.readouterr()
@@ -327,16 +327,19 @@ def test_added_line_scan_reports_only_locations_and_count(tmp_path, monkeypatch,
     assert output.err == ""
 
 
-def test_seatbelt_denies_workspace_and_home_credential_reads(tmp_path, monkeypatch):
+def test_seatbelt_protects_workspace_and_home_credentials(tmp_path, monkeypatch):
     module = load_gate_module()
     workspace = tmp_path / "workspace+symbols"
     synthetic_home = tmp_path / "host-home"
     credentials = (
         workspace / ".env",
         workspace / "nested/.env.local",
+        workspace / "deploy/credentials.env",
         workspace / ".npmrc",
+        workspace / "nested/credentials/token",
         synthetic_home / ".ssh/key",
         synthetic_home / ".netrc",
+        synthetic_home / ".git-credentials",
     )
     allowed = workspace / "ordinary.txt"
     for candidate in (*credentials, allowed):
@@ -361,6 +364,23 @@ def test_seatbelt_denies_workspace_and_home_credential_reads(tmp_path, monkeypat
         assert (result.returncode != 0) == (candidate in credentials)
         if candidate in credentials:
             assert b"Operation not permitted" in result.stderr
+    for candidate in (*credentials, synthetic_home / ".zprofile", workspace / "new.txt"):
+        result = subprocess.run(
+            ["/usr/bin/sandbox-exec", "-p", policy, "/usr/bin/touch", str(candidate)],
+            capture_output=True,
+            check=False,
+        )
+        assert result.returncode != 0 and b"Operation not permitted" in result.stderr
+    direct_dns = subprocess.run(
+        [
+            "/usr/bin/sandbox-exec", "-p", policy, sys.executable, "-c",
+            "import errno, socket; s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); "
+            "raise SystemExit(s.connect_ex(('localhost', 53)) not in (errno.EPERM, errno.EACCES))",
+        ],
+        capture_output=True,
+        check=False,
+    )
+    assert direct_dns.returncode == 0, direct_dns.stderr
 
 
 def test_executor_refuses_existing_public_output_directory(tmp_path, monkeypatch):

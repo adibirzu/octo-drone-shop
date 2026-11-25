@@ -1,10 +1,8 @@
 #!/usr/bin/env python3.11
 """Run the local CI gate for octo-drone-shop with macOS Seatbelt isolation and private receipts.
 
-Default execution is strictly offline under (deny network*). Jobs that require outbound
-network access report unavailable and return exit 1 unless --allow-online is passed.
-With --allow-online, only online opt-in jobs use outbound-permitted (inbound/bind denied)
-Seatbelt rules while offline jobs remain under (deny network*).
+Default execution is strictly offline under (deny network*). The dependency audit
+requires --allow-online and uses a separate Seatbelt profile for HTTPS and DNS.
 """
 
 from __future__ import annotations
@@ -79,8 +77,13 @@ JOBS: dict[str, list[list[str]]] = {
             "--strict",
             "--progress-spinner",
             "off",
+            "--index-url",
+            "https://pypi.org/simple/",
         ],
-        ["npm", "audit", "--omit=dev", "--audit-level=high", "--package-lock-only", "--ignore-scripts"],
+        [
+            "npm", "audit", "--omit=dev", "--audit-level=high", "--package-lock-only",
+            "--ignore-scripts", "--registry=https://registry.npmjs.org/",
+        ],
     ],
     "docs-build": [
         [PYTHON, "-m", "mkdocs", "build", "--strict", "-d", f"{OUTPUT}/site"],
@@ -109,7 +112,7 @@ JOBS: dict[str, list[list[str]]] = {
 ONLINE_REASONS: dict[str, str] = {
     "dependency-audit": (
         "pip-audit and npm audit query live advisory registries and require an isolated "
-        "environment; pass --allow-online for outbound-permitted (inbound/bind denied) execution."
+        "environment. Pass --allow-online to permit HTTPS and DNS for the audit."
     ),
 }
 
@@ -150,7 +153,13 @@ def write_private_text(path: Path, content: str) -> None:
 
 
 def network_sandbox_profile(home: Path) -> str:
-    profile = "(version 1) (allow default) (deny network-inbound) (deny network-bind)"
+    profile = (
+        '(version 1) (allow default) (deny network*) '
+        '(allow network-outbound (remote tcp "*:443") '
+        '(remote unix-socket (path-literal "/private/var/run/mDNSResponder")))'
+    )
+    workspace = json.dumps(str(ROOT.resolve()))
+    profile += f" (deny file-write* (subpath {json.dumps(str(home))}) (subpath {workspace}))"
     directories = (
         ".ssh", ".oci", ".aws", ".kube", ".azure", ".docker", ".config/gh",
         ".config/gcloud", ".config/pip", ".local/share/keyrings", ".npm", "Library/Keychains",
@@ -160,6 +169,7 @@ def network_sandbox_profile(home: Path) -> str:
         profile += f" (deny file-read* (subpath {json.dumps(str(home / path))}))"
     files = (
         home / ".netrc", home / ".npmrc", home / ".pypirc", home / ".pip/pip.conf",
+        home / ".git-credentials", home / ".config/git/credentials",
         ROOT / ".gate/venv/pip.conf", ROOT / ".venv/pip.conf", ROOT / ".venv311/pip.conf",
         Path("/private/etc/pip.conf"), Path("/Library/Application Support/pip/pip.conf"),
         Path("/opt/homebrew/etc/npmrc"), Path("/usr/local/etc/npmrc"),
@@ -167,8 +177,8 @@ def network_sandbox_profile(home: Path) -> str:
     for path in files:
         profile += f" (deny file-read* (literal {json.dumps(str(path))}))"
     profile += (
-        f" (deny file-read* (require-all (subpath {json.dumps(str(ROOT.resolve()))}) "
-        '(regex #".*/([.]env([.]|$)|[.]npmrc$)")))'
+        f" (deny file-read* (require-all (subpath {workspace}) "
+        '(regex #".*/([^/]*[.]env([.]|$)|[.]npmrc$|(secrets|credentials|wallet)(/|$))")))'
     )
     return profile
 
@@ -232,7 +242,8 @@ def run_commands(
         else "(version 1) (allow default) (deny network*)"
     )
     results: list[dict[str, object]] = []
-    with tempfile.TemporaryDirectory(prefix="local-ci-home-") as home:
+    temp_parent = "/private/tmp" if allow_network else None
+    with tempfile.TemporaryDirectory(prefix="local-ci-home-", dir=temp_parent) as home:
         env = {key: os.environ[key] for key in ALLOWED_ENV_KEYS if key in os.environ}
         path_parts = [
             part
@@ -311,7 +322,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--allow-online",
         action="store_true",
-        help="Run online-dependent jobs under outbound-permitted (inbound/bind denied) Seatbelt policy",
+        help="Permit HTTPS and DNS for the dependency audit under a separate Seatbelt policy",
     )
     parser.add_argument("--receipt", type=Path, default=ROOT / OUTPUT / "receipt.json")
     args = parser.parse_args(argv)

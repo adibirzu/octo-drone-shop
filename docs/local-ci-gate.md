@@ -23,10 +23,12 @@ The runner makes no attempt to fetch or replace missing tools or rules.
 | Additional local checks | `unit-tests`, `go-gateway` | Root and async-worker pytest suites, plus gateway vet and build |
 
 Run the full gate with `.gate/venv/bin/python scripts/local_ci_gate.py --allow-online`.
-Only `dependency-audit` can connect out. It runs with a temporary home, separate
-empty package-manager configs, and Seatbelt read denials for workspace environment
-files and known home credential paths. Omitting `--allow-online` makes the audit
-unavailable and the aggregate fails. `.no-mistakes.yaml` selects the offline jobs.
+Only `dependency-audit` can connect out, over HTTPS with system DNS. It uses the public
+PyPI and npm registries, a temporary home, and separate empty package-manager
+configs. Seatbelt denies reads of workspace and host credential paths and denies
+writes to the workspace and host home. Omitting `--allow-online` makes the audit
+unavailable and the aggregate fails. The no-mistakes test command opts into
+the audit. Its lint command runs offline.
 
 The receipt and command logs live under `.gate/local-ci` by default. Keep them
 private. A command or scanner failure makes the aggregate fail. Stage new files

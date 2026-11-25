@@ -1,8 +1,7 @@
-# The offline commands cover the local build and static checks.
-# Run the aggregate runner with --allow-online for dependency advisory checks.
+# The test command opts into the isolated dependency audit. Lint runs offline.
 # CI skipping is a run flag (--skip=ci), not a repository configuration key.
 commands:
-  test: python3.11 scripts/local_ci_gate.py --job unit-tests --job python-sast --job secret-scan --job go-gateway --job terraform-fmt --job docs-build --job container-scan
+  test: python3.11 scripts/local_ci_gate.py --allow-online
   lint: python3.11 scripts/local_ci_gate.py --job python-sast --job secret-scan --job go-gateway --job terraform-fmt --job docs-build --job container-scan
 auto_fix:
   review: 0
