@@ -18,7 +18,7 @@ The runner makes no attempt to fetch or replace missing tools or rules.
 | `security-gates / secret-scan` | `secret-scan` | Gitleaks over added lines in commits ahead of `origin/main`, the index, and tracked working-tree edits, with unique file/line locations and a count |
 | `security-gates / terraform-lint` | `terraform-fmt` | Recursive Terraform format check, TFLint initialization and recursive lint |
 | `security-gates / container-scan` | `container-scan` | Trivy configuration scan with bundled checks at HIGH and CRITICAL severity |
-| `Deploy Documentation / build` and `mkdocs-deploy / build-and-deploy` | `docs-build` | Strict MkDocs build with Material's Mermaid support |
+| `Deploy Documentation / build` and `mkdocs-deploy / build-and-deploy` | `docs-build` | Strict offline MkDocs build that preserves Mermaid code blocks. Diagram rendering runs in the browser and may fetch Mermaid JavaScript. |
 | `Deploy Documentation / deploy` and Pages publication steps | GitHub Pages | Upload and deployment require the hosted workflow |
 | Additional local checks | `unit-tests`, `go-gateway` | Root and async-worker pytest suites, plus gateway vet and build |
 
@@ -29,6 +29,13 @@ configs. Seatbelt denies reads of workspace and host credential paths and denies
 writes to the workspace and host home. Omitting `--allow-online` makes the audit
 unavailable and the aggregate fails. The no-mistakes test command opts into
 the audit. Its lint command runs offline.
+
+TFLint uses Unix sockets inside the gate's private temporary directory for its
+bundled plugin. Seatbelt denies IP networking for TFLint. The gate runs
+`tflint --init` at the repository root to match the hosted job, then lints
+`deploy/terraform` recursively. If that directory gains an external plugin,
+the initialization step will need to target that directory and the plugin will
+need to be provisioned before the offline run.
 
 The receipt and command logs live under `.gate/local-ci` by default. Keep them
 private. A command or scanner failure makes the aggregate fail. Stage new files

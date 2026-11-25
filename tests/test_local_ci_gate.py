@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import shutil
 import stat
 import subprocess
 import sys
@@ -181,6 +182,56 @@ def test_executor_continues_after_failure_and_blocks_network(tmp_path: Path):
         log_path = tmp_path / str(row["log"])
         assert log_path.is_file()
         assert stat.S_IMODE(log_path.stat().st_mode) == 0o600
+
+
+def test_tflint_runs_with_private_unix_sockets_and_no_ip_network(tmp_path, monkeypatch):
+    module = load_gate_module()
+    path = os.pathsep.join([str(ROOT / ".gate/bin"), os.environ["PATH"]])
+    if not shutil.which("tflint", path=path):
+        pytest.skip("TFLint is required for the Seatbelt integration test")
+    monkeypatch.setenv("PATH", path)
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+    (tmp_path / "main.tf").write_text('terraform { required_version = ">= 1.5.0" }\n')
+    real_run = subprocess.run
+
+    def check_tflint_network(argv, **kwargs):
+        sandbox = argv[:3]
+        preflight = real_run([*sandbox, "/usr/bin/true"], capture_output=True, check=False)
+        if preflight.returncode == 71 and b"sandbox_apply: Operation not permitted" in preflight.stderr:
+            pytest.skip("An outer sandbox forbids applying the TFLint Seatbelt profile")
+        assert preflight.returncode == 0, preflight.stderr
+        result = real_run(argv, **kwargs)
+        assert result.returncode == 0, "TFLint failed on valid Terraform"
+        probe = """
+import errno
+import os
+from pathlib import Path
+import socket
+
+tmp = Path(os.environ["TMPDIR"])
+assert tmp.stat().st_mode & 0o777 == 0o700
+blocked = {errno.EPERM, errno.EACCES}
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp:
+    assert tcp.connect_ex(("localhost", 443)) in blocked
+with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp:
+    assert udp.connect_ex(("localhost", 53)) in blocked
+for path in (tmp.parent / "outside.sock", tmp / ".." / "outside.sock"):
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as outside:
+        try:
+            outside.bind(str(path))
+        except OSError as error:
+            assert error.errno in blocked
+        else:
+            raise AssertionError("Unix bind outside TFLint TMPDIR succeeded")
+"""
+        checked = real_run(
+            [*sandbox, sys.executable, "-c", probe], env=kwargs["env"], capture_output=True, check=False
+        )
+        assert checked.returncode == 0, checked.stderr
+        return result
+
+    monkeypatch.setattr(module.subprocess, "run", check_tflint_network)
+    module.run_commands([["tflint", "--recursive"]], tmp_path / "out")
 
 
 def test_minimal_allowlist_env_strips_provider_and_db_credentials(

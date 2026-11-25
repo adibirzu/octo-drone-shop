@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import platform
 import pwd
+import re
 import shutil
 import stat
 import subprocess
@@ -242,7 +243,9 @@ def run_commands(
         else "(version 1) (allow default) (deny network*)"
     )
     results: list[dict[str, object]] = []
-    temp_parent = "/private/tmp" if allow_network else None
+    has_tflint = any(command[0] == "tflint" for command in commands)
+    # Unix socket paths have a short length limit on macOS.
+    temp_parent = "/private/tmp" if allow_network or has_tflint else None
     with tempfile.TemporaryDirectory(prefix="local-ci-home-", dir=temp_parent) as home:
         env = {key: os.environ[key] for key in ALLOWED_ENV_KEYS if key in os.environ}
         path_parts = [
@@ -293,13 +296,24 @@ def run_commands(
             )
             Path(env["TMPDIR"]).mkdir(mode=0o700)
         for index, command in enumerate(commands):
+            command_env = env
+            command_policy = policy
+            if not allow_network and command[0] == "tflint":
+                socket_dir = Path(home).resolve() / "tmp"
+                ensure_private_directory(socket_dir)
+                command_env = {**env, "TMPDIR": str(socket_dir)}
+                socket_filter = f'unix-socket (regex #"^{re.escape(str(socket_dir))}/")'
+                command_policy += (
+                    f" (allow network-bind network-inbound (local {socket_filter}))"
+                    f" (allow network-outbound (remote {socket_filter}))"
+                )
             log = output / f"{index:02d}.log"
             with open_private_write(log) as stream:
                 try:
                     result = subprocess.run(
-                        ["sandbox-exec", "-p", policy, *command],
+                        ["sandbox-exec", "-p", command_policy, *command],
                         cwd=ROOT,
-                        env=env,
+                        env=command_env,
                         stdout=stream,
                         stderr=subprocess.STDOUT,
                         timeout=600 if allow_network else 300,
