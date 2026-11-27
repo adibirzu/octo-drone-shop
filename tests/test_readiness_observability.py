@@ -59,11 +59,24 @@ def shop_journey(monkeypatch, request):
     from sqlalchemy import create_engine, event
     from sqlalchemy.orm import Session
 
-    from server import database
+    from server import auth_security, database
     from server.chaos import db_faults
     from server.config import cfg
-    from server.modules import integrations, observability_dashboard
-    from server.observability import log_enricher, logging_sdk, metrics, otel_setup
+    from server.middleware import tracing
+    from server.modules import (
+        integrations,
+        java_app_server,
+        observability_dashboard,
+        payment_gateway_simulation,
+        shop,
+    )
+    from server.observability import (
+        correlation,
+        log_enricher,
+        logging_sdk,
+        metrics,
+        otel_setup,
+    )
 
     # Use the real routes without starting exporters or installing global hooks.
     for module, name in (
@@ -87,6 +100,21 @@ def shop_journey(monkeypatch, request):
     monkeypatch.setattr(cfg, "internal_service_key", service_key)
     monkeypatch.setattr(cfg, "payment_gateway_simulation_enabled", True)
     monkeypatch.setenv("PAYMENT_SIMULATION_MODE", "approve")
+
+    # Config reload tests replace cfg while these modules keep their imports.
+    # Bind the cached routes and their dependencies to the same cfg as /ready.
+    for module in (
+        auth_security,
+        correlation,
+        integrations,
+        java_app_server,
+        logging_sdk,
+        observability_dashboard,
+        payment_gateway_simulation,
+        shop,
+        tracing,
+    ):
+        monkeypatch.setattr(module, "cfg", cfg)
 
     logs = []
     monkeypatch.setattr(logging_sdk, "_log_queue", Mock(put=logs.append))
