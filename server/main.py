@@ -208,6 +208,8 @@ except ImportError:
 # ── Health & readiness ────────────────────────────────────────
 
 @app.get("/health")
+@app.get("/healthz")
+@app.get("/api/health")
 async def health():
     return {"status": "ok", "service": cfg.app_name}
 
