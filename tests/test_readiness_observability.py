@@ -258,3 +258,55 @@ async def test_checkout_payment_evidence_joins_one_ready_shop_transaction(
         assert fields["workflow_id"] == "checkout"
         assert fields["shop.journey_id"] == journey
     assert payment_log["span_id"] == final_event["trace"]["span_id"]
+
+
+async def test_declined_checkout_retains_correlated_failure_evidence(
+    shop_journey, monkeypatch
+) -> None:
+    monkeypatch.setenv("PAYMENT_SIMULATION_MODE", "decline")
+    app, service_key, spans, logs = shop_journey
+    journey = "synthetic-declined-checkout"
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://shop.test") as client:
+        response = await client.post(
+            "/api/shop/checkout",
+            headers={"X-Octo-Journey-Id": journey},
+            json={"items": [{"product_id": 1, "quantity": 1}],
+                  "session_id": journey, "customer_email": "buyer@example.test",
+                  "payment_method": "google_pay",
+                  "payment_details": {"wallet": {"token": "synthetic", "network": "visa"}}},
+        )
+        assert response.status_code == 200
+        receipt = response.json()
+        assert receipt["payment_status"] == "failed"
+        assert receipt["payment"]["status"] == "declined"
+        assert receipt["order_status"] != "paid"
+        order_id, trace_id = receipt["order_id"], receipt["trace_id"]
+        gateway_id = receipt["payment"]["gateway"]["request_id"]
+        assert order_id > 0 and gateway_id and re.fullmatch(r"[0-9a-f]{32}", trace_id)
+        evidence_response = await client.get(
+            "/api/observability/payment-gateway/events",
+            params={"order_id": order_id, "gateway_request_id": gateway_id, "trace_id": trace_id},
+            headers={"X-Internal-Service-Key": service_key},
+        )
+        assert evidence_response.status_code == 200
+        evidence = evidence_response.json()
+        assert evidence["summary"]["order_ids"] == [order_id]
+        assert evidence["summary"]["gateway_request_ids"] == [gateway_id]
+        assert evidence["summary"]["trace_ids"] == [trace_id]
+        [final_event] = [event for event in evidence["events"] if event["step"]["name"] == "merchant_authorization_result"]
+        assert final_event["step"]["status"] != "completed"
+        assert final_event["order"]["payment_status"] == "failed"
+
+    [checkout_span] = [span for span in spans.get_finished_spans() if span.name == "shop.checkout"]
+    [payment_span] = [span for span in spans.get_finished_spans() if span.attributes.get("payment.gateway.step") == "merchant_authorization_result"]
+    [checkout_log] = [fields for _, message, fields in logs if message == "Store checkout persisted"]
+    [payment_log] = [fields for _, _, fields in logs if fields.get("payment.gateway.step") == "merchant_authorization_result"]
+    for span, fields in ((checkout_span, checkout_log), (payment_span, payment_log)):
+        assert trace.format_trace_id(span.context.trace_id) == trace_id
+        assert span.attributes["orders.order_id"] == fields["orders.order_id"] == order_id
+        assert span.attributes["payment.gateway.request_id"] == fields["payment.gateway.request_id"] == gateway_id
+        assert span.attributes["shop.journey_id"] == fields["shop.journey_id"] == journey
+        assert fields["trace_id"] == fields["oracleApmTraceId"] == trace_id
+        assert fields["span_id"] == trace.format_span_id(span.context.span_id)
+    assert checkout_log["orders.payment_status"] == "failed"
+    assert payment_log["span_id"] == final_event["trace"]["span_id"]
