@@ -37,6 +37,8 @@ _PAGE_RULES: tuple[tuple[str, str, str], ...] = (
     ("/api/auth", "login", "auth"),
     ("/ready", "readiness", "health"),
     ("/health", "health", "health"),
+    ("/healthz", "health", "health"),
+    ("/api/health", "health", "health"),
 )
 
 
