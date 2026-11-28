@@ -13,6 +13,8 @@ from server.observability.correlation import infer_page_identity
 
 @pytest.mark.parametrize("path", ["/health", "/healthz", "/api/health"])
 async def test_liveness_is_public_and_does_not_access_database(path, monkeypatch):
+    monkeypatch.setenv("GIT_SHA", "a" * 40)
+    monkeypatch.setenv("APP_IMAGE_TAG", "synthetic-version")
     db = Mock(side_effect=AssertionError("liveness accessed the database"))
     monkeypatch.setattr(main, "get_db", db)
     statements = []
@@ -35,7 +37,7 @@ async def test_liveness_is_public_and_does_not_access_database(path, monkeypatch
 
     assert response.status_code == expected.status_code == 200
     assert response.headers["content-type"] == expected.headers["content-type"] == "application/json"
-    assert response.json() == expected.json() == {"status": "ok", "service": main.cfg.app_name}
+    assert response.json() == expected.json() == {"status": "ok", "service": main.cfg.app_name, "build": {"source_commit": "a" * 40, "version": "synthetic-version"}}
     db.assert_not_called()
     assert statements == []
 
@@ -60,5 +62,15 @@ async def test_readiness_still_checks_database(monkeypatch):
     assert response.status_code == 200
     assert response.json()["ready"] is False
     assert response.json()["database"] == "disconnected"
+    assert "build" not in response.json()
     db.assert_called_once_with()
     assert infer_page_identity("/ready") == ("readiness", "health")
+
+
+@pytest.mark.parametrize("path", ["/health", "/healthz", "/api/health"])
+async def test_liveness_unknown_build_when_unset(path, monkeypatch):
+    monkeypatch.delenv("GIT_SHA", raising=False)
+    monkeypatch.delenv("APP_IMAGE_TAG", raising=False)
+    async with AsyncClient(transport=ASGITransport(app=main.app), base_url="http://test") as client:
+        response = await client.get(path)
+    assert response.json()["build"] == {"source_commit": "unknown", "version": "unknown"}

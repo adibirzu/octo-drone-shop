@@ -53,6 +53,15 @@ echo " Roll:  ${ROLLOUT}"
 echo "================================================"
 
 if $BUILD; then
+    SOURCE_COMMIT=$(git rev-parse HEAD)
+    if [[ ! "$SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+        echo "Invalid source commit" >&2
+        exit 1
+    fi
+    if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
+        echo "Build requires a clean working tree" >&2
+        exit 1
+    fi
     # ── 1. Sync code to the remote build host ──────────
     echo ""
     echo "[1/4] Syncing code to ${REMOTE_HOST}:${REMOTE_DIR}..."
@@ -77,7 +86,7 @@ if $BUILD; then
     # ── 2. Build on VM (native x86_64) ─────────────────
     echo ""
     echo "[2/4] Building Docker image on ${REMOTE_HOST}..."
-    ssh "${REMOTE_HOST}" "cd ${REMOTE_DIR} && docker build -t ${OCIR_REPO}:${TAG} -t ${OCIR_REPO}:latest ."
+    ssh "${REMOTE_HOST}" "cd ${REMOTE_DIR} && docker build --build-arg SOURCE_COMMIT=${SOURCE_COMMIT} -t ${OCIR_REPO}:${TAG} -t ${OCIR_REPO}:latest ."
     echo "[2/4] Build complete: ${OCIR_REPO}:${TAG}"
 
     # ── 3. Push to OCIR ────────────────────────────────

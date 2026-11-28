@@ -23,12 +23,19 @@ from fastapi import APIRouter
 router = APIRouter(tags=["meta"])
 
 
+def build_identity() -> dict[str, str]:
+    return {
+        "source_commit": os.getenv("GIT_SHA") or "unknown",
+        "version": os.getenv("APP_IMAGE_TAG") or "unknown",
+    }
+
+
 @router.get("/api/version")
 async def version() -> dict[str, Any]:
     return {
         "service": os.getenv("APP_NAME", "octo-drone-shop"),
         "image_tag": os.getenv("APP_IMAGE_TAG", "unknown"),
-        "git_sha": os.getenv("GIT_SHA", "unknown"),
+        "git_sha": build_identity()["source_commit"],
         "schema_version": os.getenv("SCHEMA_VERSION", "unknown"),
         "environment": os.getenv("ENVIRONMENT", "unknown"),
     }
