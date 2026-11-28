@@ -51,7 +51,7 @@ from server.modules.public_api import (
     public_router as public_api_router,
     partner_router as partner_api_router,
 )
-from server.modules.version import router as version_router
+from server.modules.version import build_identity, router as version_router
 from server.modules.platform_status import router as platform_status_router
 
 logger = logging.getLogger(__name__)
@@ -211,7 +211,7 @@ except ImportError:
 @app.get("/healthz")
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": cfg.app_name}
+    return {"status": "ok", "service": cfg.app_name, "build": build_identity()}
 
 
 @app.get("/favicon.ico", include_in_schema=False)

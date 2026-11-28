@@ -36,10 +36,15 @@ RUN pip install --upgrade pip setuptools wheel && \
 # ── Runtime stage: slim, non-root ──────────────────────────────────
 FROM ${PYTHON_BASE}
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
+ARG SOURCE_COMMIT
+RUN test "${#SOURCE_COMMIT}" -eq 40 && printf '%s' "${SOURCE_COMMIT}" | grep -Eq '^[0-9a-f]{40}$'
+
+ENV GIT_SHA=${SOURCE_COMMIT} \
+    PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/usr/local/bin:${PATH}"
 
+# Runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl ca-certificates && \
     rm -rf /var/lib/apt/lists/* && \
